@@ -1,0 +1,6 @@
+{
+  "name": "Parailaf Maroc - FreeStyle Libre & Santé Glucose",
+  "description": "Boutique e-commerce et parapharmacie de référence au Maroc spécialisée dans les solutions de suivi du glucose FreeStyle Libre 2 & 3, capteurs, lecteurs et accessoires avec livraison express partout au Maroc.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
