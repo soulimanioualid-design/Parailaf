@@ -3,14 +3,12 @@ import { CartProvider } from './context/CartContext';
 import { Header } from './components/Header';
 import { MobileBottomNav } from './components/MobileBottomNav';
 import { HeroSection } from './components/HeroSection';
-import { CategoryPills } from './components/CategoryPills';
 import { ProductGrid } from './components/ProductGrid';
 import { FreeStyleGuideSection } from './components/FreeStyleGuideSection';
 import { AdvantagesSection } from './components/AdvantagesSection';
 import { VideoSection } from './components/VideoSection';
 import { WhyUsSection } from './components/WhyUsSection';
 import { SoloPromoFlyerSection } from './components/SoloPromoFlyerSection';
-import { PromoOffersBottomSection } from './components/PromoOffersBottomSection';
 import { TestimonialsSection } from './components/TestimonialsSection';
 import { FaqSection } from './components/FaqSection';
 import { Footer } from './components/Footer';
@@ -46,11 +44,11 @@ export default function App() {
           {/* Hero Section */}
           <HeroSection />
 
-          {/* Category Navigation Pills */}
-          <CategoryPills />
-
-          {/* Featured & Filterable Products Grid */}
+          {/* Featured & Filterable Products Grid (ends with Approvisionnement mensuel banner) */}
           <ProductGrid />
+
+          {/* Produit Offre Spéciale Affiche (Seul avec Bouton WhatsApp & Commande - Placé après l'approvisionnement mensuel) */}
+          <SoloPromoFlyerSection />
 
           {/* 3-Step FreeStyle Libre Visual Explanation */}
           <FreeStyleGuideSection />
@@ -63,12 +61,6 @@ export default function App() {
 
           {/* Why Order From Us (Reassurance) */}
           <WhyUsSection />
-
-          {/* Produit Offre Spéciale Affiche (Seul avec Bouton WhatsApp & Commande) */}
-          <SoloPromoFlyerSection />
-
-          {/* Offres & Tarifs Complémentaires */}
-          <PromoOffersBottomSection />
 
           {/* Moroccan Verified Reviews */}
           <TestimonialsSection />

@@ -10,68 +10,171 @@ import imgWipes from '../assets/images/alcohol_wipes_box_1788260900680.jpg';
 import imgCase from '../assets/images/travel_case_eva_1788260915608.jpg';
 import imgSingle2 from '../assets/images/freestyle_libre2_single_1788260930453.jpg';
 import imgPromoOujda from '../assets/images/freestyle_promo_oujda_1788441986495.jpg';
+import imgPromoLibre3 from '../assets/images/freestyle_libre3_promo_flyer_1788452962096.jpg';
+import imgPromoOmnipod from '../assets/images/omnipod_5_promo_flyer_1788454250818.jpg';
 
 export const CATEGORIES = [
-  { id: 'all', name: 'Tous les produits', count: 10 },
-  { id: 'offres-speciales', name: 'Offres Spéciales', count: 4 },
-  { id: 'libre-2', name: 'FreeStyle Libre 2 PLUS', count: 4 },
+  { id: 'all', name: 'Tous les produits', count: 9 },
+  { id: 'offres-speciales', name: 'Offres Spéciales', count: 3 },
+  { id: 'libre-2', name: 'FreeStyle Libre 2 PLUS', count: 3 },
   { id: 'libre-3', name: 'FreeStyle Libre 3 PLUS', count: 2 },
   { id: 'omnipod', name: 'Omnipod 5', count: 1 },
   { id: 'lecteurs', name: 'Lecteurs & Kits', count: 1 },
   { id: 'accessoires', name: 'Accessoires & Soins', count: 3 },
 ];
 
-export const PRODUCTS: Product[] = [
-  {
-    id: 'fsl2-plus-promo-550',
-    name: 'FreeStyle Libre 2 PLUS - Offre Spéciale Promo 550 DH',
-    category: 'offres-speciales',
-    categoryLabel: 'Offres Spéciales',
-    brand: 'Abbott',
-    shortDescription: 'Offre Spéciale Affiche Promo à 550 DH. Mesure en continu 24h/24 sans piqûres au bout des doigts, alertes personnalisées.',
-    fullDescription: 'Système officiel de mesure du glucose en continu FreeStyle Libre 2 PLUS d’Abbott. Mesure 24h/24 sans piqûres au bout des doigts, alertes personnalisées en cas d’hypo ou d’hyperglycémie, durée jusqu’à 14-15 jours, application mobile connectée. Offre exclusive Parailaf Direction Lazaret Oujda avec livraison express et paiement à la livraison au Maroc.',
-    price: 550,
-    originalPrice: 750,
-    discountPercentage: 27,
-    badge: 'Promo 550 DH',
-    inStock: true,
-    stockCount: 50,
-    rating: 5.0,
-    reviewsCount: 312,
-    image: imgPromoOujda,
-    gallery: [
-      imgPromoOujda,
-      imgPack4,
-      imgSingle2,
-    ],
-    features: [
-      'Prix Promotionnel Exclusif : 550 DH',
-      'Mesure en continu 24h/24, sans piqûres au bout de doigts',
-      'Alertes personnalisées en direct : soyez averti en cas d’hypo ou d’hyperglycémie',
-      'Durée jusqu’à 14-15 jours : une liberté et un confort au quotidien',
-      'Application mobile : suivi facile de vos données et transferts',
-      'Précis & fiable : technologie avancée pour un meilleur contrôle',
-      'Produit 100% original scellé d’origine Abbott',
-      'Paiement en espèces à la livraison partout au Maroc'
-    ],
-    specs: {
-      duration: 'Jusqu’à 14-15 jours',
-      waterproof: 'IP27 (résistant douche & baignade)',
-      bloodSample: 'Sans piqûres au bout des doigts',
-      alarms: 'Alertes automatiques Bluetooth en temps réel',
-      dimensions: 'Capteur FreeStyle Libre 2 PLUS',
-      memory: 'Stockage continu smartphone LibreLink',
-      appCompatibility: 'iOS et Android',
-      calibration: 'Calibré en usine (aucun étalonnage requis)'
-    },
-    boxContents: [
-      '1 Capteur FreeStyle Libre 2 PLUS scellé d’origine',
-      '1 Applicateur stérile individuel',
-      'Lingettes désinfectantes à l’alcool',
-      'Guide d’utilisation en Français'
-    ],
-    isPopular: true,
+export const STANDALONE_PROMO_550: Product = {
+  id: 'fsl2-plus-promo-550',
+  name: 'FreeStyle Libre 2 PLUS - Offre Spéciale Promo 550 DH',
+  category: 'offres-speciales',
+  categoryLabel: 'Offres Spéciales',
+  brand: 'Abbott',
+  shortDescription: 'Offre Spéciale Affiche Promo à 550 DH. Mesure en continu 24h/24 sans piqûres au bout des doigts, alertes personnalisées.',
+  fullDescription: 'Système officiel de mesure du glucose en continu FreeStyle Libre 2 PLUS d’Abbott. Mesure 24h/24 sans piqûres au bout des doigts, alertes personnalisées en cas d’hypo ou d’hyperglycémie, durée jusqu’à 14-15 jours, application mobile connectée. Offre promotionnelle exclusive avec livraison express et paiement à la livraison partout au Maroc.',
+  price: 550,
+  originalPrice: 750,
+  discountPercentage: 27,
+  badge: 'Promo 550 DH',
+  inStock: true,
+  stockCount: 50,
+  rating: 5.0,
+  reviewsCount: 312,
+  image: imgPromoOujda,
+  gallery: [
+    imgPromoOujda,
+    imgPack4,
+    imgSingle2,
+  ],
+  features: [
+    'Prix Promotionnel Exclusif : 550 DH',
+    'Mesure en continu 24h/24, sans piqûres au bout de doigts',
+    'Alertes personnalisées en direct : soyez averti en cas d’hypo ou d’hyperglycémie',
+    'Durée jusqu’à 14-15 jours : une liberté et un confort au quotidien',
+    'Application mobile : suivi facile de vos données et transferts',
+    'Précis & fiable : technologie avancée pour un meilleur contrôle',
+    'Produit 100% original scellé d’origine Abbott',
+    'Paiement en espèces à la livraison partout au Maroc'
+  ],
+  specs: {
+    duration: 'Jusqu’à 14-15 jours',
+    waterproof: 'IP27 (résistant douche & baignade)',
+    bloodSample: 'Sans piqûres au bout des doigts',
+    alarms: 'Alertes automatiques Bluetooth en temps réel',
+    dimensions: 'Capteur FreeStyle Libre 2 PLUS',
+    memory: 'Stockage continu smartphone LibreLink',
+    appCompatibility: 'iOS et Android',
+    calibration: 'Calibré en usine (aucun étalonnage requis)'
   },
+  boxContents: [
+    '1 Capteur FreeStyle Libre 2 PLUS scellé d’origine',
+    '1 Applicateur stérile individuel',
+    'Lingettes désinfectantes à l’alcool',
+    'Guide d’utilisation en Français'
+  ],
+  isPopular: true,
+};
+
+export const STANDALONE_PROMO_850: Product = {
+  id: 'fsl3-plus-promo-850',
+  name: 'FreeStyle Libre 3 PLUS - Offre Spéciale Promo 850 DH',
+  category: 'offres-speciales',
+  categoryLabel: 'Offres Spéciales',
+  brand: 'Abbott',
+  shortDescription: 'Offre Spéciale Affiche Promo à 850 DH. Mesure en continu 24h/24 sans piqûres au bout des doigts, alertes personnalisées, durée jusqu’à 15 jours.',
+  fullDescription: 'Système officiel de mesure du glucose en continu FreeStyle Libre 3 PLUS d’Abbott. Capteur nouvelle génération ultra-discret, mesure 24h/24 sans piqûres au bout des doigts, alertes personnalisées d’hypo ou d’hyperglycémie, durée jusqu’à 15 jours, application mobile connectée. Offre promotionnelle exclusive avec livraison express et paiement à la livraison partout au Maroc.',
+  price: 850,
+  originalPrice: 1100,
+  discountPercentage: 23,
+  badge: 'Promo 850 DH',
+  inStock: true,
+  stockCount: 40,
+  rating: 5.0,
+  reviewsCount: 248,
+  image: imgPromoLibre3,
+  gallery: [
+    imgPromoLibre3,
+    imgLibre3,
+  ],
+  features: [
+    'Prix Promotionnel Exclusif : 850 DH',
+    'Mesure en continu 24h/24, sans piqûres au bout de doigts',
+    'Alertes personnalisées en direct : soyez averti en cas d’hypo ou d’hyperglycémie',
+    'Durée jusqu’à 15 jours : une liberté et un confort au quotidien',
+    'Application mobile : suivi facile de vos données et transferts',
+    'Précis & fiable : technologie avancée pour un meilleur contrôle',
+    'Produit 100% original scellé d’origine Abbott',
+    'Paiement en espèces à la livraison partout au Maroc'
+  ],
+  specs: {
+    duration: 'Jusqu’à 15 jours',
+    waterproof: 'IP28 (résistant douche & baignade)',
+    bloodSample: 'Sans piqûres au bout des doigts',
+    alarms: 'Alertes automatiques Bluetooth en temps réel',
+    dimensions: 'Capteur FreeStyle Libre 3 PLUS ultra-compact',
+    memory: 'Stockage continu smartphone LibreLink',
+    appCompatibility: 'iOS et Android',
+    calibration: 'Calibré en usine (aucun étalonnage requis)'
+  },
+  boxContents: [
+    '1 Capteur FreeStyle Libre 3 PLUS scellé d’origine',
+    '1 Applicateur stérile individuel',
+    'Lingettes désinfectantes à l’alcool',
+    'Guide d’utilisation en Français'
+  ],
+  isPopular: true,
+};
+
+export const STANDALONE_PROMO_3000: Product = {
+  id: 'omnipod-5-promo-3000',
+  name: 'Omnipod 5 (Boîte de 5 Pods) - Offre Spéciale Promo 3000 DH',
+  category: 'offres-speciales',
+  categoryLabel: 'Offres Spéciales',
+  brand: 'Insulet',
+  shortDescription: 'Offre Spéciale Affiche Promo à 3000 DH. Système automatisé d’administration d’insuline sans tubulure (5 Pods). Régulation toutes les 5 minutes.',
+  fullDescription: 'Système officiel d’administration automatisée d’insuline Omnipod 5 par Insulet (boîte de 5 Pods). Pompe à insuline tubeless sans tubes de nouvelle génération. Ajuste automatiquement l’insuline toutes les 5 minutes en fonction de vos besoins pour vous aider à rester dans votre zone cible plus longtemps. Étanche IP28 (jusqu’à 7,6 m), sans tubulure, compatible capteurs Dexcom et FreeStyle Libre 2 PLUS. Offre promotionnelle exclusive avec livraison express et paiement à la livraison partout au Maroc.',
+  price: 3000,
+  originalPrice: 3800,
+  discountPercentage: 21,
+  badge: 'Promo 3000 DH',
+  inStock: true,
+  stockCount: 25,
+  rating: 5.0,
+  reviewsCount: 184,
+  image: imgPromoOmnipod,
+  gallery: [
+    imgPromoOmnipod,
+    imgOmnipod,
+  ],
+  features: [
+    'Prix Promotionnel Exclusif : 3000 DH (Boîte de 5 Pods)',
+    'Sans tubulure (Tubeless) : design discret, facile et confortable à porter',
+    'Régulation automatisée : ajuste automatiquement l’insuline toutes les 5 minutes',
+    'Compatible avec les capteurs Dexcom G6/G7 et FreeStyle Libre 2 PLUS',
+    'Boîte de 5 Pods : jusqu’à 15 jours de gestion continue (jusqu’à 3 jours par Pod)',
+    'Étanche IP28 : résiste à l’eau jusqu’à 7,6 mètres pendant 60 minutes',
+    'Gestion simple via l’application smartphone ou le PDM',
+    'Produit 100% original certifié Insulet',
+    'Paiement en espèces à la livraison partout au Maroc'
+  ],
+  specs: {
+    duration: 'Jusqu’à 3 jours par pod (5 pods = 15 jours)',
+    waterproof: 'IP28 (étanche jusqu’à 7,6 mètres)',
+    bloodSample: 'Sans tubulure (Tubeless sans fil)',
+    alarms: 'Alertes automatiques et gestion des doses',
+    dimensions: 'Pod miniature et ergonomique',
+    memory: 'Historique complet sur PDM ou smartphone',
+    appCompatibility: 'iOS et Android',
+    calibration: 'Algorithme intelligent intégré'
+  },
+  boxContents: [
+    '5 Pods Omnipod 5 scellés individuellement sous emballage stérile',
+    '5 Seringues de remplissage avec aiguille stérile',
+    'Guide d’utilisation complet en Français'
+  ],
+  isPopular: true,
+};
+
+export const PRODUCTS: Product[] = [
   {
     id: 'pack-4-fsl2-plus',
     name: 'Pack 4 Pièces - FreeStyle Libre 2 PLUS',

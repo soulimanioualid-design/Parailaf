@@ -205,7 +205,7 @@ export const Header: React.FC<HeaderProps> = ({ onOpenAbout, onOpenContact }) =>
               className="px-3 py-2 rounded-lg text-red-600 hover:bg-red-50 font-black transition cursor-pointer flex items-center gap-1.5"
             >
               <Flame className="w-4 h-4 fill-red-600 text-red-600" />
-              <span>Affiche 550 DH</span>
+              <span>Affiches Promos</span>
             </button>
             <button 
               onClick={() => handleCategoryClick('libre-2')} 
@@ -397,10 +397,10 @@ export const Header: React.FC<HeaderProps> = ({ onOpenAbout, onOpenContact }) =>
                   >
                     <span className="flex items-center gap-2">
                       <Flame className="w-4 h-4 fill-red-600 text-red-600" />
-                      <span>Affiche Promo 550 DH</span>
+                      <span>Affiches Promos (550 / 850 / 3000 DH)</span>
                     </span>
                     <span className="text-[10px] bg-red-600 text-white font-black px-2 py-0.5 rounded-full uppercase">
-                      Offre
+                      Offres
                     </span>
                   </button>
 
