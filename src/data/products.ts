@@ -52,7 +52,6 @@ export const STANDALONE_PROMO_550: Product = {
     'Durée jusqu’à 14-15 jours : une liberté et un confort au quotidien',
     'Application mobile : suivi facile de vos données et transferts',
     'Précis & fiable : technologie avancée pour un meilleur contrôle',
-    'Produit 100% original scellé d’origine Abbott',
     'Paiement en espèces à la livraison partout au Maroc'
   ],
   specs: {
@@ -102,7 +101,6 @@ export const STANDALONE_PROMO_850: Product = {
     'Durée jusqu’à 15 jours : une liberté et un confort au quotidien',
     'Application mobile : suivi facile de vos données et transferts',
     'Précis & fiable : technologie avancée pour un meilleur contrôle',
-    'Produit 100% original scellé d’origine Abbott',
     'Paiement en espèces à la livraison partout au Maroc'
   ],
   specs: {

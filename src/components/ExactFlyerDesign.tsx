@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Flame, 
   ShoppingBag,
@@ -6,8 +6,6 @@ import {
   Maximize2,
   CheckCircle2,
   Sparkles,
-  Upload,
-  RefreshCw,
   X,
   Plus,
   ShieldCheck,
@@ -17,6 +15,8 @@ import {
 import { useCart } from '../context/CartContext';
 import { PRODUCTS } from '../data/products';
 import flyerGenerated from '../assets/images/freestyle_promo_flyer_1788255081953.jpg';
+import { doc, onSnapshot } from 'firebase/firestore';
+import { db } from '../utils/firebase';
 
 interface ExactFlyerDesignProps {
   onZoom?: () => void;
@@ -24,54 +24,56 @@ interface ExactFlyerDesignProps {
 
 export const ExactFlyerDesign: React.FC<ExactFlyerDesignProps> = ({ onZoom }) => {
   const { addToCart, setIsCartOpen } = useCart();
-  const [customImage, setCustomImage] = useState<string | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [images, setImages] = useState<{ desktop: string | null; mobile: string | null }>({ desktop: null, mobile: null });
 
   const pack4 = PRODUCTS.find(p => p.id === 'pack-4-fsl2-plus') || PRODUCTS[0];
   const pack10 = PRODUCTS.find(p => p.id === 'pack-10-fsl2-plus') || PRODUCTS[1];
   const libre3 = PRODUCTS.find(p => p.id === 'fsl3-plus-nouveau') || PRODUCTS[2];
   const omnipod = PRODUCTS.find(p => p.id === 'omnipod-5-pods-10pack') || PRODUCTS[3];
 
-  // Load saved custom image from localStorage if available
+  // Load saved custom image from Firestore if available
   useEffect(() => {
     try {
-      const saved = localStorage.getItem('parailaf_flyer_image_custom');
-      if (saved) {
-        setCustomImage(saved);
+      // Check local first for immediate render
+      const savedDesktop = localStorage.getItem('parailaf_flyer_desktop');
+      const savedMobile = localStorage.getItem('parailaf_flyer_mobile');
+      
+      if (savedDesktop || savedMobile) {
+        setImages({
+          desktop: savedDesktop || null,
+          mobile: savedMobile || null,
+        });
       }
+      
+      // Listen to Firestore
+      const unsub = onSnapshot(doc(db, 'images', 'parailaf_flyer_image_custom'), (snap) => {
+        if (snap.exists()) {
+          const data = snap.data();
+          const desktopImg = data.desktop || data.data || null; // fallback to 'data' for backwards compatibility
+          const mobileImg = data.mobile || data.data || null;
+          
+          setImages({ desktop: desktopImg, mobile: mobileImg });
+          
+          try {
+            if (desktopImg) localStorage.setItem('parailaf_flyer_desktop', desktopImg);
+            else localStorage.removeItem('parailaf_flyer_desktop');
+            
+            if (mobileImg) localStorage.setItem('parailaf_flyer_mobile', mobileImg);
+            else localStorage.removeItem('parailaf_flyer_mobile');
+          } catch {}
+        } else {
+          setImages({ desktop: null, mobile: null });
+          try {
+            localStorage.removeItem('parailaf_flyer_desktop');
+            localStorage.removeItem('parailaf_flyer_mobile');
+          } catch {}
+        }
+      });
+      return () => unsub();
     } catch {
       // ignore
     }
   }, []);
-
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        const result = event.target?.result as string;
-        if (result) {
-          setCustomImage(result);
-          try {
-            localStorage.setItem('parailaf_flyer_image_custom', result);
-          } catch {
-            // ignore quota errors
-          }
-        }
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
-  const handleResetImage = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    setCustomImage(null);
-    try {
-      localStorage.removeItem('parailaf_flyer_image_custom');
-    } catch {
-      // ignore
-    }
-  };
 
   const handleQuickOrder = (product: typeof pack4, e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
@@ -80,17 +82,8 @@ export const ExactFlyerDesign: React.FC<ExactFlyerDesignProps> = ({ onZoom }) =>
   };
 
   return (
-    <div className="w-full max-w-2xl mx-auto bg-white rounded-3xl shadow-2xl border-4 border-[#c8102e] overflow-hidden text-slate-900 font-sans relative group">
+    <div className="w-full mx-auto bg-white sm:rounded-3xl shadow-2xl border-y-4 sm:border-4 border-[#c8102e] lg:border-none lg:rounded-none overflow-hidden text-slate-900 font-sans relative group">
       
-      {/* Hidden File Input */}
-      <input 
-        type="file" 
-        ref={fileInputRef} 
-        onChange={handleFileUpload} 
-        accept="image/*" 
-        className="hidden" 
-      />
-
       {/* Top Banner with Red & Gold Branding */}
       <div className="bg-gradient-to-r from-[#b71124] via-[#cb1429] to-[#b71124] text-white py-3 px-4 text-center relative shadow-md">
         <div className="flex items-center justify-center gap-2">
@@ -101,67 +94,41 @@ export const ExactFlyerDesign: React.FC<ExactFlyerDesignProps> = ({ onZoom }) =>
           <Flame className="w-5 h-5 text-amber-300 fill-amber-300 animate-bounce" />
         </div>
 
-        <div className="absolute right-3 top-2 flex items-center gap-1.5">
-          <button
-            onClick={() => fileInputRef.current?.click()}
-            className="bg-white/20 hover:bg-white/30 text-white text-[10px] sm:text-xs font-bold px-2.5 py-1 rounded-lg transition cursor-pointer flex items-center gap-1"
-            title="Charger l'image originale exacte depuis votre appareil"
-          >
-            <Upload className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Changer l'image</span>
-          </button>
-
-          {onZoom && (
+        {onZoom && (
+          <div className="absolute right-3 top-2.5 flex items-center gap-1.5">
             <button
               onClick={onZoom}
-              className="bg-white/20 hover:bg-white/30 text-white p-1 rounded-lg transition cursor-pointer"
-              title="Agrandir"
+              className="bg-white/20 hover:bg-white/30 text-white p-1.5 rounded-lg transition cursor-pointer flex items-center gap-1 text-xs font-bold"
+              title="Agrandir l'affiche"
             >
               <Maximize2 className="w-4 h-4" />
+              <span className="hidden sm:inline">Agrandir</span>
             </button>
-          )}
-        </div>
+          </div>
+        )}
       </div>
 
       {/* Flyer Image Container (100% Unaltered Image Display) */}
       <div className="relative bg-slate-50 flex flex-col items-center cursor-pointer" onClick={onZoom}>
         
-        {/* The Exact Poster Image */}
+        {/* The Exact Poster Images */}
         <div className="w-full relative">
+          
+          {/* MOBILE IMAGE (Hidden on lg) */}
           <img 
-            src={customImage || flyerGenerated} 
-            alt="Affiche Officielle FreeStyle Libre Maroc" 
+            src={images.mobile || flyerGenerated} 
+            alt="Affiche Officielle FreeStyle Libre Maroc (Mobile)" 
             referrerPolicy="no-referrer"
-            className="w-full h-auto object-contain block select-none"
+            className="w-full h-auto object-cover block lg:hidden select-none mx-auto"
           />
 
-          {/* Quick upload trigger pill if custom image is not yet loaded */}
-          {!customImage && (
-            <div className="absolute top-3 left-3 z-20">
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  fileInputRef.current?.click();
-                }}
-                className="bg-amber-400 hover:bg-amber-300 text-slate-950 text-[11px] font-black px-3 py-1.5 rounded-full shadow-lg border border-amber-500 flex items-center gap-1.5 animate-pulse cursor-pointer"
-              >
-                <Upload className="w-3.5 h-3.5" />
-                <span>Importer l'image originale exacte</span>
-              </button>
-            </div>
-          )}
-
-          {customImage && (
-            <div className="absolute top-3 left-3 z-20">
-              <button
-                onClick={handleResetImage}
-                className="bg-slate-900/80 hover:bg-slate-900 text-white text-[10px] font-bold px-2.5 py-1 rounded-full shadow-md backdrop-blur-xs flex items-center gap-1 cursor-pointer"
-              >
-                <RefreshCw className="w-3 h-3" />
-                <span>Réinitialiser</span>
-              </button>
-            </div>
-          )}
+          {/* DESKTOP IMAGE (Visible only on lg) */}
+          <img 
+            src={images.desktop || flyerGenerated} 
+            alt="Affiche Officielle FreeStyle Libre Maroc (PC)" 
+            referrerPolicy="no-referrer"
+            className="w-full h-auto object-cover hidden lg:block select-none mx-auto"
+          />
 
           {/* Subtle Hover Action Hint */}
           <div className="absolute inset-0 bg-slate-950/0 group-hover:bg-slate-950/10 transition-colors pointer-events-none flex items-center justify-center">

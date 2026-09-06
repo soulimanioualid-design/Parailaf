@@ -49,7 +49,7 @@ export const Footer: React.FC<FooterProps> = ({ onOpenAbout, onOpenContact, onOp
   const openDeliveryPolicy = () => {
     onOpenLegal(
       "Politique de Livraison au Maroc",
-      "Parailaf Maroc assure la livraison dans toutes les villes du Royaume sous 24h à 48h ouvrées. À Casablanca et Rabat, la livraison peut être effectuée le jour même pour toute commande passée avant 12h00. La livraison est offerte pour toute commande à partir de 700 DH. Le livreur prend contact par téléphone avant de se présenter à votre adresse."
+      "Parailaf Maroc assure la livraison dans toutes les villes du Royaume sous 24h à 48h ouvrées. À Casablanca et Rabat, la livraison peut être effectuée le jour même pour toute commande passée avant 12h00. Les frais de livraison sont de 40 DH partout au Maroc quel que soit le montant de la commande. Le règlement s'effectue en espèces à la remise du colis en main propre. Le livreur prend contact par téléphone avant de se présenter à votre adresse."
     );
   };
 

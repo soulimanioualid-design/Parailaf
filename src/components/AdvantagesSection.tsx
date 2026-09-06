@@ -20,7 +20,7 @@ export const AdvantagesSection: React.FC = () => {
       title: 'Livraison Partout au Maroc',
       tag: 'Express 24h - 48h',
       description: 'Livraison à domicile dans toutes les villes : Casablanca, Rabat, Marrakech, Tanger, Fès, Agadir, Oujda, Tétouan, Meknès et provinces.',
-      subText: 'Expédition sous emballage protecteur discret et sécurisé.',
+      subText: 'Frais de livraison fixes : 40 DH partout au Maroc. Emballage protecteur discret et sécurisé.',
       iconBg: 'bg-red-500/20 text-red-400 border-red-500/40',
       tagBg: 'bg-red-950/80 text-red-300 border-red-800/80',
     },

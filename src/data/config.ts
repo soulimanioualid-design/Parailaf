@@ -12,28 +12,28 @@ export const BRAND_CONFIG: BrandConfig = {
   email: "contact@parailaf.ma",
   address: "Direction Lazaret, Oujda, Maroc",
   operatingHours: "Lun - Sam : 08h30 - 20h00 | Dim : 10h00 - 18h00",
-  deliveryNotice: "Livraison express partout au Maroc sous 24h à 48h",
-  freeShippingThreshold: 700, // Livraison gratuite à partir de 700 DH
-  defaultShippingFee: 35, // 35 DH livraison standard partout au Maroc
+  deliveryNotice: "Livraison express partout au Maroc sous 24h à 48h (Frais fixes : 40 DH)",
+  freeShippingThreshold: 0, // Pas de livraison gratuite, payante quel que soit le prix
+  defaultShippingFee: 40, // 40 DH fixe partout au Maroc quel que soit le montant
 };
 
 export const MOROCCAN_CITIES: MoroccanCity[] = [
-  { name: "Casablanca", region: "Casablanca-Settat", deliveryTime: "24h (Livraison express le jour même)", deliveryFee: 25 },
-  { name: "Rabat", region: "Rabat-Salé-Kénitra", deliveryTime: "24h express", deliveryFee: 30 },
-  { name: "Marrakech", region: "Marrakech-Safi", deliveryTime: "24h - 48h", deliveryFee: 35 },
-  { name: "Tanger", region: "Tanger-Tétouan-Al Hoceïma", deliveryTime: "24h - 48h", deliveryFee: 35 },
-  { name: "Fès", region: "Fès-Meknès", deliveryTime: "24h - 48h", deliveryFee: 35 },
-  { name: "Agadir", region: "Souss-Massa", deliveryTime: "24h - 48h", deliveryFee: 35 },
-  { name: "Meknès", region: "Fès-Meknès", deliveryTime: "24h - 48h", deliveryFee: 35 },
+  { name: "Casablanca", region: "Casablanca-Settat", deliveryTime: "24h (Livraison express le jour même)", deliveryFee: 40 },
+  { name: "Rabat", region: "Rabat-Salé-Kénitra", deliveryTime: "24h express", deliveryFee: 40 },
+  { name: "Marrakech", region: "Marrakech-Safi", deliveryTime: "24h - 48h", deliveryFee: 40 },
+  { name: "Tanger", region: "Tanger-Tétouan-Al Hoceïma", deliveryTime: "24h - 48h", deliveryFee: 40 },
+  { name: "Fès", region: "Fès-Meknès", deliveryTime: "24h - 48h", deliveryFee: 40 },
+  { name: "Agadir", region: "Souss-Massa", deliveryTime: "24h - 48h", deliveryFee: 40 },
+  { name: "Meknès", region: "Fès-Meknès", deliveryTime: "24h - 48h", deliveryFee: 40 },
   { name: "Oujda", region: "Oriental", deliveryTime: "48h", deliveryFee: 40 },
-  { name: "Kénitra", region: "Rabat-Salé-Kénitra", deliveryTime: "24h", deliveryFee: 30 },
-  { name: "Tétouan", region: "Tanger-Tétouan-Al Hoceïma", deliveryTime: "24h - 48h", deliveryFee: 35 },
-  { name: "Salé", region: "Rabat-Salé-Kénitra", deliveryTime: "24h", deliveryFee: 25 },
-  { name: "Mohammédia", region: "Casablanca-Settat", deliveryTime: "24h", deliveryFee: 25 },
-  { name: "El Jadida", region: "Casablanca-Settat", deliveryTime: "24h - 48h", deliveryFee: 35 },
+  { name: "Kénitra", region: "Rabat-Salé-Kénitra", deliveryTime: "24h", deliveryFee: 40 },
+  { name: "Tétouan", region: "Tanger-Tétouan-Al Hoceïma", deliveryTime: "24h - 48h", deliveryFee: 40 },
+  { name: "Salé", region: "Rabat-Salé-Kénitra", deliveryTime: "24h", deliveryFee: 40 },
+  { name: "Mohammédia", region: "Casablanca-Settat", deliveryTime: "24h", deliveryFee: 40 },
+  { name: "El Jadida", region: "Casablanca-Settat", deliveryTime: "24h - 48h", deliveryFee: 40 },
   { name: "Nador", region: "Oriental", deliveryTime: "48h", deliveryFee: 40 },
-  { name: "Béni Mellal", region: "Béni Mellal-Khénifra", deliveryTime: "48h", deliveryFee: 35 },
-  { name: "Safi", region: "Marrakech-Safi", deliveryTime: "48h", deliveryFee: 35 },
-  { name: "Témara", region: "Rabat-Salé-Kénitra", deliveryTime: "24h", deliveryFee: 25 },
+  { name: "Béni Mellal", region: "Béni Mellal-Khénifra", deliveryTime: "48h", deliveryFee: 40 },
+  { name: "Safi", region: "Marrakech-Safi", deliveryTime: "48h", deliveryFee: 40 },
+  { name: "Témara", region: "Rabat-Salé-Kénitra", deliveryTime: "24h", deliveryFee: 40 },
   { name: "Autre ville au Maroc", region: "Toutes régions", deliveryTime: "48h max", deliveryFee: 40 },
 ];

@@ -16,8 +16,8 @@ export const FAQS: FAQItem[] = [
   {
     id: 'faq-3',
     category: 'livraison',
-    question: "Livrez-vous partout au Maroc et quels sont les délais ?",
-    answer: "Oui, nous assurons la livraison dans toutes les villes du Maroc (Casablanca, Rabat, Marrakech, Tanger, Fès, Agadir, Meknès, Oujda, Tétouan, Laâyoune, etc.). Les délais sont de 24h à Casablanca et Rabat, et de 24h à 48h ouvrées pour les autres villes du Royaume. La livraison est offerte pour les commandes supérieures à 700 DH."
+    question: "Livrez-vous partout au Maroc et quels sont les frais et délais ?",
+    answer: "Oui, nous assurons la livraison dans toutes les villes du Maroc (Casablanca, Rabat, Marrakech, Tanger, Fès, Agadir, Meknès, Oujda, Tétouan, Laâyoune, etc.). Les délais sont de 24h à Casablanca et Rabat, et de 24h à 48h ouvrées pour les autres villes du Royaume. Les frais de livraison sont de 40 DH partout au Maroc quel que soit le montant de la commande."
   },
   {
     id: 'faq-4',

@@ -24,7 +24,8 @@ export const ProductDetailModal: React.FC = () => {
     setSelectedProductForModal, 
     addToCart,
     setQuickBuyProduct,
-    setIsCheckoutOpen
+    setIsCheckoutOpen,
+    getProductImage
   } = useCart();
 
   const [quantity, setQuantity] = useState(1);
@@ -34,7 +35,10 @@ export const ProductDetailModal: React.FC = () => {
   if (!selectedProductForModal) return null;
 
   const product = selectedProductForModal;
-  const images = product.gallery && product.gallery.length > 0 ? product.gallery : [product.image];
+  const mainImage = getProductImage ? getProductImage(product) : product.image;
+  const images = product.gallery && product.gallery.length > 0 
+    ? [mainImage, ...product.gallery.filter(g => g !== product.image)] 
+    : [mainImage];
 
   const handleAddToCart = () => {
     addToCart(product, quantity);

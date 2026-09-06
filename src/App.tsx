@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { CartProvider } from './context/CartContext';
+import { AuthProvider } from './context/AuthContext';
 import { Header } from './components/Header';
 import { MobileBottomNav } from './components/MobileBottomNav';
 import { HeroSection } from './components/HeroSection';
@@ -19,6 +20,8 @@ import { ProductDetailModal } from './components/ProductDetailModal';
 import { AdminDashboard } from './components/AdminDashboard';
 import { Toast } from './components/Toast';
 import { AboutModal, ContactModal, LegalModal } from './components/InfoModals';
+import { AuthModal } from './components/AuthModal';
+import { AccountModal } from './components/AccountModal';
 
 export default function App() {
   const [isAboutOpen, setIsAboutOpen] = useState(false);
@@ -30,97 +33,105 @@ export default function App() {
   };
 
   return (
-    <CartProvider>
-      <div className="min-h-screen flex flex-col bg-slate-50 text-slate-800 font-['Plus_Jakarta_Sans',sans-serif]">
-        
-        {/* Header (Desktop + Mobile) */}
-        <Header 
-          onOpenAbout={() => setIsAboutOpen(true)}
-          onOpenContact={() => setIsContactOpen(true)}
-        />
-
-        {/* Main Content */}
-        <main className="flex-grow">
-          {/* Hero Section */}
-          <HeroSection />
-
-          {/* Featured & Filterable Products Grid (ends with Approvisionnement mensuel banner) */}
-          <ProductGrid />
-
-          {/* Produit Offre Spéciale Affiche (Seul avec Bouton WhatsApp & Commande - Placé après l'approvisionnement mensuel) */}
-          <SoloPromoFlyerSection />
-
-          {/* 3-Step FreeStyle Libre Visual Explanation */}
-          <FreeStyleGuideSection />
-
-          {/* 4 Advantages Trust Cards */}
-          <AdvantagesSection />
-
-          {/* Video Demonstration Section */}
-          <VideoSection />
-
-          {/* Why Order From Us (Reassurance) */}
-          <WhyUsSection />
-
-          {/* Moroccan Verified Reviews */}
-          <TestimonialsSection />
-
-          {/* FAQ Accordion Section */}
-          <FaqSection />
-        </main>
-
-        {/* Footer */}
-        <Footer 
-          onOpenAbout={() => setIsAboutOpen(true)}
-          onOpenContact={() => setIsContactOpen(true)}
-          onOpenLegal={handleOpenLegal}
-        />
-
-        {/* Mobile Fixed Bottom Navigation */}
-        <MobileBottomNav 
-          onOpenCategoriesDrawer={() => {}}
-          onOpenContact={() => setIsContactOpen(true)}
-        />
-
-        {/* Floating WhatsApp Bubble */}
-        <FloatingWhatsApp />
-
-        {/* Slide-in Cart Drawer */}
-        <CartDrawer />
-
-        {/* 1-Step Moroccan Express Checkout Modal */}
-        <CheckoutModal />
-
-        {/* Product Details & Specs Modal */}
-        <ProductDetailModal />
-
-        {/* Back-office Admin Orders Dashboard */}
-        <AdminDashboard />
-
-        {/* Interactive Toast Notifications */}
-        <Toast />
-
-        {/* Info & Legal Modals */}
-        <AboutModal 
-          isOpen={isAboutOpen} 
-          onClose={() => setIsAboutOpen(false)} 
-        />
-        
-        <ContactModal 
-          isOpen={isContactOpen} 
-          onClose={() => setIsContactOpen(false)} 
-        />
-
-        {legalModalInfo && (
-          <LegalModal
-            isOpen={!!legalModalInfo}
-            onClose={() => setLegalModalInfo(null)}
-            title={legalModalInfo.title}
-            content={legalModalInfo.content}
+    <AuthProvider>
+      <CartProvider>
+        <div className="min-h-screen flex flex-col bg-slate-50 text-slate-800 font-['Plus_Jakarta_Sans',sans-serif] overflow-x-hidden w-full max-w-full relative">
+          
+          {/* Header (Desktop + Mobile) */}
+          <Header 
+            onOpenAbout={() => setIsAboutOpen(true)}
+            onOpenContact={() => setIsContactOpen(true)}
           />
-        )}
 
-      </div>
-    </CartProvider>
+          {/* Main Content */}
+          <main className="flex-grow w-full max-w-full overflow-x-hidden">
+            {/* Hero Section */}
+            <HeroSection />
+
+            {/* Produits Offres Spéciales Affiches (Solo Promos 550 DH, 850 DH, 3000 DH) */}
+            <SoloPromoFlyerSection />
+
+            {/* Featured & Filterable Products Grid (ends with Approvisionnement mensuel banner) */}
+            <ProductGrid />
+
+            {/* 3-Step FreeStyle Libre Visual Explanation */}
+            <FreeStyleGuideSection />
+
+            {/* 4 Advantages Trust Cards */}
+            <AdvantagesSection />
+
+            {/* Video Demonstration Section */}
+            <VideoSection />
+
+            {/* Why Order From Us (Reassurance) */}
+            <WhyUsSection />
+
+            {/* Moroccan Verified Reviews */}
+            <TestimonialsSection />
+
+            {/* FAQ Accordion Section */}
+            <FaqSection />
+          </main>
+
+          {/* Footer */}
+          <Footer 
+            onOpenAbout={() => setIsAboutOpen(true)}
+            onOpenContact={() => setIsContactOpen(true)}
+            onOpenLegal={handleOpenLegal}
+          />
+
+          {/* Mobile Fixed Bottom Navigation */}
+          <MobileBottomNav 
+            onOpenCategoriesDrawer={() => {}}
+            onOpenContact={() => setIsContactOpen(true)}
+          />
+
+          {/* Floating WhatsApp Bubble */}
+          <FloatingWhatsApp />
+
+          {/* Slide-in Cart Drawer */}
+          <CartDrawer />
+
+          {/* 1-Step Moroccan Express Checkout Modal */}
+          <CheckoutModal />
+
+          {/* Product Details & Specs Modal */}
+          <ProductDetailModal />
+
+          {/* Back-office Admin Orders Dashboard */}
+          <AdminDashboard />
+
+          {/* Authentication Modal (Login / Register) */}
+          <AuthModal />
+
+          {/* User Account / Orders History Modal */}
+          <AccountModal />
+
+          {/* Interactive Toast Notifications */}
+          <Toast />
+
+          {/* Info & Legal Modals */}
+          <AboutModal 
+            isOpen={isAboutOpen} 
+            onClose={() => setIsAboutOpen(false)} 
+          />
+          
+          <ContactModal 
+            isOpen={isContactOpen} 
+            onClose={() => setIsContactOpen(false)} 
+          />
+
+          {legalModalInfo && (
+            <LegalModal
+              isOpen={!!legalModalInfo}
+              onClose={() => setLegalModalInfo(null)}
+              title={legalModalInfo.title}
+              content={legalModalInfo.content}
+            />
+          )}
+
+        </div>
+      </CartProvider>
+    </AuthProvider>
   );
 }

@@ -16,16 +16,16 @@ export const HeroSection: React.FC = () => {
       <div className="absolute top-0 right-1/4 w-96 h-96 bg-red-100/40 rounded-full blur-3xl pointer-events-none" />
       <div className="absolute top-1/3 left-1/4 w-96 h-96 bg-blue-100/40 rounded-full blur-3xl pointer-events-none" />
 
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 relative z-10">
+      <div className="max-w-[1920px] mx-auto px-0 sm:px-4 lg:px-0 relative z-10">
         {/* The Exact Promotional Flyer (Centered in Hero) */}
         <div className="flex flex-col items-center">
           
-          <div className="w-full relative shadow-2xl rounded-3xl">
+          <div className="w-full relative">
             <ExactFlyerDesign onZoom={() => setIsZoomOpen(true)} />
           </div>
 
           {/* Quick Helper under the flyer */}
-          <div className="mt-3 flex items-center justify-between w-full max-w-2xl px-2 text-xs text-slate-500 font-medium">
+          <div className="mt-3 flex items-center justify-between w-full px-2 text-xs text-slate-500 font-medium">
             <span className="flex items-center gap-1.5">
               <Eye className="w-3.5 h-3.5 text-slate-400" />
               Cliquez sur les packs sous l'affiche pour commander
@@ -54,7 +54,7 @@ export const HeroSection: React.FC = () => {
             <X className="w-6 h-6" />
           </button>
 
-          <div className="max-w-3xl w-full my-auto py-8">
+          <div className="max-w-[1920px] w-full my-auto py-4 sm:py-8">
             <ExactFlyerDesign />
           </div>
         </div>

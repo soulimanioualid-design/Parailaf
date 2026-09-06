@@ -16,6 +16,7 @@ import {
   BellRing
 } from 'lucide-react';
 import { useCart } from '../context/CartContext';
+import { useAuth } from '../context/AuthContext';
 import { MOROCCAN_CITIES, BRAND_CONFIG } from '../data/config';
 import { OrderCustomerInfo } from '../types';
 
@@ -34,6 +35,8 @@ export const CheckoutModal: React.FC = () => {
     lastOrder
   } = useCart();
 
+  const { currentUser, openAuthModal } = useAuth();
+
   const [fullName, setFullName] = useState('');
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
@@ -45,6 +48,17 @@ export const CheckoutModal: React.FC = () => {
   const [orderCompleted, setOrderCompleted] = useState(false);
   const [confirmedOrder, setConfirmedOrder] = useState<any>(null);
 
+  // Auto-fill from authenticated profile
+  React.useEffect(() => {
+    if (isCheckoutOpen && currentUser) {
+      if (currentUser.fullName) setFullName(currentUser.fullName);
+      if (currentUser.phone) setPhone(currentUser.phone);
+      if (currentUser.email) setEmail(currentUser.email);
+      if (currentUser.city) setCity(currentUser.city);
+      if (currentUser.address) setAddress(currentUser.address);
+    }
+  }, [isCheckoutOpen, currentUser]);
+
   if (!isCheckoutOpen) return null;
 
   const itemsToCheckout = quickBuyProduct 
@@ -55,8 +69,7 @@ export const CheckoutModal: React.FC = () => {
     ? quickBuyProduct.price 
     : subtotal;
 
-  const checkoutIsFreeShipping = checkoutSubtotal >= BRAND_CONFIG.freeShippingThreshold;
-  const checkoutShipping = itemsToCheckout.length === 0 ? 0 : (checkoutIsFreeShipping ? 0 : BRAND_CONFIG.defaultShippingFee);
+  const checkoutShipping = itemsToCheckout.length === 0 ? 0 : 40; // Frais fixe 40 DH partout au Maroc
   const checkoutTotal = checkoutSubtotal + checkoutShipping;
 
   const handleSubmitOrder = (e: React.FormEvent) => {
@@ -80,7 +93,7 @@ export const CheckoutModal: React.FC = () => {
       };
 
       const source = quickBuyProduct ? 'Achat Express 1-Clic' : 'Panier';
-      const newOrder = createOrder(customerInfo, source);
+      const newOrder = createOrder(customerInfo, source, currentUser?.id);
       setConfirmedOrder(newOrder);
       setOrderCompleted(true);
       setIsSubmitting(false);
@@ -170,10 +183,18 @@ export const CheckoutModal: React.FC = () => {
               </div>
 
               {/* Order Recap Box */}
-              <div className="bg-slate-50 rounded-2xl p-4 text-left border border-slate-200 text-xs space-y-2.5 max-w-md mx-auto">
+              <div className="bg-slate-50 rounded-2xl p-4 text-left border border-slate-200 text-xs space-y-2 max-w-md mx-auto">
                 <div className="flex justify-between pb-1.5 border-b border-slate-200">
                   <span className="text-slate-500">Ville de livraison :</span>
                   <span className="font-bold text-slate-900">{confirmedOrder.customer.city}</span>
+                </div>
+                <div className="flex justify-between pb-1.5 border-b border-slate-200">
+                  <span className="text-slate-500">Sous-total articles :</span>
+                  <span className="font-bold text-slate-900">{confirmedOrder.subtotal} DH</span>
+                </div>
+                <div className="flex justify-between pb-1.5 border-b border-slate-200">
+                  <span className="text-slate-500">Frais de livraison :</span>
+                  <span className="font-bold text-slate-900">{confirmedOrder.shippingFee} DH</span>
                 </div>
                 <div className="flex justify-between pb-1.5 border-b border-slate-200">
                   <span className="text-slate-500">Mode de paiement :</span>
@@ -211,16 +232,43 @@ export const CheckoutModal: React.FC = () => {
             <form onSubmit={handleSubmitOrder} className="p-5 sm:p-6 space-y-5">
               
               {/* Order Summary Bar */}
-              <div className="p-3.5 bg-red-50/80 rounded-xl border border-red-200 flex items-center justify-between text-xs">
+              <div className="p-3.5 bg-red-50/80 rounded-xl border border-red-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 text-xs">
                 <div>
-                  <span className="text-slate-600">Articles sélectionnés : </span>
-                  <strong className="text-slate-900 font-bold">{itemsToCheckout.length} article(s)</strong>
+                  <span className="text-slate-600">Articles ({itemsToCheckout.length}) : </span>
+                  <strong className="text-slate-900 font-bold">{checkoutSubtotal} DH</strong>
+                  <span className="mx-2 text-slate-300">|</span>
+                  <span className="text-slate-600">Livraison : </span>
+                  <strong className="text-red-700 font-bold">40 DH</strong>
                 </div>
-                <div className="text-right">
-                  <span className="text-slate-500">Total à régler : </span>
+                <div className="text-right w-full sm:w-auto">
+                  <span className="text-slate-600 font-medium">Total à régler : </span>
                   <strong className="text-red-600 font-black text-base font-heading">{checkoutTotal} DH</strong>
                 </div>
               </div>
+
+              {/* User Account / Pre-fill Status Banner */}
+              {currentUser ? (
+                <div className="p-2.5 bg-blue-50/80 border border-blue-200 rounded-xl text-xs text-blue-900 flex items-center justify-between">
+                  <span className="flex items-center gap-1.5 font-bold">
+                    <Sparkles className="w-3.5 h-3.5 text-blue-600" />
+                    Connecté : {currentUser.fullName}
+                  </span>
+                  <span className="text-[10px] font-extrabold bg-blue-200/70 text-blue-800 px-2 py-0.5 rounded-md">
+                    Coordonnées pré-remplies
+                  </span>
+                </div>
+              ) : (
+                <div className="p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 flex items-center justify-between">
+                  <span className="text-slate-600">Déjà client Parailaf ?</span>
+                  <button
+                    type="button"
+                    onClick={() => openAuthModal('login')}
+                    className="text-xs font-bold text-[#002f6c] hover:underline cursor-pointer"
+                  >
+                    Se connecter pour pré-remplir
+                  </button>
+                </div>
+              )}
 
               <div className="space-y-4">
                 <p className="text-xs font-black text-[#002f6c] uppercase tracking-wider">

@@ -27,8 +27,6 @@ export const CartDrawer: React.FC = () => {
     subtotal, 
     savingsTotal, 
     shippingFee, 
-    isFreeShipping, 
-    amountNeededForFreeShipping, 
     totalAmount,
     setIsCheckoutOpen,
     generateWhatsAppOrderUrl,
@@ -47,8 +45,6 @@ export const CartDrawer: React.FC = () => {
     window.open(url, '_blank');
   };
 
-  const freeShippingProgress = Math.min(100, (subtotal / BRAND_CONFIG.freeShippingThreshold) * 100);
-
   return (
     <div className="fixed inset-0 z-50 overflow-hidden">
       {/* Backdrop */}
@@ -58,7 +54,7 @@ export const CartDrawer: React.FC = () => {
       />
 
       <div className="fixed inset-y-0 right-0 max-w-full flex pl-0 sm:pl-10">
-        <div className="w-screen max-w-md bg-white shadow-2xl flex flex-col justify-between animate-in slide-in-from-right duration-300">
+        <div className="w-full max-w-md bg-white shadow-2xl flex flex-col justify-between animate-in slide-in-from-right duration-300">
           
           {/* Top Cart Header */}
           <div className="p-4 sm:p-5 border-b border-slate-200 bg-[#001f3f] text-white flex items-center justify-between">
@@ -85,28 +81,15 @@ export const CartDrawer: React.FC = () => {
             </button>
           </div>
 
-          {/* Free Shipping Progress Indicator */}
-          <div className="p-4 bg-amber-50/70 border-b border-amber-200">
-            <div className="flex items-center justify-between text-xs font-bold mb-1.5">
-              <div className="flex items-center gap-1.5 text-slate-900">
-                <Truck className="w-4 h-4 text-red-600" />
-                {isFreeShipping ? (
-                  <span className="text-red-700 font-black">🎉 Félicitations ! Livraison Gratuite offerte</span>
-                ) : (
-                  <span>Plus que <strong className="text-red-600 font-black">{amountNeededForFreeShipping} DH</strong> pour la livraison gratuite</span>
-                )}
-              </div>
-              <span className="text-[11px] font-black text-amber-900">
-                {Math.round(freeShippingProgress)}%
-              </span>
+          {/* Delivery Notice: 40 DH Flat Rate Everywhere in Morocco */}
+          <div className="p-3 bg-red-50/80 border-b border-red-100 flex items-center justify-between text-xs">
+            <div className="flex items-center gap-2 text-slate-800 font-bold">
+              <Truck className="w-4 h-4 text-red-600 shrink-0" />
+              <span>Livraison partout au Maroc (24h/48h) :</span>
             </div>
-            
-            <div className="w-full bg-amber-200 h-2 rounded-full overflow-hidden">
-              <div 
-                className="bg-red-600 h-full rounded-full transition-all duration-300"
-                style={{ width: `${freeShippingProgress}%` }}
-              />
-            </div>
+            <span className="font-black text-red-600 bg-white px-2 py-0.5 rounded border border-red-200 shadow-2xs">
+              40 DH
+            </span>
           </div>
 
           {/* Cart Items List */}
@@ -214,13 +197,9 @@ export const CartDrawer: React.FC = () => {
                 )}
 
                 <div className="flex justify-between text-slate-600 font-medium">
-                  <span>Frais de livraison :</span>
-                  <span className="font-bold">
-                    {isFreeShipping ? (
-                      <span className="text-red-600 font-black">GRATUITE</span>
-                    ) : (
-                      <span>{shippingFee} DH</span>
-                    )}
+                  <span>Frais de livraison (Maroc) :</span>
+                  <span className="font-bold text-slate-900">
+                    {shippingFee} DH
                   </span>
                 </div>
 

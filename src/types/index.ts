@@ -67,6 +67,22 @@ export interface Order {
   source?: 'Panier' | 'Achat Express 1-Clic' | 'Offre Promo' | 'Manuel (Téléphone)';
   emailNotified?: boolean;
   adminNotes?: string;
+  userId?: string;
+}
+
+export interface User {
+  id: string;
+  fullName: string;
+  email: string;
+  phone: string;
+  city?: string;
+  address?: string;
+  createdAt: string;
+  role?: 'customer' | 'admin';
+}
+
+export interface StoredUserAccount extends User {
+  passwordHash: string; // stored hashed or base-64 encoded locally
 }
 
 export interface FAQItem {

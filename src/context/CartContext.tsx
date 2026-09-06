@@ -3,6 +3,8 @@ import { Product, CartItem, Order, OrderCustomerInfo } from '../types';
 import { BRAND_CONFIG } from '../data/config';
 import { INITIAL_SEED_ORDERS } from '../data/seedOrders';
 import { sendOrderEmailNotification } from '../utils/notificationService';
+import { doc, onSnapshot, setDoc } from 'firebase/firestore';
+import { db } from '../utils/firebase';
 
 interface CartContextType {
   cart: CartItem[];
@@ -34,10 +36,15 @@ interface CartContextType {
   toastMessage: string | null;
   showToast: (message: string) => void;
   
+  // Product Images Override (Admin controlled)
+  productCustomImages: Record<string, string>;
+  getProductImage: (product: Product) => string;
+  updateProductImage: (productId: string, base64Image: string | null) => Promise<void>;
+
   // Orders Management & Dashboard
   lastOrder: Order | null;
   allOrders: Order[];
-  createOrder: (customer: OrderCustomerInfo, source?: Order['source']) => Order;
+  createOrder: (customer: OrderCustomerInfo, source?: Order['source'], userId?: string) => Order;
   updateOrderStatus: (orderId: string, status: Order['status'], adminNotes?: string) => void;
   deleteOrder: (orderId: string) => void;
   addManualOrder: (order: Order) => void;
@@ -90,6 +97,57 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [lastOrder, setLastOrder] = useState<Order | null>(null);
   const [activeCategory, setActiveCategory] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
+
+  // Product Custom Images (Admin Managed)
+  const [productCustomImages, setProductCustomImages] = useState<Record<string, string>>(() => {
+    try {
+      const saved = localStorage.getItem('parailaf_product_images');
+      return saved ? JSON.parse(saved) : {};
+    } catch {
+      return {};
+    }
+  });
+
+  // Sync custom product images from Firestore
+  useEffect(() => {
+    try {
+      const unsub = onSnapshot(doc(db, 'images', 'parailaf_product_images_custom'), (snap) => {
+        if (snap.exists()) {
+          const data = snap.data() as Record<string, string>;
+          setProductCustomImages(data || {});
+          try {
+            localStorage.setItem('parailaf_product_images', JSON.stringify(data || {}));
+          } catch {}
+        }
+      });
+      return () => unsub();
+    } catch (e) {
+      console.error(e);
+    }
+  }, []);
+
+  const getProductImage = (product: Product): string => {
+    if (productCustomImages && productCustomImages[product.id]) {
+      return productCustomImages[product.id];
+    }
+    return product.image;
+  };
+
+  const updateProductImage = async (productId: string, base64Image: string | null) => {
+    const updated = { ...productCustomImages };
+    if (base64Image) {
+      updated[productId] = base64Image;
+    } else {
+      delete updated[productId];
+    }
+    setProductCustomImages(updated);
+    try {
+      localStorage.setItem('parailaf_product_images', JSON.stringify(updated));
+      await setDoc(doc(db, 'images', 'parailaf_product_images_custom'), updated);
+    } catch (err) {
+      console.error("Erreur mise à jour image produit:", err);
+    }
+  };
 
   // Persist cart
   useEffect(() => {
@@ -161,18 +219,18 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return sum;
   }, 0);
 
-  const isFreeShipping = subtotal >= BRAND_CONFIG.freeShippingThreshold;
-  const shippingFee = cart.length === 0 ? 0 : (isFreeShipping ? 0 : BRAND_CONFIG.defaultShippingFee);
-  const amountNeededForFreeShipping = Math.max(0, BRAND_CONFIG.freeShippingThreshold - subtotal);
+  const isFreeShipping = false; // La livraison est payante quel que soit le montant
+  const shippingFee = cart.length === 0 ? 0 : 40; // 40 DH fixe partout au Maroc
+  const amountNeededForFreeShipping = 0;
   const totalAmount = subtotal + shippingFee;
 
-  const createOrder = (customer: OrderCustomerInfo, orderSource?: Order['source']): Order => {
+  const createOrder = (customer: OrderCustomerInfo, orderSource?: Order['source'], userId?: string): Order => {
     const itemsToOrder = quickBuyProduct 
       ? [{ product: quickBuyProduct, quantity: 1 }] 
       : [...cart];
     
     const orderSubtotal = itemsToOrder.reduce((sum, item) => sum + (item.product.price * item.quantity), 0);
-    const orderShipping = orderSubtotal >= BRAND_CONFIG.freeShippingThreshold ? 0 : BRAND_CONFIG.defaultShippingFee;
+    const orderShipping = itemsToOrder.length === 0 ? 0 : 40; // Frais fixe 40 DH
     const orderDiscount = itemsToOrder.reduce((sum, item) => {
       if (item.product.originalPrice) {
         return sum + ((item.product.originalPrice - item.product.price) * item.quantity);
@@ -194,7 +252,8 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
       total: orderSubtotal + orderShipping,
       status: 'pending',
       source: orderSource || (quickBuyProduct ? 'Achat Express 1-Clic' : 'Panier'),
-      emailNotified: true
+      emailNotified: true,
+      userId: userId || undefined,
     };
 
     // 1. Save locally to all orders array
@@ -244,13 +303,18 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
       ? [`- 1x ${singleProduct.product.name} (${singleProduct.product.price} DH)`]
       : (cart.length > 0 ? cart.map(i => `- ${i.quantity}x ${i.product.name} (${i.product.price * i.quantity} DH)`) : ['- Demande d’information générale FreeStyle Libre']);
 
-    const calcTotal = singleProduct 
+    const itemsSubtotal = singleProduct 
       ? singleProduct.product.price 
-      : totalAmount;
+      : subtotal;
+
+    const orderShipping = itemsSubtotal > 0 ? 40 : 0;
+    const calcTotal = itemsSubtotal + orderShipping;
 
     let text = `*NOUVELLE COMMANDE FREESTYLE LIBRE - ${BRAND_CONFIG.name}*\n\n`;
     text += `*Produits souhaités :*\n${itemsList.join('\n')}\n\n`;
-    text += `*Montant estimé :* ${calcTotal} DH ${singleProduct && calcTotal < BRAND_CONFIG.freeShippingThreshold ? '(+ Livraison standard)' : ''}\n\n`;
+    text += `*Sous-total :* ${itemsSubtotal} DH\n`;
+    text += `*Frais de livraison :* 40 DH (Partout au Maroc)\n`;
+    text += `*Total à payer :* ${calcTotal} DH\n\n`;
 
     if (customer) {
       text += `*Coordonnées du client :*\n`;
@@ -319,6 +383,9 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         deleteOrder,
         addManualOrder,
         generateWhatsAppOrderUrl,
+        productCustomImages,
+        getProductImage,
+        updateProductImage,
         activeCategory,
         setActiveCategory,
         searchQuery,

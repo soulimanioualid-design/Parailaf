@@ -1,0 +1,73 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "User profile containing personal information and preferences.",
+      "type": "object",
+      "properties": {
+        "fullName": { "type": "string", "maxLength": 100 },
+        "email": { "type": "string", "maxLength": 150 },
+        "phone": { "type": "string", "maxLength": 20 },
+        "city": { "type": "string", "maxLength": 50 },
+        "address": { "type": "string", "maxLength": 200 },
+        "createdAt": { "type": "string" },
+        "role": { "type": "string", "enum": ["customer", "admin"] }
+      },
+      "required": ["fullName", "email", "createdAt", "role"]
+    },
+    "Order": {
+      "title": "Order",
+      "description": "An e-commerce order containing customer info and cart items.",
+      "type": "object",
+      "properties": {
+        "createdAt": { "type": "string" },
+        "customer": {
+          "type": "object",
+          "properties": {
+            "fullName": { "type": "string", "maxLength": 100 },
+            "phone": { "type": "string", "maxLength": 20 },
+            "city": { "type": "string", "maxLength": 50 },
+            "address": { "type": "string", "maxLength": 200 },
+            "email": { "type": "string", "maxLength": 150 },
+            "paymentMethod": { "type": "string" }
+          },
+          "required": ["fullName", "phone", "city", "address", "paymentMethod"]
+        },
+        "items": { "type": "array" },
+        "subtotal": { "type": "number" },
+        "shippingFee": { "type": "number" },
+        "discountTotal": { "type": "number" },
+        "total": { "type": "number" },
+        "status": { "type": "string", "enum": ["pending", "confirmed", "shipping", "delivered", "cancelled"] },
+        "source": { "type": "string" },
+        "userId": { "type": "string", "maxLength": 128 },
+        "adminNotes": { "type": "string", "maxLength": 500 }
+      },
+      "required": ["createdAt", "customer", "items", "total", "status"]
+    },
+    "AppImage": {
+      "title": "AppImage",
+      "description": "Stores custom flyer or promotional images synchronized across devices.",
+      "type": "object",
+      "properties": {
+        "data": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["data", "updatedAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/User" },
+      "description": "Stores user profiles."
+    },
+    "/orders/{orderId}": {
+      "schema": { "$ref": "#/entities/Order" },
+      "description": "Stores e-commerce orders."
+    },
+    "/images/{imageId}": {
+      "schema": { "$ref": "#/entities/AppImage" },
+      "description": "Stores custom promotional and flyer image data synchronized across devices."
+    }
+  }
+}

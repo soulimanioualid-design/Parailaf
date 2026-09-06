@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Flame, 
   ShoppingBag, 
@@ -10,7 +10,6 @@ import {
   Phone, 
   Maximize2, 
   X, 
-  Upload, 
   Sparkles,
   Zap,
   Activity
@@ -22,6 +21,8 @@ import { Product } from '../types';
 import imgPromoFSL2 from '../assets/images/freestyle_promo_oujda_1788441986495.jpg';
 import imgPromoFSL3 from '../assets/images/freestyle_libre3_promo_flyer_1788452962096.jpg';
 import imgPromoOmnipod from '../assets/images/omnipod_5_promo_flyer_1788454250818.jpg';
+import { doc, onSnapshot } from 'firebase/firestore';
+import { db } from '../utils/firebase';
 
 interface PromoFlyerItemProps {
   product: Product;
@@ -57,37 +58,30 @@ const PromoFlyerCard: React.FC<PromoFlyerItemProps> = ({
   const { addToCart, setIsCartOpen, setIsCheckoutOpen } = useCart();
   const [customImage, setCustomImage] = useState<string | null>(null);
   const [isZoomed, setIsZoomed] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     try {
+      // Local first
       const saved = localStorage.getItem(storageKey);
       if (saved) {
         setCustomImage(saved);
       }
+      
+      // Firestore listener
+      const unsub = onSnapshot(doc(db, 'images', storageKey), (snap) => {
+        if (snap.exists() && snap.data().data) {
+          setCustomImage(snap.data().data);
+          try { localStorage.setItem(storageKey, snap.data().data); } catch {}
+        } else {
+          setCustomImage(null);
+          try { localStorage.removeItem(storageKey); } catch {}
+        }
+      });
+      return () => unsub();
     } catch {
       // ignore
     }
   }, [storageKey]);
-
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        const result = event.target?.result as string;
-        if (result) {
-          setCustomImage(result);
-          try {
-            localStorage.setItem(storageKey, result);
-          } catch {
-            // ignore
-          }
-        }
-      };
-      reader.readAsDataURL(file);
-    }
-  };
 
   const handleOrderNow = () => {
     addToCart(product, 1);
@@ -99,61 +93,26 @@ const PromoFlyerCard: React.FC<PromoFlyerItemProps> = ({
   const currentImageSrc = customImage || defaultImage;
 
   return (
-    <div className="bg-white rounded-3xl border-2 border-slate-200/90 shadow-2xl overflow-hidden mb-12 last:mb-0">
+    <div className="bg-white rounded-3xl border-2 border-slate-200/90 shadow-2xl overflow-hidden flex flex-col h-full">
       
-      {/* Hidden File Input for Image Updating */}
-      <input 
-        type="file" 
-        ref={fileInputRef} 
-        onChange={handleFileUpload} 
-        accept="image/*" 
-        className="hidden" 
-      />
-
       {/* Header Bar of the Card */}
-      <div className={`${headerGradientClass} text-white px-4 sm:px-6 py-3 flex items-center justify-between shadow-sm`}>
-        <div className="flex items-center gap-2">
-          <span className={`${badgeColorClass} text-slate-950 font-black text-[11px] px-2.5 py-0.5 rounded-md uppercase tracking-wide`}>
-            {badgeLabel}
-          </span>
-          <span className="text-xs sm:text-sm font-extrabold text-white/95">
-            {certLabel}
-          </span>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => setIsZoomed(true)}
-            className="bg-white/20 hover:bg-white/30 text-white text-xs font-bold px-2.5 py-1 rounded-lg transition flex items-center gap-1 cursor-pointer"
-            title="Agrandir l'affiche"
-          >
-            <Maximize2 className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Zoom</span>
-          </button>
-
-          <button
-            onClick={() => fileInputRef.current?.click()}
-            className="bg-white/10 hover:bg-white/20 text-white text-[11px] font-semibold px-2 py-1 rounded-lg transition flex items-center gap-1 cursor-pointer"
-            title="Remplacer par une autre image"
-          >
-            <Upload className="w-3 h-3" />
-            <span className="hidden sm:inline">Changer l'image</span>
-          </button>
-        </div>
-      </div>
-
-      {/* Title inside Card */}
-      <div className="pt-6 pb-2 px-4 sm:px-6 text-center">
-        <h3 className="text-2xl sm:text-3xl font-black text-slate-950 tracking-tight font-heading">
-          {title} <span className="text-red-600">{versionHighlight}</span>
+      <div className={`${headerGradientClass} text-white px-4 sm:px-6 py-3 flex items-center justify-center shadow-sm text-center`}>
+        <h3 className="text-lg sm:text-xl font-black text-white tracking-tight font-heading leading-tight">
+          {title} <span className="text-white/90">{versionHighlight}</span>
         </h3>
-        <p className="text-slate-600 text-xs sm:text-sm font-medium mt-1 max-w-lg mx-auto">
-          {subtitle}
-        </p>
       </div>
+
+      {/* Subtitle inside Card */}
+      {subtitle && (
+        <div className="pt-4 pb-2 px-4 text-center flex flex-col justify-center">
+          <p className="text-slate-600 text-xs sm:text-sm font-medium mx-auto leading-relaxed">
+            {subtitle}
+          </p>
+        </div>
+      )}
 
       {/* Main Visual Image (Prominently Displayed) */}
-      <div className="relative bg-slate-100 flex items-center justify-center p-2 sm:p-4 group">
+      <div className="relative bg-slate-100 flex items-center justify-center p-2 sm:p-4 group flex-grow">
         <div 
           onClick={() => setIsZoomed(true)} 
           className="w-full max-w-xl mx-auto rounded-2xl overflow-hidden shadow-md cursor-pointer relative"
@@ -169,15 +128,15 @@ const PromoFlyerCard: React.FC<PromoFlyerItemProps> = ({
           <div className="absolute inset-0 bg-slate-950/0 group-hover:bg-slate-950/15 transition-colors flex items-center justify-center pointer-events-none">
             <span className="opacity-0 group-hover:opacity-100 transition-opacity bg-slate-900/90 text-white text-xs font-bold px-4 py-2 rounded-full shadow-lg flex items-center gap-2">
               <Maximize2 className="w-3.5 h-3.5" />
-              Cliquez pour agrandir l'affiche
+              Cliquez
             </span>
           </div>
         </div>
       </div>
 
       {/* Key Advantages Summary from Flyer */}
-      <div className="bg-amber-50/70 border-t border-b border-amber-200/80 px-4 sm:px-6 py-3.5">
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center text-xs">
+      <div className="bg-amber-50/70 border-t border-b border-amber-200/80 px-4 py-3.5 mt-auto">
+        <div className="grid grid-cols-2 gap-2 text-center text-xs">
           {highlights && highlights.length > 0 ? (
             highlights.map((h, i) => (
               <div key={i} className="p-2 bg-white/80 rounded-xl border border-amber-200">
@@ -209,10 +168,10 @@ const PromoFlyerCard: React.FC<PromoFlyerItemProps> = ({
       </div>
 
       {/* Price & The Two Action Buttons: Commande & WhatsApp */}
-      <div className="p-5 sm:p-7 bg-white space-y-4 text-center">
+      <div className="p-5 bg-white space-y-4 text-center">
         
         {/* Price Display */}
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-4">
+        <div className="flex flex-col items-center justify-center gap-2">
           <div className="flex items-baseline gap-2">
             <span className="text-3xl sm:text-4xl font-black text-red-600 tracking-tight">
               {product.price} DH
@@ -223,14 +182,14 @@ const PromoFlyerCard: React.FC<PromoFlyerItemProps> = ({
               </span>
             )}
           </div>
-          <span className="inline-flex items-center gap-1 text-xs bg-emerald-100 text-emerald-800 font-bold px-3 py-1 rounded-full border border-emerald-300">
-            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-            En stock • Paiement en espèces à la livraison
+          <span className="inline-flex items-center gap-1 text-xs bg-emerald-100 text-emerald-800 font-bold px-3 py-1 rounded-full border border-emerald-300 text-center">
+            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+            En stock • Paiement à la livraison
           </span>
         </div>
 
         {/* The 2 Requested Buttons */}
-        <div className="flex flex-col sm:flex-row items-stretch justify-center gap-3.5 max-w-xl mx-auto pt-2">
+        <div className="flex flex-col items-stretch justify-center gap-3.5 max-w-xl mx-auto pt-2">
           
           {/* Button 1: Commande Directe */}
           <button
@@ -260,17 +219,6 @@ const PromoFlyerCard: React.FC<PromoFlyerItemProps> = ({
             <Truck className="w-4 h-4 text-blue-600" />
             Livraison rapide partout au Maroc
           </span>
-          <span className="flex items-center gap-1.5 font-bold text-slate-800">
-            <ShieldCheck className="w-4 h-4 text-emerald-600" />
-            Produit certifié d'origine scellé {product.brand || 'Abbott'}
-          </span>
-          <a 
-            href={`tel:${BRAND_CONFIG.phone}`}
-            className="flex items-center gap-1.5 font-bold text-red-600 hover:underline"
-          >
-            <Phone className="w-4 h-4" />
-            {BRAND_CONFIG.displayPhone}
-          </a>
         </div>
 
       </div>
@@ -340,7 +288,7 @@ export const SoloPromoFlyerSection: React.FC = () => {
       <div className="absolute top-1/4 -right-20 w-80 h-80 bg-red-100/50 rounded-full blur-3xl pointer-events-none" />
       <div className="absolute bottom-10 -left-20 w-80 h-80 bg-amber-100/40 rounded-full blur-3xl pointer-events-none" />
 
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 relative z-10">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 relative z-10">
         
         {/* Section Header */}
         <div className="text-center mb-10 space-y-2.5">
@@ -357,59 +305,61 @@ export const SoloPromoFlyerSection: React.FC = () => {
           </p>
         </div>
 
-        {/* 1er Produit Affiche : FreeStyle Libre 2 PLUS - 550 DH */}
-        <PromoFlyerCard
-          product={STANDALONE_PROMO_550}
-          defaultImage={imgPromoFSL2}
-          storageKey="parailaf_promo_flyer_custom_img"
-          badgeLabel="PROMOTION 550 DH"
-          title="FreeStyle Libre 2"
-          versionHighlight="PLUS"
-          subtitle="Système officiel de mesure du glucose en continu 24h/24 sans piqûre au bout des doigts."
-          durationLabel="Jusqu’à 14-15 Jours"
-          whatsappMessageText="Bonjour, je souhaite commander l'Offre Spéciale FreeStyle Libre 2 PLUS à 550 DH."
-          headerGradientClass="bg-gradient-to-r from-red-700 via-red-600 to-red-700"
-          badgeColorClass="bg-amber-400"
-          certLabel="Dispositif Médical Certifié Abbott"
-        />
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* 1er Produit Affiche : FreeStyle Libre 2 PLUS - 550 DH */}
+          <PromoFlyerCard
+            product={STANDALONE_PROMO_550}
+            defaultImage={imgPromoFSL2}
+            storageKey="parailaf_promo_flyer_custom_img"
+            badgeLabel="PROMOTION 550 DH"
+            title="FreeStyle Libre 2"
+            versionHighlight="PLUS"
+            subtitle="Système officiel de mesure du glucose en continu 24h/24 sans piqûre au bout des doigts."
+            durationLabel="Jusqu’à 14-15 Jours"
+            whatsappMessageText="Bonjour, je souhaite commander l'Offre Spéciale FreeStyle Libre 2 PLUS à 550 DH."
+            headerGradientClass="bg-gradient-to-r from-red-700 via-red-600 to-red-700"
+            badgeColorClass="bg-amber-400"
+            certLabel="Dispositif Médical Certifié Abbott"
+          />
 
-        {/* 2ème Produit Affiche : FreeStyle Libre 3 PLUS - 850 DH (Placé juste en dessous) */}
-        <PromoFlyerCard
-          product={STANDALONE_PROMO_850}
-          defaultImage={imgPromoFSL3}
-          storageKey="parailaf_promo_flyer_fsl3_custom_img"
-          badgeLabel="PROMOTION 850 DH"
-          title="FreeStyle Libre 3"
-          versionHighlight="PLUS"
-          subtitle="Capteur nouvelle génération ultra-discret, mesure continue sans piqûres, alertes en temps réel."
-          durationLabel="Jusqu’à 15 Jours"
-          whatsappMessageText="Bonjour, je souhaite commander l'Offre Spéciale FreeStyle Libre 3 PLUS à 850 DH."
-          headerGradientClass="bg-gradient-to-r from-slate-900 via-slate-800 to-red-700"
-          badgeColorClass="bg-amber-400"
-          certLabel="Dispositif Médical Certifié Abbott"
-        />
+          {/* 2ème Produit Affiche : FreeStyle Libre 3 PLUS - 850 DH (Placé juste en dessous) */}
+          <PromoFlyerCard
+            product={STANDALONE_PROMO_850}
+            defaultImage={imgPromoFSL3}
+            storageKey="parailaf_promo_flyer_fsl3_custom_img"
+            badgeLabel="PROMOTION 850 DH"
+            title="FreeStyle Libre 3"
+            versionHighlight="PLUS"
+            subtitle="Capteur nouvelle génération ultra-discret, mesure continue sans piqûres, alertes en temps réel."
+            durationLabel="Jusqu’à 15 Jours"
+            whatsappMessageText="Bonjour, je souhaite commander l'Offre Spéciale FreeStyle Libre 3 PLUS à 850 DH."
+            headerGradientClass="bg-gradient-to-r from-slate-900 via-slate-800 to-red-700"
+            badgeColorClass="bg-amber-400"
+            certLabel="Dispositif Médical Certifié Abbott"
+          />
 
-        {/* 3ème Produit Affiche : Omnipod 5 (Boîte de 5 Pods) - 3000 DH (Placé sous les deux autres) */}
-        <PromoFlyerCard
-          product={STANDALONE_PROMO_3000}
-          defaultImage={imgPromoOmnipod}
-          storageKey="parailaf_promo_flyer_omnipod_custom_img"
-          badgeLabel="PROMOTION 3000 DH"
-          title="Omnipod 5"
-          versionHighlight="(Boîte 5 Pods)"
-          subtitle="Système automatisé d'administration d'insuline tubeless (sans tubulure) de nouvelle génération."
-          durationLabel="Pack 5 Pods (15 Jours)"
-          whatsappMessageText="Bonjour, je souhaite commander l'Offre Spéciale Omnipod 5 (Boîte de 5 Pods) à 3000 DH."
-          headerGradientClass="bg-gradient-to-r from-orange-600 via-amber-600 to-orange-700"
-          badgeColorClass="bg-amber-300"
-          certLabel="Dispositif Médical Certifié Insulet"
-          highlights={[
-            { title: "Sans Tubes", desc: "Design tubeless discret" },
-            { title: "Régulation Auto", desc: "Ajuste toutes les 5 min" },
-            { title: "Boîte 5 Pods", desc: "Jusqu'à 15 jours de gestion" },
-            { title: "Étanche IP28", desc: "Eau jusqu'à 7,6 mètres" }
-          ]}
-        />
+          {/* 3ème Produit Affiche : Omnipod 5 (Boîte de 5 Pods) - 3000 DH (Placé sous les deux autres) */}
+          <PromoFlyerCard
+            product={STANDALONE_PROMO_3000}
+            defaultImage={imgPromoOmnipod}
+            storageKey="parailaf_promo_flyer_omnipod_custom_img"
+            badgeLabel="PROMOTION 3000 DH"
+            title="Omnipod 5"
+            versionHighlight="(Boîte 5 Pods)"
+            subtitle="Système automatisé d'administration d'insuline tubeless (sans tubulure) de nouvelle génération."
+            durationLabel="Pack 5 Pods (15 Jours)"
+            whatsappMessageText="Bonjour, je souhaite commander l'Offre Spéciale Omnipod 5 (Boîte de 5 Pods) à 3000 DH."
+            headerGradientClass="bg-gradient-to-r from-orange-600 via-amber-600 to-orange-700"
+            badgeColorClass="bg-amber-300"
+            certLabel="Dispositif Médical Certifié Insulet"
+            highlights={[
+              { title: "Sans Tubes", desc: "Design tubeless discret" },
+              { title: "Régulation Auto", desc: "Ajuste toutes les 5 min" },
+              { title: "Boîte 5 Pods", desc: "Jusqu'à 15 jours de gestion" },
+              { title: "Étanche IP28", desc: "Eau jusqu'à 7,6 mètres" }
+            ]}
+          />
+        </div>
 
       </div>
 

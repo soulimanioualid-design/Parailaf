@@ -25,11 +25,14 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, viewMode = 'l
     addToCart, 
     setSelectedProductForModal,
     setQuickBuyProduct,
-    setIsCheckoutOpen 
+    setIsCheckoutOpen,
+    getProductImage
   } = useCart();
 
   const [isAddedRecently, setIsAddedRecently] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
+
+  const displayImage = getProductImage ? getProductImage(product) : product.image;
 
   const isGrid = viewMode === 'grid';
 
@@ -132,7 +135,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, viewMode = 'l
         {/* Product Image */}
         <div className="w-full h-full flex items-center justify-center bg-white overflow-hidden">
           <img
-            src={product.image}
+            src={displayImage}
             alt={product.name}
             onLoad={() => setImageLoaded(true)}
             className={`w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-500 ${imageLoaded ? 'opacity-100' : 'opacity-0'}`}

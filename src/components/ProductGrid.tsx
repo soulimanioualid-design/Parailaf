@@ -93,7 +93,7 @@ export const ProductGrid: React.FC = () => {
           </div>
 
           {/* Right Controls: View Switcher + Sort selector */}
-          <div className="flex items-center gap-2.5 w-full md:w-auto justify-between md:justify-end">
+          <div className="flex lg:hidden items-center gap-2.5 w-full md:w-auto justify-between md:justify-end">
             
             {/* View Mode Toggle (Grid 2 cols mobile vs List 1-by-1) */}
             <div className="flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200">

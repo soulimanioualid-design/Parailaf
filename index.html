@@ -1,6 +1,21 @@
 <!doctype html>
-<html lang="fr" class="scroll-smooth">
+<html lang="fr" class="scroll-smooth overflow-x-hidden w-full max-w-full">
   <head>
+    <script>
+      (function() {
+        try {
+          var desc = Object.getOwnPropertyDescriptor(window, 'fetch') || Object.getOwnPropertyDescriptor(Window.prototype, 'fetch');
+          if (desc && desc.configurable && !desc.set) {
+            Object.defineProperty(window, 'fetch', {
+              get: desc.get || function() { return desc.value; },
+              set: function() { console.debug('Ignored attempt to redefine window.fetch'); },
+              configurable: true,
+              enumerable: desc.enumerable
+            });
+          }
+        } catch(e) {}
+      })();
+    </script>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>Parailaf Maroc | FreeStyle Libre 2 & 3 - Suivi du Glucose au Maroc</title>
@@ -12,9 +27,9 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   </head>
-  <body class="bg-slate-50 text-slate-800 antialiased font-['Plus_Jakarta_Sans',sans-serif] selection:bg-red-600 selection:text-white pb-20 md:pb-0">
+  <body class="bg-slate-50 text-slate-800 antialiased font-['Plus_Jakarta_Sans',sans-serif] selection:bg-red-600 selection:text-white pb-20 md:pb-0 overflow-x-hidden w-full max-w-full relative">
     <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
+    <script type="module" src="/src/main-entry.tsx"></script>
   </body>
 </html>
 
