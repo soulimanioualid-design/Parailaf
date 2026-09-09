@@ -27,6 +27,9 @@ interface CartContextType {
   setIsCheckoutOpen: (open: boolean) => void;
   isAdminOpen: boolean;
   setIsAdminOpen: (open: boolean) => void;
+  adminActiveTab: 'orders' | 'email' | 'analytics' | 'new-order' | 'media';
+  setAdminActiveTab: (tab: 'orders' | 'email' | 'analytics' | 'new-order' | 'media') => void;
+  openAdmin: (tab?: 'orders' | 'email' | 'analytics' | 'new-order' | 'media') => void;
   quickBuyProduct: Product | null;
   setQuickBuyProduct: (product: Product | null) => void;
   selectedProductForModal: Product | null;
@@ -91,6 +94,12 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
   const [isAdminOpen, setIsAdminOpen] = useState(false);
+  const [adminActiveTab, setAdminActiveTab] = useState<'orders' | 'email' | 'analytics' | 'new-order' | 'media'>('orders');
+
+  const openAdmin = (tab: 'orders' | 'email' | 'analytics' | 'new-order' | 'media' = 'orders') => {
+    setAdminActiveTab(tab);
+    setIsAdminOpen(true);
+  };
   const [quickBuyProduct, setQuickBuyProduct] = useState<Product | null>(null);
   const [selectedProductForModal, setSelectedProductForModal] = useState<Product | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -370,6 +379,9 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setIsCheckoutOpen,
         isAdminOpen,
         setIsAdminOpen,
+        adminActiveTab,
+        setAdminActiveTab,
+        openAdmin,
         quickBuyProduct,
         setQuickBuyProduct,
         selectedProductForModal,

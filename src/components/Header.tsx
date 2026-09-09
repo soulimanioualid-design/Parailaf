@@ -19,7 +19,8 @@ import {
   Flame,
   User as UserIcon,
   LogIn,
-  UserPlus
+  UserPlus,
+  Image as ImageIcon
 } from 'lucide-react';
 import { BRAND_CONFIG } from '../data/config';
 import { useCart } from '../context/CartContext';
@@ -37,6 +38,7 @@ export const Header: React.FC<HeaderProps> = ({ onOpenAbout, onOpenContact }) =>
     totalItemsCount, 
     setIsCartOpen, 
     setIsAdminOpen,
+    openAdmin,
     allOrders,
     activeCategory, 
     setActiveCategory, 
@@ -129,9 +131,18 @@ export const Header: React.FC<HeaderProps> = ({ onOpenAbout, onOpenContact }) =>
           </div>
 
           {hasAdminAccess && (
-            <div className="flex items-center absolute right-0">
+            <div className="flex items-center gap-2 absolute right-0">
               <button
-                onClick={() => setIsAdminOpen(true)}
+                onClick={() => openAdmin('media')}
+                className="flex items-center gap-1.5 text-slate-900 font-extrabold text-xs bg-amber-400 hover:bg-amber-300 px-2.5 py-1 rounded-lg transition shadow-xs cursor-pointer"
+                title="Modifier les affiches promo et images du site"
+              >
+                <ImageIcon className="w-3.5 h-3.5 text-slate-950" />
+                <span>Changer Images</span>
+              </button>
+
+              <button
+                onClick={() => openAdmin('orders')}
                 className="flex items-center gap-1.5 text-white font-bold text-xs bg-red-600 hover:bg-red-700 px-2.5 py-1 rounded-lg transition shadow-sm cursor-pointer"
                 title="Accès Administrateur & Commandes"
               >
@@ -214,13 +225,6 @@ export const Header: React.FC<HeaderProps> = ({ onOpenAbout, onOpenContact }) =>
             </div>
 
             <button 
-              onClick={() => handleNavClick('offre-exclusive-affiche')} 
-              className="px-3 py-2 rounded-lg text-red-600 hover:bg-red-50 font-black transition cursor-pointer flex items-center gap-1.5"
-            >
-              <Flame className="w-4 h-4 fill-red-600 text-red-600" />
-              <span>Affiches Promos</span>
-            </button>
-            <button 
               onClick={onOpenAbout} 
               className="px-3 py-2 rounded-lg hover:bg-red-50 hover:text-red-600 transition cursor-pointer"
             >
@@ -273,6 +277,18 @@ export const Header: React.FC<HeaderProps> = ({ onOpenAbout, onOpenContact }) =>
             >
               <Search className="w-5 h-5" />
             </button>
+
+            {/* Quick Admin / Images button - ONLY visible for authenticated Administrator */}
+            {hasAdminAccess && (
+              <button
+                onClick={() => openAdmin('media')}
+                className="flex items-center gap-1.5 bg-amber-400 hover:bg-amber-300 text-slate-950 px-2.5 py-2 rounded-lg text-xs font-black transition shadow-xs cursor-pointer"
+                title="Modifier les images, affiches et photos du site"
+              >
+                <ImageIcon className="w-4 h-4 text-slate-950" />
+                <span className="text-[11px] font-black">Images</span>
+              </button>
+            )}
 
             {/* User Account / Login Button */}
             {currentUser ? (
@@ -462,19 +478,6 @@ export const Header: React.FC<HeaderProps> = ({ onOpenAbout, onOpenContact }) =>
                 ))}
 
                 <div className="pt-3 pb-1 border-t border-slate-100 mt-2">
-                  <button
-                    onClick={() => handleNavClick('offre-exclusive-affiche')}
-                    className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-black text-red-600 bg-red-50 hover:bg-red-100 mb-2 border border-red-200"
-                  >
-                    <span className="flex items-center gap-2">
-                      <Flame className="w-4 h-4 fill-red-600 text-red-600" />
-                      <span>Affiches Promos (550 / 850 / 3000 DH)</span>
-                    </span>
-                    <span className="text-[10px] bg-red-600 text-white font-black px-2 py-0.5 rounded-full uppercase">
-                      Offres
-                    </span>
-                  </button>
-
                   <p className="px-3 pb-1 text-[11px] font-bold text-slate-400 uppercase tracking-wider">
                     Informations
                   </p>
@@ -517,24 +520,51 @@ export const Header: React.FC<HeaderProps> = ({ onOpenAbout, onOpenContact }) =>
                     <ChevronRight className="w-4 h-4 text-slate-400" />
                   </button>
 
+                  {/* Espace Admin & Modification des Images (Mobile Drawer) - ONLY for authenticated Admin */}
                   {hasAdminAccess && (
-                    <button
-                      onClick={() => {
-                        setIsMobileMenuOpen(false);
-                        setIsAdminOpen(true);
-                      }}
-                      className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-bold text-red-600 bg-red-50 hover:bg-red-100"
-                    >
-                      <span className="flex items-center gap-2">
-                        <Lock className="w-4 h-4" />
-                        <span>Tableau de Bord Admin</span>
-                      </span>
-                      {pendingOrdersCount > 0 && (
-                        <span className="px-2 py-0.5 bg-red-600 text-white text-[10px] font-black rounded-full">
-                          {pendingOrdersCount}
-                        </span>
-                      )}
-                    </button>
+                    <div className="mt-3 p-3.5 bg-gradient-to-br from-slate-900 via-slate-800 to-[#002f6c] rounded-2xl text-white shadow-md border border-slate-700">
+                      <div className="flex items-center justify-between mb-2.5">
+                        <div className="flex items-center gap-2">
+                          <div className="w-8 h-8 rounded-xl bg-amber-400 text-slate-950 flex items-center justify-center font-black shrink-0">
+                            <Lock className="w-4 h-4" />
+                          </div>
+                          <div>
+                            <div className="text-xs font-black flex items-center gap-1.5">
+                              <span>Panneau d'Administration</span>
+                              <span className="text-[9px] font-black px-1.5 py-0.2 bg-red-600 text-white rounded uppercase">ADMIN</span>
+                            </div>
+                            <div className="text-[11px] text-slate-300">Modifier images, affiches & commandes</div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-2 mt-2">
+                        <button
+                          onClick={() => {
+                            setIsMobileMenuOpen(false);
+                            openAdmin('media');
+                          }}
+                          className="bg-amber-400 hover:bg-amber-300 text-slate-950 text-xs font-extrabold py-2 px-2.5 rounded-xl flex items-center justify-center gap-1.5 transition shadow-xs cursor-pointer"
+                        >
+                          <ImageIcon className="w-3.5 h-3.5 text-slate-950" />
+                          <span>Changer Images</span>
+                        </button>
+
+                        <button
+                          onClick={() => {
+                            setIsMobileMenuOpen(false);
+                            openAdmin('orders');
+                          }}
+                          className="bg-white/10 hover:bg-white/20 text-white text-xs font-bold py-2 px-2.5 rounded-xl flex items-center justify-center gap-1.5 transition border border-white/20 cursor-pointer"
+                        >
+                          <Package className="w-3.5 h-3.5" />
+                          <span>Commandes</span>
+                          {pendingOrdersCount > 0 && (
+                            <span className="w-2 h-2 rounded-full bg-amber-300 animate-pulse" />
+                          )}
+                        </button>
+                      </div>
+                    </div>
                   )}
                 </div>
               </div>

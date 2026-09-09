@@ -50,11 +50,14 @@ export const AdminDashboard: React.FC = () => {
   const { 
     isAdminOpen, 
     setIsAdminOpen, 
+    adminActiveTab: activeTab,
+    setAdminActiveTab: setActiveTab,
     allOrders, 
     updateOrderStatus, 
     deleteOrder, 
     addManualOrder,
-    showToast 
+    showToast,
+    scrollToSection
   } = useCart();
 
   const { 
@@ -73,15 +76,12 @@ export const AdminDashboard: React.FC = () => {
   const [adminEmailInput, setAdminEmailInput] = useState(
     currentUser?.email && currentUser.role === 'admin'
       ? currentUser.email
-      : 'soulimani.oualid@gmail.com'
+      : ''
   );
   const [adminPasswordInput, setAdminPasswordInput] = useState('');
   const [authError, setAuthError] = useState<string | null>(null);
   const [isVerifying, setIsVerifying] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-
-  // Tab navigation
-  const [activeTab, setActiveTab] = useState<'orders' | 'email' | 'analytics' | 'new-order' | 'media'>('orders');
 
   // Orders Filters
   const [searchTerm, setSearchTerm] = useState('');
@@ -269,8 +269,8 @@ export const AdminDashboard: React.FC = () => {
                       <Eye className="w-4 h-4" />
                     </button>
                   </div>
-                  <p className="text-[11px] text-slate-400 mt-1">
-                    Code d'accès exclusif attribué à la direction Parailaf Maroc
+                  <p className="text-[11px] text-slate-400 mt-1.5">
+                    Accès strictement réservé à la direction Parailaf Maroc.
                   </p>
                 </div>
 
@@ -297,7 +297,7 @@ export const AdminDashboard: React.FC = () => {
                       type="email"
                       value={adminEmailInput}
                       onChange={(e) => setAdminEmailInput(e.target.value)}
-                      placeholder="soulimani.oualid@gmail.com"
+                      placeholder="admin@exemple.com"
                       className="w-full px-3.5 py-2.5 pl-10 bg-slate-50 border border-slate-300 rounded-xl text-xs font-semibold text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-red-600/30 focus:border-red-600 transition"
                     />
                     <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
@@ -500,6 +500,19 @@ export const AdminDashboard: React.FC = () => {
 
           <div className="flex items-center gap-2">
             <button
+              onClick={() => setActiveTab('media')}
+              className={`px-3.5 py-2 font-black text-xs rounded-xl flex items-center gap-1.5 transition cursor-pointer shadow-sm ${
+                activeTab === 'media'
+                  ? 'bg-amber-400 text-slate-950 ring-2 ring-white'
+                  : 'bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-400/40'
+              }`}
+              title="Modifier les images, affiches et photos de produits du site"
+            >
+              <ImageIcon className="w-4 h-4 text-amber-300" />
+              <span>Changer les Images</span>
+            </button>
+
+            <button
               onClick={handleExportCSV}
               className="px-3.5 py-2 bg-white/10 hover:bg-white/20 text-white font-bold text-xs rounded-xl flex items-center gap-1.5 transition cursor-pointer"
               title="Exporter les commandes en Excel/CSV"
@@ -596,10 +609,10 @@ export const AdminDashboard: React.FC = () => {
                 : 'border-transparent text-slate-600 hover:text-slate-900'
             }`}
           >
-            <ImageIcon className="w-4 h-4" />
-            <span>Médias & Bannières</span>
-            <span className="px-1.5 py-0.5 bg-[#002f6c] text-white text-[9px] font-black rounded-full">
-              ADMIN
+            <ImageIcon className="w-4 h-4 text-amber-500" />
+            <span>Gestion des Images & Médias</span>
+            <span className="px-1.5 py-0.5 bg-red-600 text-white text-[9px] font-black rounded-full uppercase tracking-wider">
+              Changer
             </span>
           </button>
 
@@ -1217,7 +1230,10 @@ export const AdminDashboard: React.FC = () => {
 
           {/* TAB 5: MEDIA & BANNERS MANAGER */}
           {activeTab === 'media' && (
-            <AdminMediaManager />
+            <AdminMediaManager onPreviewSection={(sectionId) => {
+              setIsAdminOpen(false);
+              scrollToSection(sectionId);
+            }} />
           )}
 
         </div>
@@ -1234,7 +1250,10 @@ export const AdminDashboard: React.FC = () => {
               <div>
                 <span className="text-xs font-black text-red-600 uppercase tracking-widest">BON DE LIVRAISON</span>
                 <h3 className="text-xl font-black text-[#002f6c] font-heading mt-0.5">Parailaf Maroc</h3>
-                <p className="text-xs text-slate-500">Service Logistique & Expédition Express</p>
+                <p className="text-[11px] text-slate-500 mt-0.5">
+                  ICE : <span className="font-mono font-bold text-slate-800">{BRAND_CONFIG.ice}</span> • IF : <span className="font-mono font-bold text-slate-800">{BRAND_CONFIG.ifNumber}</span> • TP : <span className="font-mono font-bold text-slate-800">{BRAND_CONFIG.taxePro}</span>
+                </p>
+                <p className="text-[10px] text-slate-400">{BRAND_CONFIG.address} • Tél : {BRAND_CONFIG.displayPhone}</p>
               </div>
 
               <div className="text-right">
@@ -1289,6 +1308,12 @@ export const AdminDashboard: React.FC = () => {
               <span className="text-2xl font-black text-red-600 font-heading">
                 {selectedOrderForPrint.total} DH
               </span>
+            </div>
+
+            {/* Legal footer for printed slip */}
+            <div className="text-[10px] text-slate-400 text-center border-t border-slate-200 pt-3 space-y-0.5">
+              <p className="font-semibold text-slate-600">Parailaf Maroc — Dispositifs médicaux certifiés conformes CE</p>
+              <p>ICE : {BRAND_CONFIG.ice} | Identifiant Fiscal (IF) : {BRAND_CONFIG.ifNumber} | Taxe Professionnelle : {BRAND_CONFIG.taxePro}</p>
             </div>
 
             {/* Print & Close CTA */}

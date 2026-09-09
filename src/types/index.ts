@@ -118,4 +118,7 @@ export interface BrandConfig {
   deliveryNotice: string;
   freeShippingThreshold: number; // in MAD
   defaultShippingFee: number; // in MAD
+  ice: string;
+  ifNumber: string;
+  taxePro: string;
 }

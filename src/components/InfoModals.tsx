@@ -73,6 +73,33 @@ export const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose }) => {
             <p>
               Nous mettons un point d'honneur à offrir un service après-vente chaleureux et disponible 7 jours sur 7 par téléphone et WhatsApp pour guider chaque patient lors de la pose et de la configuration de son application.
             </p>
+
+            {/* Identification Fiscale & Juridique Officielle Maroc */}
+            <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 mt-4 space-y-2.5">
+              <div className="flex items-center justify-between">
+                <h5 className="font-bold text-slate-900 text-xs flex items-center gap-1.5">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                  <span>Registre Juridique & Fiscal Officiel</span>
+                </h5>
+                <span className="text-[10px] font-bold text-slate-500 uppercase bg-slate-200/70 px-2 py-0.5 rounded-md">
+                  Maroc
+                </span>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
+                <div className="bg-white p-2.5 rounded-xl border border-slate-200">
+                  <span className="text-[10px] text-slate-500 uppercase font-bold block">ICE</span>
+                  <span className="font-mono font-black text-slate-900 select-all text-xs">{BRAND_CONFIG.ice}</span>
+                </div>
+                <div className="bg-white p-2.5 rounded-xl border border-slate-200">
+                  <span className="text-[10px] text-slate-500 uppercase font-bold block">Identifiant Fiscal (IF)</span>
+                  <span className="font-mono font-black text-slate-900 select-all text-xs">{BRAND_CONFIG.ifNumber}</span>
+                </div>
+                <div className="bg-white p-2.5 rounded-xl border border-slate-200">
+                  <span className="text-[10px] text-slate-500 uppercase font-bold block">Taxe Pro (TP)</span>
+                  <span className="font-mono font-black text-slate-900 select-all text-xs">{BRAND_CONFIG.taxePro}</span>
+                </div>
+              </div>
+            </div>
           </div>
 
           <div className="mt-6 pt-4 border-t border-slate-200 flex justify-end">

@@ -30,7 +30,8 @@ export const CartDrawer: React.FC = () => {
     totalAmount,
     setIsCheckoutOpen,
     generateWhatsAppOrderUrl,
-    scrollToSection
+    scrollToSection,
+    getProductImage
   } = useCart();
 
   if (!isCartOpen) return null;
@@ -120,7 +121,7 @@ export const CartDrawer: React.FC = () => {
                   {/* Image */}
                   <div className="w-18 h-18 rounded-xl bg-slate-50 border border-slate-200 p-1 flex items-center justify-center shrink-0 overflow-hidden">
                     <img 
-                      src={item.product.image} 
+                      src={getProductImage ? getProductImage(item.product) : item.product.image} 
                       alt={item.product.name}
                       className="max-h-full object-contain mix-blend-multiply"
                     />

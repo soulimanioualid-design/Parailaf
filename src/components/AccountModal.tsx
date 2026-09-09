@@ -23,13 +23,16 @@ import { MOROCCAN_CITIES, BRAND_CONFIG } from '../data/config';
 export const AccountModal: React.FC = () => {
   const { 
     currentUser, 
+    isAdmin,
+    isAdminSessionActive,
     isAccountModalOpen, 
     setIsAccountModalOpen, 
     logout, 
     updateProfile 
   } = useAuth();
   
-  const { allOrders, setIsCartOpen, setIsAdminOpen } = useCart();
+  const { allOrders, setIsCartOpen, setIsAdminOpen, openAdmin } = useCart();
+  const hasAdminAccess = isAdmin || isAdminSessionActive;
 
   const [activeTab, setActiveTab] = useState<'orders' | 'profile'>('orders');
   
@@ -176,16 +179,16 @@ export const AccountModal: React.FC = () => {
                     {currentUser.phone}
                   </span>
                 </div>
-                {currentUser.role === 'admin' && (
+                {hasAdminAccess && (
                   <button
                     onClick={() => {
                       setIsAccountModalOpen(false);
-                      setIsAdminOpen(true);
+                      openAdmin('media');
                     }}
-                    className="mt-2.5 px-3 py-1 bg-red-600 hover:bg-red-700 text-white text-xs font-bold rounded-lg flex items-center gap-1.5 transition shadow-sm cursor-pointer"
+                    className="mt-2.5 px-3 py-1.5 bg-amber-400 hover:bg-amber-300 text-slate-950 text-xs font-black rounded-lg flex items-center gap-1.5 transition shadow-sm cursor-pointer"
                   >
                     <ShieldCheck className="w-3.5 h-3.5" />
-                    <span>Ouvrir le Tableau de Bord Admin</span>
+                    <span>Panneau d'Administration & Images</span>
                   </button>
                 )}
               </div>

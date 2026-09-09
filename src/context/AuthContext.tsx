@@ -188,6 +188,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // ignore
     }
 
+    if (found.role === 'admin' || found.email.toLowerCase() === 'soulimani.oualid@gmail.com') {
+      setIsAdminSessionActive(true);
+      try {
+        sessionStorage.setItem(ADMIN_SESSION_KEY, 'true');
+      } catch {}
+    }
+
     setIsAuthModalOpen(false);
     return { success: true };
   };
@@ -274,8 +281,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const logout = () => {
     setCurrentUser(null);
+    setIsAdminSessionActive(false);
     try {
       localStorage.removeItem(CURRENT_SESSION_KEY);
+      sessionStorage.removeItem(ADMIN_SESSION_KEY);
     } catch {
       // ignore
     }

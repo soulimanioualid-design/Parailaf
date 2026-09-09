@@ -47,13 +47,8 @@
     },
     "AppImage": {
       "title": "AppImage",
-      "description": "Stores custom flyer or promotional images synchronized across devices.",
-      "type": "object",
-      "properties": {
-        "data": { "type": "string" },
-        "updatedAt": { "type": "string" }
-      },
-      "required": ["data", "updatedAt"]
+      "description": "Stores custom promotional flyers, banner, and catalog product images synchronized across devices.",
+      "type": "object"
     }
   },
   "firestore": {

@@ -12,7 +12,9 @@ import {
   ChevronRight,
   Heart,
   Flame,
-  Lock
+  Lock,
+  Building2,
+  FileText
 } from 'lucide-react';
 import { BRAND_CONFIG, MOROCCAN_CITIES } from '../data/config';
 import { useCart } from '../context/CartContext';
@@ -25,17 +27,24 @@ interface FooterProps {
 }
 
 export const Footer: React.FC<FooterProps> = ({ onOpenAbout, onOpenContact, onOpenLegal }) => {
-  const { scrollToSection, setActiveCategory, setIsAdminOpen } = useCart();
+  const { scrollToSection, setActiveCategory, setIsAdminOpen, openAdmin } = useCart();
 
   const handleCategoryNav = (cat: string) => {
     setActiveCategory(cat);
     scrollToSection('nos-produits');
   };
 
+  const openLegalNotice = () => {
+    onOpenLegal(
+      "Mentions Légales & Registre Professionnel",
+      `Parailaf Maroc - Société spécialisée dans la distribution de dispositifs médicaux certifiés au Maroc (FreeStyle Libre, Omnipod, accessoires de glycémie).\n\n• Raison Sociale : Parailaf Maroc\n• Adresse de Direction : ${BRAND_CONFIG.address}\n• ICE (Identifiant Commun de l'Entreprise) : ${BRAND_CONFIG.ice}\n• IF (Identifiant Fiscal) : ${BRAND_CONFIG.ifNumber}\n• Taxe Professionnelle (TP) : ${BRAND_CONFIG.taxePro}\n• Téléphone : ${BRAND_CONFIG.displayPhone}\n• Email : ${BRAND_CONFIG.email}\n• Disponibilité Service Client : ${BRAND_CONFIG.operatingHours}\n\nTous nos dispositifs sont neufs, sous emballage scellé d'origine et conformes aux normes sanitaires CE.`
+    );
+  };
+
   const openCGV = () => {
     onOpenLegal(
       "Conditions Générales de Vente (CGV)",
-      "Les présentes conditions régissent les ventes de dispositifs médicaux et accessoires effectuées sur le site Parailaf Maroc. Tous les produits proposés sont neufs, scellés d'origine par les fabricants et conformes aux normes CE. Le paiement s'effectue exclusivement en espèces à la livraison (Cash on Delivery) après réception de votre colis. En cas de non-conformité d'un article scellé à réception, le remplacement est garanti sous 48h."
+      `Les présentes conditions régissent les ventes effectuées sur le site Parailaf Maroc (ICE : ${BRAND_CONFIG.ice} | IF : ${BRAND_CONFIG.ifNumber} | Taxe Pro : ${BRAND_CONFIG.taxePro}). Tous les produits proposés sont neufs, scellés d'origine par les fabricants et conformes aux normes CE. Le paiement s'effectue exclusivement en espèces à la livraison (Cash on Delivery) après réception de votre colis. En cas de non-conformité d'un article scellé à réception, le remplacement est garanti sous 48h.`
     );
   };
 
@@ -113,6 +122,24 @@ export const Footer: React.FC<FooterProps> = ({ onOpenAbout, onOpenContact, onOp
               <div className="flex items-center gap-2">
                 <Clock className="w-3.5 h-3.5 text-amber-400 shrink-0" />
                 <span>{BRAND_CONFIG.operatingHours}</span>
+              </div>
+            </div>
+
+            {/* Identifiants Juridiques & Fiscaux Officiels Maroc */}
+            <div className="pt-2">
+              <div className="p-3 bg-slate-900/90 rounded-2xl border border-slate-800 text-[11px] space-y-1.5 shadow-inner">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-slate-400 font-medium">ICE :</span>
+                  <span className="font-mono font-bold text-amber-300 tracking-wider select-all">{BRAND_CONFIG.ice}</span>
+                </div>
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-slate-400 font-medium">Identifiant Fiscal (IF) :</span>
+                  <span className="font-mono font-bold text-slate-200 select-all">{BRAND_CONFIG.ifNumber}</span>
+                </div>
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-slate-400 font-medium">Taxe Professionnelle :</span>
+                  <span className="font-mono font-bold text-slate-200 select-all">{BRAND_CONFIG.taxePro}</span>
+                </div>
               </div>
             </div>
           </div>
@@ -296,16 +323,18 @@ export const Footer: React.FC<FooterProps> = ({ onOpenAbout, onOpenContact, onOp
         {/* Bottom copyright line */}
         <div className="mt-6 pt-6 border-t border-slate-900 flex flex-col sm:flex-row items-center justify-between gap-3 text-[11px] text-slate-400">
           <p>© {new Date().getFullYear()} {BRAND_CONFIG.name} - Tous droits réservés. Livraison partout au Maroc.</p>
-          <div className="flex items-center gap-4">
+          <div className="flex flex-wrap items-center gap-3 sm:gap-4">
+            <button onClick={openLegalNotice} className="hover:text-white cursor-pointer font-medium text-slate-300">Mentions Légales</button>
             <button onClick={openCGV} className="hover:text-white cursor-pointer">CGV</button>
             <button onClick={openPrivacy} className="hover:text-white cursor-pointer">Confidentialité</button>
             <button onClick={openDeliveryPolicy} className="hover:text-white cursor-pointer">Livraison Maroc</button>
             <button 
               onClick={() => setIsAdminOpen(true)} 
-              className="text-amber-400 hover:text-amber-300 font-bold flex items-center gap-1 cursor-pointer"
+              className="text-slate-500 hover:text-slate-300 transition-colors flex items-center gap-1 cursor-pointer"
+              title="Accès réservé administration"
             >
-              <Lock className="w-3 h-3" />
-              <span>Espace Admin</span>
+              <Lock className="w-3 h-3 text-slate-500" />
+              <span>Espace Pro</span>
             </button>
           </div>
         </div>

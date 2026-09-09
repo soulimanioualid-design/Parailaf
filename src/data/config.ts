@@ -15,6 +15,9 @@ export const BRAND_CONFIG: BrandConfig = {
   deliveryNotice: "Livraison express partout au Maroc sous 24h à 48h (Frais fixes : 40 DH)",
   freeShippingThreshold: 0, // Pas de livraison gratuite, payante quel que soit le prix
   defaultShippingFee: 40, // 40 DH fixe partout au Maroc quel que soit le montant
+  ice: "002691734000044",
+  ifNumber: "47320490",
+  taxePro: "10501450",
 };
 
 export const MOROCCAN_CITIES: MoroccanCity[] = [

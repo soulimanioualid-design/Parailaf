@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Play, 
   X, 
@@ -12,6 +12,8 @@ import {
   HelpCircle,
   RefreshCw
 } from 'lucide-react';
+import { doc, onSnapshot } from 'firebase/firestore';
+import { db } from '../utils/firebase';
 import { BRAND_CONFIG } from '../data/config';
 
 interface VideoTutorial {
@@ -27,6 +29,30 @@ interface VideoTutorial {
 export const VideoSection: React.FC = () => {
   const [selectedVideoIndex, setSelectedVideoIndex] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [customThumbnail, setCustomThumbnail] = useState<string | null>(() => {
+    try {
+      return localStorage.getItem('parailaf_video_thumbnail');
+    } catch {
+      return null;
+    }
+  });
+
+  useEffect(() => {
+    try {
+      const unsub = onSnapshot(doc(db, 'images', 'parailaf_video_thumbnail'), (snap) => {
+        if (snap.exists() && snap.data()?.data) {
+          setCustomThumbnail(snap.data().data);
+          try { localStorage.setItem('parailaf_video_thumbnail', snap.data().data); } catch {}
+        } else {
+          setCustomThumbnail(null);
+          try { localStorage.removeItem('parailaf_video_thumbnail'); } catch {}
+        }
+      });
+      return () => unsub();
+    } catch {
+      // ignore
+    }
+  }, []);
 
   const tutorials: VideoTutorial[] = [
     {
@@ -138,7 +164,7 @@ export const VideoSection: React.FC = () => {
                 
                 {/* Background Thumbnail Image */}
                 <img 
-                  src={currentVideo.thumbnail} 
+                  src={customThumbnail || currentVideo.thumbnail} 
                   alt={currentVideo.title}
                   className="w-full h-full object-cover opacity-70 group-hover:scale-105 transition-transform duration-700"
                 />
