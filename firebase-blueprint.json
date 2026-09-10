@@ -49,6 +49,11 @@
       "title": "AppImage",
       "description": "Stores custom promotional flyers, banner, and catalog product images synchronized across devices.",
       "type": "object"
+    },
+    "CatalogProduct": {
+      "title": "CatalogProduct",
+      "description": "Stores e-commerce catalog product data and customizations.",
+      "type": "object"
     }
   },
   "firestore": {
@@ -63,6 +68,10 @@
     "/images/{imageId}": {
       "schema": { "$ref": "#/entities/AppImage" },
       "description": "Stores custom promotional and flyer image data synchronized across devices."
+    },
+    "/products/{productId}": {
+      "schema": { "$ref": "#/entities/CatalogProduct" },
+      "description": "Stores products catalog and individual product customizations."
     }
   }
 }

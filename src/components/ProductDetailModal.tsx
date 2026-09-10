@@ -102,8 +102,8 @@ export const ProductDetailModal: React.FC = () => {
                       {product.badge}
                     </span>
                   )}
-                  <span className="text-xs font-bold text-red-800 bg-red-50 px-2 py-0.5 rounded-md border border-red-200 flex items-center gap-1">
-                    <Check className="w-3.5 h-3.5 text-red-600" /> En stock au Maroc
+                  <span className="text-xs font-bold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200 flex items-center gap-1">
+                    <Check className="w-3.5 h-3.5 text-emerald-600" /> En stock
                   </span>
 
                   {hasAdminAccess && (

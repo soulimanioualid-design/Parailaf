@@ -281,6 +281,11 @@ const PromoFlyerCard: React.FC<PromoFlyerItemProps> = ({
 };
 
 export const SoloPromoFlyerSection: React.FC = () => {
+  const { allProducts } = useCart();
+  const prodFSL2 = allProducts.find(p => p.id === STANDALONE_PROMO_550.id) || STANDALONE_PROMO_550;
+  const prodFSL3 = allProducts.find(p => p.id === STANDALONE_PROMO_850.id) || STANDALONE_PROMO_850;
+  const prodOmnipod = allProducts.find(p => p.id === STANDALONE_PROMO_3000.id) || STANDALONE_PROMO_3000;
+
   return (
     <section id="offre-exclusive-affiche" className="py-12 sm:py-16 bg-gradient-to-b from-slate-100 via-white to-slate-50 border-t-2 border-slate-200 relative overflow-hidden">
       
@@ -306,49 +311,49 @@ export const SoloPromoFlyerSection: React.FC = () => {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* 1er Produit Affiche : FreeStyle Libre 2 PLUS - 550 DH */}
+          {/* 1er Produit Affiche : FreeStyle Libre 2 PLUS */}
           <PromoFlyerCard
-            product={STANDALONE_PROMO_550}
+            product={prodFSL2}
             defaultImage={imgPromoFSL2}
             storageKey="parailaf_promo_flyer_custom_img"
-            badgeLabel="PROMOTION 550 DH"
-            title="FreeStyle Libre 2"
+            badgeLabel={`PROMOTION ${prodFSL2.price} DH`}
+            title={prodFSL2.name || "FreeStyle Libre 2"}
             versionHighlight="PLUS"
-            subtitle="Système officiel de mesure du glucose en continu 24h/24 sans piqûre au bout des doigts."
+            subtitle={prodFSL2.shortDescription || "Système officiel de mesure du glucose en continu 24h/24 sans piqûre au bout des doigts."}
             durationLabel="Jusqu’à 14-15 Jours"
-            whatsappMessageText="Bonjour, je souhaite commander l'Offre Spéciale FreeStyle Libre 2 PLUS à 550 DH."
+            whatsappMessageText={`Bonjour, je souhaite commander l'Offre Spéciale ${prodFSL2.name} à ${prodFSL2.price} DH.`}
             headerGradientClass="bg-gradient-to-r from-red-700 via-red-600 to-red-700"
             badgeColorClass="bg-amber-400"
             certLabel="Dispositif Médical Certifié Abbott"
           />
 
-          {/* 2ème Produit Affiche : FreeStyle Libre 3 PLUS - 850 DH (Placé juste en dessous) */}
+          {/* 2ème Produit Affiche : FreeStyle Libre 3 PLUS */}
           <PromoFlyerCard
-            product={STANDALONE_PROMO_850}
+            product={prodFSL3}
             defaultImage={imgPromoFSL3}
             storageKey="parailaf_promo_flyer_fsl3_custom_img"
-            badgeLabel="PROMOTION 850 DH"
-            title="FreeStyle Libre 3"
+            badgeLabel={`PROMOTION ${prodFSL3.price} DH`}
+            title={prodFSL3.name || "FreeStyle Libre 3"}
             versionHighlight="PLUS"
-            subtitle="Capteur nouvelle génération ultra-discret, mesure continue sans piqûres, alertes en temps réel."
+            subtitle={prodFSL3.shortDescription || "Capteur nouvelle génération ultra-discret, mesure continue sans piqûres, alertes en temps réel."}
             durationLabel="Jusqu’à 15 Jours"
-            whatsappMessageText="Bonjour, je souhaite commander l'Offre Spéciale FreeStyle Libre 3 PLUS à 850 DH."
+            whatsappMessageText={`Bonjour, je souhaite commander l'Offre Spéciale ${prodFSL3.name} à ${prodFSL3.price} DH.`}
             headerGradientClass="bg-gradient-to-r from-slate-900 via-slate-800 to-red-700"
             badgeColorClass="bg-amber-400"
             certLabel="Dispositif Médical Certifié Abbott"
           />
 
-          {/* 3ème Produit Affiche : Omnipod 5 (Boîte de 5 Pods) - 3000 DH (Placé sous les deux autres) */}
+          {/* 3ème Produit Affiche : Omnipod 5 (Boîte de 5 Pods) */}
           <PromoFlyerCard
-            product={STANDALONE_PROMO_3000}
+            product={prodOmnipod}
             defaultImage={imgPromoOmnipod}
             storageKey="parailaf_promo_flyer_omnipod_custom_img"
-            badgeLabel="PROMOTION 3000 DH"
-            title="Omnipod 5"
+            badgeLabel={`PROMOTION ${prodOmnipod.price} DH`}
+            title={prodOmnipod.name || "Omnipod 5"}
             versionHighlight="(Boîte 5 Pods)"
-            subtitle="Système automatisé d'administration d'insuline tubeless (sans tubulure) de nouvelle génération."
+            subtitle={prodOmnipod.shortDescription || "Système automatisé d'administration d'insuline tubeless (sans tubulure) de nouvelle génération."}
             durationLabel="Pack 5 Pods (15 Jours)"
-            whatsappMessageText="Bonjour, je souhaite commander l'Offre Spéciale Omnipod 5 (Boîte de 5 Pods) à 3000 DH."
+            whatsappMessageText={`Bonjour, je souhaite commander l'Offre Spéciale ${prodOmnipod.name} à ${prodOmnipod.price} DH.`}
             headerGradientClass="bg-gradient-to-r from-orange-600 via-amber-600 to-orange-700"
             badgeColorClass="bg-amber-300"
             certLabel="Dispositif Médical Certifié Insulet"

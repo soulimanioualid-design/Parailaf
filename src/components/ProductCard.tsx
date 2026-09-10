@@ -164,18 +164,14 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, viewMode = 'l
           />
         </div>
         
-        {/* Stock tag on bottom of image */}
-        <div className="absolute bottom-1.5 left-2 right-2 sm:bottom-2.5 sm:left-3 sm:right-3 flex items-center justify-between text-[10px] sm:text-[11px] z-10">
-          <span className="font-bold text-red-800 bg-white/95 px-1.5 sm:px-2.5 py-0.5 sm:py-1 rounded-md border border-red-200 flex items-center gap-1 shadow-xs backdrop-blur-xs text-[9px] sm:text-[11px]">
-            <Check className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-red-600" />
-            Stock Maroc
-          </span>
-          {product.specs.duration && (
-            <span className="hidden sm:inline-block text-[10px] text-slate-700 font-bold bg-white/95 px-2 py-0.5 rounded border border-slate-200 shadow-xs backdrop-blur-xs">
+        {/* Optional Duration tag on bottom of image */}
+        {product.specs?.duration && (
+          <div className="absolute bottom-1.5 right-2 sm:bottom-2.5 sm:right-3 flex items-center text-[10px] sm:text-[11px] z-10">
+            <span className="text-[10px] text-slate-700 font-bold bg-white/95 px-2 py-0.5 rounded border border-slate-200 shadow-xs backdrop-blur-xs">
               {product.specs.duration}
             </span>
-          )}
-        </div>
+          </div>
+        )}
       </div>
 
       {/* Card Body */}

@@ -42,7 +42,7 @@ export const ProductGrid: React.FC = () => {
       if (sortBy === 'rating') return b.rating - a.rating;
       return (b.isPopular ? 1 : 0) - (a.isPopular ? 1 : 0);
     });
-  }, [activeCategory, searchQuery, sortBy]);
+  }, [allProducts, activeCategory, searchQuery, sortBy]);
 
   return (
     <section id="nos-produits" className="py-12 md:py-16 bg-slate-50 border-b border-slate-200">

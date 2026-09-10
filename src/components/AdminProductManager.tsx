@@ -17,7 +17,9 @@ import {
   Layers,
   ArrowUpRight,
   ListPlus,
-  ArrowLeft
+  ArrowLeft,
+  Copy,
+  CheckCircle2
 } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 import { Product } from '../types';
@@ -28,9 +30,10 @@ interface AdminProductManagerProps {
 }
 
 export const AdminProductManager: React.FC<AdminProductManagerProps> = ({ initialProductId }) => {
-  const { allProducts, updateProduct, productCustomImages, updateProductImage, showToast } = useCart();
+  const { allProducts, updateProduct, addProduct, deleteProduct, productCustomImages, updateProductImage, showToast } = useCart();
   const [search, setSearch] = useState('');
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [productToDelete, setProductToDelete] = useState<Product | null>(null);
 
   useEffect(() => {
     if (initialProductId) {
@@ -47,6 +50,8 @@ export const AdminProductManager: React.FC<AdminProductManagerProps> = ({ initia
 
   // New feature bullet input
   const [newFeatureInput, setNewFeatureInput] = useState('');
+  // New box contents item input
+  const [newBoxContentInput, setNewBoxContentInput] = useState('');
 
   // Image upload ref
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -55,7 +60,7 @@ export const AdminProductManager: React.FC<AdminProductManagerProps> = ({ initia
   const filtered = allProducts.filter(p => p.name.toLowerCase().includes(search.toLowerCase()));
 
   // AI Generator function
-  const handleAiAction = async (mode: 'all' | 'improve_title' | 'improve_short' | 'improve_full') => {
+  const handleAiAction = async (mode: 'all' | 'improve_title' | 'improve_short' | 'improve_full' | 'improve_specs' | 'improve_box') => {
     if (!editingProduct) return;
     try {
       setAiLoadingMode(mode);
@@ -84,6 +89,8 @@ export const AdminProductManager: React.FC<AdminProductManagerProps> = ({ initia
             shortDescription: d.shortDescription || prev.shortDescription,
             fullDescription: d.fullDescription || prev.fullDescription,
             features: Array.isArray(d.features) && d.features.length > 0 ? d.features : prev.features,
+            specs: d.specs ? { ...prev.specs, ...d.specs } : prev.specs,
+            boxContents: Array.isArray(d.boxContents) && d.boxContents.length > 0 ? d.boxContents : prev.boxContents,
             price: d.suggestedPrice && mode === 'all' ? d.suggestedPrice : prev.price,
             originalPrice: d.suggestedOriginalPrice && mode === 'all' ? d.suggestedOriginalPrice : prev.originalPrice,
             badge: d.badge && mode === 'all' ? d.badge : prev.badge,
@@ -244,26 +251,122 @@ export const AdminProductManager: React.FC<AdminProductManagerProps> = ({ initia
     });
   };
 
-  // Save changes to Firestore
-  const handleSave = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (editingProduct) {
-      const currentMain = getCurrentMainImage(editingProduct);
-      const secondary = getDistinctGallery(editingProduct);
-      const finalProduct: Product = {
-        ...editingProduct,
-        image: currentMain,
-        gallery: [currentMain, ...secondary]
-      };
-      updateProduct(finalProduct);
-      // Ensure custom image matches
-      updateProductImage(finalProduct.id, currentMain);
+  // Add box content item
+  const handleAddBoxContent = () => {
+    if (!editingProduct || !newBoxContentInput.trim()) return;
+    setEditingProduct({
+      ...editingProduct,
+      boxContents: [...(editingProduct.boxContents || []), newBoxContentInput.trim()]
+    });
+    setNewBoxContentInput('');
+  };
+
+  const handleRemoveBoxContent = (idx: number) => {
+    if (!editingProduct) return;
+    setEditingProduct({
+      ...editingProduct,
+      boxContents: (editingProduct.boxContents || []).filter((_, i) => i !== idx)
+    });
+  };
+
+  // Create new product flow
+  const handleCreateNewProduct = () => {
+    const newId = `prod_${Date.now()}`;
+    const newProd: Product = {
+      id: newId,
+      name: '',
+      brand: 'Abbott',
+      category: 'libre-2',
+      categoryLabel: 'FreeStyle Libre 2',
+      price: 490,
+      originalPrice: 650,
+      rating: 5.0,
+      reviewsCount: 1,
+      image: 'https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?auto=format&fit=crop&w=600&q=80',
+      gallery: [],
+      shortDescription: '',
+      fullDescription: '',
+      features: [
+        "Dispositif 100% original certifié sous scellé d'origine",
+        "Livraison express 24h à 48h partout au Maroc",
+        "Paiement sécurisé en espèces à la livraison (Cash on delivery)"
+      ],
+      specs: {
+        duration: "Jusqu’à 14-15 jours",
+        waterproof: "IP27 (résistant à l'eau)",
+        bloodSample: "Sans piqûres au bout des doigts",
+        appCompatibility: "iOS et Android"
+      },
+      boxContents: [
+        "1 Dispositif médical scellé d'origine",
+        "1 Applicateur stérile individuel",
+        "Notice et guide d'utilisation en Français"
+      ],
+      badge: 'Nouveau',
+      inStock: true,
+      isPopular: true
+    };
+    setEditingProduct(newProd);
+    setAiPrompt('');
+  };
+
+  // Duplicate an existing product
+  const handleDuplicateProduct = (prod: Product, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    const duplicated: Product = {
+      ...prod,
+      id: `prod_${Date.now()}`,
+      name: `${prod.name} (Nouveau Pack)`,
+      badge: 'Nouveau'
+    };
+    setEditingProduct(duplicated);
+    setAiPrompt(duplicated.name);
+    showToast(`Produit dupliqué. Vous pouvez modifier et enregistrer cette nouvelle fiche.`);
+  };
+
+  // Confirm delete product
+  const confirmDeleteProduct = async () => {
+    if (!productToDelete) return;
+    await deleteProduct(productToDelete.id);
+    if (editingProduct?.id === productToDelete.id) {
       setEditingProduct(null);
     }
+    setProductToDelete(null);
+  };
+
+  // Save changes to Firestore
+  const handleSave = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingProduct) return;
+
+    if (!editingProduct.name.trim()) {
+      showToast("Veuillez renseigner au moins le nom du produit.");
+      return;
+    }
+
+    const currentMain = getCurrentMainImage(editingProduct);
+    const secondary = getDistinctGallery(editingProduct);
+    const finalProduct: Product = {
+      ...editingProduct,
+      image: currentMain,
+      gallery: [currentMain, ...secondary]
+    };
+
+    const isNew = !allProducts.some(p => p.id === finalProduct.id);
+    if (isNew) {
+      await addProduct(finalProduct);
+    } else {
+      await updateProduct(finalProduct);
+    }
+
+    // Ensure custom image matches
+    updateProductImage(finalProduct.id, currentMain);
+    setEditingProduct(null);
   };
 
   // EDITING VIEW
   if (editingProduct) {
+    const isNewProduct = !allProducts.some(p => p.id === editingProduct.id);
     const currentMain = getCurrentMainImage(editingProduct);
     const secondaryImages = getDistinctGallery(editingProduct);
     const allImageList = [currentMain, ...secondaryImages];
@@ -292,16 +395,31 @@ export const AdminProductManager: React.FC<AdminProductManagerProps> = ({ initia
               <ArrowLeft className="w-4 h-4" />
             </button>
             <div>
-              <span className="text-[11px] font-black uppercase tracking-wider text-red-600 bg-red-50 px-2.5 py-0.5 rounded-md border border-red-200">
-                Éditeur de Fiche Produit
+              <span className={`text-[11px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-md border ${
+                isNewProduct 
+                  ? 'text-emerald-700 bg-emerald-50 border-emerald-200' 
+                  : 'text-red-600 bg-red-50 border-red-200'
+              }`}>
+                {isNewProduct ? '+ Nouveau Produit' : 'Éditeur de Fiche Produit'}
               </span>
               <h3 className="text-lg sm:text-xl font-black text-slate-900 font-heading mt-0.5">
-                {editingProduct.name}
+                {editingProduct.name || 'Nouveau Produit à Configurer'}
               </h3>
             </div>
           </div>
 
           <div className="flex items-center gap-2 self-end sm:self-auto">
+            {!isNewProduct && (
+              <button 
+                type="button"
+                onClick={() => setProductToDelete(editingProduct)} 
+                className="px-3 py-2 text-xs font-bold text-red-600 hover:bg-red-50 border border-red-200 rounded-xl transition cursor-pointer flex items-center gap-1"
+                title="Supprimer définitivement ce produit"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Supprimer</span>
+              </button>
+            )}
             <button 
               type="button"
               onClick={() => setEditingProduct(null)} 
@@ -315,7 +433,7 @@ export const AdminProductManager: React.FC<AdminProductManagerProps> = ({ initia
               className="px-4 py-2 bg-red-600 hover:bg-red-700 active:scale-98 text-white font-black text-xs rounded-xl flex items-center gap-1.5 shadow-sm transition cursor-pointer"
             >
               <Save className="w-3.5 h-3.5" />
-              <span>Sauvegarder</span>
+              <span>{isNewProduct ? 'Créer le Produit' : 'Sauvegarder'}</span>
             </button>
           </div>
         </div>
@@ -334,7 +452,7 @@ export const AdminProductManager: React.FC<AdminProductManagerProps> = ({ initia
                   Remplissage Facile avec l'IA Gemini
                 </h4>
                 <p className="text-xs text-slate-300">
-                  Générez ou optimisez le titre, l'accroche, la description complète et les points forts en 1 clic.
+                  Générez ou optimisez le titre, l'accroche, la description complète, les caractéristiques clés et le contenu du pack en 1 clic.
                 </p>
               </div>
             </div>
@@ -508,7 +626,55 @@ export const AdminProductManager: React.FC<AdminProductManagerProps> = ({ initia
                 value={editingProduct.name}
                 onChange={e => setEditingProduct({ ...editingProduct, name: e.target.value })}
                 className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-red-500 font-bold"
+                placeholder="Ex: FreeStyle Libre 3 Plus, Lecteur Contour Plus, Bandelettes..."
               />
+            </div>
+
+            {/* Marque et Catégorie */}
+            <div>
+              <label className="block text-xs font-bold text-slate-700 mb-1">Marque du Produit</label>
+              <input
+                type="text"
+                value={editingProduct.brand || ''}
+                onChange={e => setEditingProduct({ ...editingProduct, brand: e.target.value })}
+                placeholder="Ex: Abbott, Dexcom, Roche, Ascensia..."
+                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-red-500 font-medium"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-slate-700 mb-1">Rayon / Catégorie</label>
+              <select
+                value={editingProduct.category}
+                onChange={(e) => {
+                  const cat = e.target.value as any;
+                  const labels: Record<string, string> = {
+                    'offres-speciales': 'Offres Spéciales',
+                    'libre-2': 'FreeStyle Libre 2',
+                    'libre-3': 'FreeStyle Libre 3',
+                    'omnipod': 'Omnipod',
+                    'lecteurs': 'Lecteurs & Kits',
+                    'accessoires': 'Accessoires & Soins',
+                    'capteurs': 'Capteurs de Glycémie',
+                    'packs': 'Packs Économiques'
+                  };
+                  setEditingProduct({
+                    ...editingProduct,
+                    category: cat,
+                    categoryLabel: labels[cat] || 'Matériel Médical'
+                  });
+                }}
+                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-red-500 font-medium"
+              >
+                <option value="libre-2">FreeStyle Libre 2</option>
+                <option value="libre-3">FreeStyle Libre 3</option>
+                <option value="capteurs">Capteurs de Glycémie</option>
+                <option value="lecteurs">Lecteurs & Kits</option>
+                <option value="accessoires">Accessoires & Soins</option>
+                <option value="omnipod">Omnipod</option>
+                <option value="offres-speciales">Offres Spéciales</option>
+                <option value="packs">Packs Économiques</option>
+              </select>
             </div>
             
             {/* Description Courte */}
@@ -559,7 +725,7 @@ export const AdminProductManager: React.FC<AdminProductManagerProps> = ({ initia
 
             {/* Points Forts (Features) */}
             <div className="sm:col-span-2">
-              <label className="block text-xs font-bold text-slate-700 mb-1">Points Forts & Caractéristiques Clés</label>
+              <label className="block text-xs font-bold text-slate-700 mb-1">Points Forts & Avantages Clés</label>
               <div className="space-y-2 mb-2">
                 {(editingProduct.features || []).map((feat, idx) => (
                   <div key={idx} className="flex items-center gap-2 bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-xl">
@@ -599,6 +765,162 @@ export const AdminProductManager: React.FC<AdminProductManagerProps> = ({ initia
                   type="button"
                   onClick={handleAddFeature}
                   className="px-3 py-2 bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold text-xs rounded-xl flex items-center gap-1 cursor-pointer"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>Ajouter</span>
+                </button>
+              </div>
+            </div>
+
+            {/* ============================================================= */}
+            {/* CARACTÉRISTIQUES CLÉS (SPECS)                                  */}
+            {/* ============================================================= */}
+            <div className="sm:col-span-2 p-4 bg-slate-100/70 rounded-2xl border border-slate-200/90 space-y-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h5 className="text-xs font-black text-slate-900 uppercase tracking-wide flex items-center gap-1.5">
+                    <Check className="w-3.5 h-3.5 text-red-600" />
+                    <span>Caractéristiques clés (Page Produit)</span>
+                  </h5>
+                  <p className="text-[11px] text-slate-500">
+                    Ces éléments s'affichent sous la description détaillée dans la pop-up produit.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  disabled={aiLoadingMode !== null}
+                  onClick={() => handleAiAction('improve_specs')}
+                  className="text-[11px] font-bold text-indigo-600 hover:text-indigo-800 flex items-center gap-1 bg-white px-2.5 py-1.5 rounded-lg border border-indigo-200 shadow-2xs cursor-pointer"
+                >
+                  <Sparkles className="w-3 h-3" />
+                  <span>Régler avec l'IA</span>
+                </button>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-700 mb-1">Durée d'utilisation :</label>
+                  <input
+                    type="text"
+                    placeholder="Ex: Jusqu’à 14-15 jours"
+                    value={editingProduct.specs?.duration || ''}
+                    onChange={(e) => setEditingProduct({
+                      ...editingProduct,
+                      specs: { ...(editingProduct.specs || {}), duration: e.target.value }
+                    })}
+                    className="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-xs focus:ring-2 focus:ring-red-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-700 mb-1">Étanchéité :</label>
+                  <input
+                    type="text"
+                    placeholder="Ex: IP27 (douche & baignade)"
+                    value={editingProduct.specs?.waterproof || ''}
+                    onChange={(e) => setEditingProduct({
+                      ...editingProduct,
+                      specs: { ...(editingProduct.specs || {}), waterproof: e.target.value }
+                    })}
+                    className="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-xs focus:ring-2 focus:ring-red-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-700 mb-1">Prélèvement :</label>
+                  <input
+                    type="text"
+                    placeholder="Ex: Sans piqûres au bout des doigts"
+                    value={editingProduct.specs?.bloodSample || ''}
+                    onChange={(e) => setEditingProduct({
+                      ...editingProduct,
+                      specs: { ...(editingProduct.specs || {}), bloodSample: e.target.value }
+                    })}
+                    className="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-xs focus:ring-2 focus:ring-red-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-700 mb-1">Compatibilité :</label>
+                  <input
+                    type="text"
+                    placeholder="Ex: iOS et Android (FreeStyle LibreLink)"
+                    value={editingProduct.specs?.appCompatibility || ''}
+                    onChange={(e) => setEditingProduct({
+                      ...editingProduct,
+                      specs: { ...(editingProduct.specs || {}), appCompatibility: e.target.value }
+                    })}
+                    className="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-xs focus:ring-2 focus:ring-red-500"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* ============================================================= */}
+            {/* CONTENU DU PACK (BOX CONTENTS)                                */}
+            {/* ============================================================= */}
+            <div className="sm:col-span-2 p-4 bg-slate-100/70 rounded-2xl border border-slate-200/90 space-y-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h5 className="text-xs font-black text-[#002f6c] uppercase tracking-wide flex items-center gap-1.5">
+                    <Package className="w-3.5 h-3.5 text-red-600" />
+                    <span>Contenu du pack (Boîte / Coffret)</span>
+                  </h5>
+                  <p className="text-[11px] text-slate-500">
+                    Ces lignes s'affichent sous le titre « Contenu du pack : » dans la page produit.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  disabled={aiLoadingMode !== null}
+                  onClick={() => handleAiAction('improve_box')}
+                  className="text-[11px] font-bold text-indigo-600 hover:text-indigo-800 flex items-center gap-1 bg-white px-2.5 py-1.5 rounded-lg border border-indigo-200 shadow-2xs cursor-pointer"
+                >
+                  <Sparkles className="w-3 h-3" />
+                  <span>Régler avec l'IA</span>
+                </button>
+              </div>
+
+              {/* Items List */}
+              <div className="space-y-2">
+                {(editingProduct.boxContents || []).map((item, idx) => (
+                  <div key={idx} className="flex items-center gap-2 bg-white border border-slate-200 px-3 py-1.5 rounded-xl shadow-2xs">
+                    <span className="w-2 h-2 rounded-full bg-red-600 shrink-0" />
+                    <input
+                      type="text"
+                      value={item}
+                      onChange={(e) => {
+                        const newB = [...(editingProduct.boxContents || [])];
+                        newB[idx] = e.target.value;
+                        setEditingProduct({ ...editingProduct, boxContents: newB });
+                      }}
+                      className="w-full bg-transparent text-xs text-slate-800 focus:outline-none font-medium"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveBoxContent(idx)}
+                      className="text-slate-400 hover:text-red-500 p-1 cursor-pointer"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+
+              {/* Add item line */}
+              <div className="flex gap-2 pt-1">
+                <input
+                  type="text"
+                  placeholder="Ajouter un élément (ex: 1 Applicateur stérile, 1 Notice...)"
+                  value={newBoxContentInput}
+                  onChange={(e) => setNewBoxContentInput(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleAddBoxContent(); } }}
+                  className="flex-1 px-3 py-2 bg-white border border-slate-300 rounded-xl text-xs focus:ring-2 focus:ring-red-500"
+                />
+                <button
+                  type="button"
+                  onClick={handleAddBoxContent}
+                  className="px-3 py-2 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-xl flex items-center gap-1 cursor-pointer"
                 >
                   <Plus className="w-3.5 h-3.5" />
                   <span>Ajouter</span>
@@ -683,111 +1005,207 @@ export const AdminProductManager: React.FC<AdminProductManagerProps> = ({ initia
   // CATALOG LIST VIEW
   return (
     <div className="max-w-5xl mx-auto space-y-6">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-5 rounded-3xl shadow-sm border border-slate-200">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white p-5 rounded-3xl shadow-sm border border-slate-200">
         <div>
-          <h2 className="text-xl font-black text-slate-900 flex items-center gap-2.5 font-heading">
+          <div className="flex items-center gap-2">
+            <span className="text-[11px] font-black uppercase tracking-wider text-red-600 bg-red-50 px-2.5 py-0.5 rounded-md border border-red-200">
+              Gestion du Catalogue & Stock
+            </span>
+          </div>
+          <h2 className="text-xl font-black text-slate-900 flex items-center gap-2.5 font-heading mt-1">
             <Package className="w-6 h-6 text-red-600" />
             Catalogue Produits ({allProducts.length})
           </h2>
           <p className="text-xs text-slate-500 mt-0.5">
-            Cliquez sur "Modifier" pour changer les prix, titres, descriptions avec l'IA, ou supprimer les photos en trop.
+            Ajoutez de nouveaux produits, modifiez les fiches, ajustez les prix et photos, ou utilisez l'IA Gemini.
           </p>
         </div>
 
-        <div className="relative w-full sm:w-72">
-          <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-          <input
-            type="text"
-            placeholder="Rechercher par nom..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-red-500"
-          />
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full md:w-auto">
+          <div className="relative w-full sm:w-60">
+            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+            <input
+              type="text"
+              placeholder="Rechercher par nom..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-full pl-9 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-red-500"
+            />
+          </div>
+
+          <button
+            onClick={handleCreateNewProduct}
+            className="px-4 py-2.5 bg-red-600 hover:bg-red-700 active:scale-98 text-white font-black text-xs sm:text-sm rounded-xl flex items-center justify-center gap-2 shadow-sm transition cursor-pointer shrink-0"
+          >
+            <Plus className="w-4 h-4" />
+            <span>+ Ajouter un Produit</span>
+          </button>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-        {filtered.map(product => {
-          const mainImg = getCurrentMainImage(product);
-          const gallery = getDistinctGallery(product);
-          const photoCount = 1 + gallery.length;
+      {filtered.length === 0 ? (
+        <div className="bg-white rounded-3xl p-12 text-center border border-slate-200 shadow-xs space-y-4">
+          <Package className="w-12 h-12 text-slate-300 mx-auto" />
+          <h3 className="font-bold text-slate-800 text-lg">Aucun produit trouvé</h3>
+          <p className="text-slate-500 text-xs max-w-md mx-auto">
+            {search ? `Aucun résultat pour "${search}".` : "Votre catalogue ne contient aucun produit."}
+          </p>
+          <button
+            onClick={handleCreateNewProduct}
+            className="px-5 py-2.5 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl text-sm inline-flex items-center gap-2 shadow-sm transition cursor-pointer"
+          >
+            <Plus className="w-4 h-4" />
+            <span>Ajouter votre premier produit</span>
+          </button>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+          {filtered.map(product => {
+            const mainImg = getCurrentMainImage(product);
+            const gallery = getDistinctGallery(product);
+            const photoCount = 1 + gallery.length;
 
-          return (
-            <div key={product.id} className="bg-white rounded-3xl border border-slate-200 overflow-hidden shadow-xs hover:shadow-md transition-all flex flex-col justify-between group">
-              <div>
-                <div className="aspect-video bg-slate-50 relative border-b border-slate-100 flex items-center justify-center p-4">
-                  <img 
-                    src={mainImg} 
-                    alt={product.name} 
-                    className="w-full h-full object-contain mix-blend-multiply transition group-hover:scale-105 duration-200"
-                    onError={(e) => (e.currentTarget.src = 'https://placehold.co/400?text=Image')}
-                  />
-                  
-                  {/* Photo count indicator */}
-                  <span className="absolute bottom-2.5 left-2.5 bg-slate-900/70 backdrop-blur-xs text-white text-[10px] font-bold px-2 py-0.5 rounded-md flex items-center gap-1">
-                    <Layers className="w-3 h-3 text-slate-300" />
-                    {photoCount} photo{photoCount > 1 ? 's' : ''}
-                  </span>
-
-                  {product.badge && (
-                    <span className="absolute top-2.5 left-2.5 bg-red-600 text-white font-black text-[10px] px-2 py-0.5 rounded-md shadow-xs">
-                      {product.badge}
+            return (
+              <div key={product.id} className="bg-white rounded-3xl border border-slate-200 overflow-hidden shadow-xs hover:shadow-md transition-all flex flex-col justify-between group">
+                <div>
+                  <div className="aspect-video bg-slate-50 relative border-b border-slate-100 flex items-center justify-center p-4">
+                    <img 
+                      src={mainImg} 
+                      alt={product.name} 
+                      className="w-full h-full object-contain mix-blend-multiply transition group-hover:scale-105 duration-200"
+                      onError={(e) => (e.currentTarget.src = 'https://placehold.co/400?text=Image')}
+                    />
+                    
+                    {/* Photo count indicator */}
+                    <span className="absolute bottom-2.5 left-2.5 bg-slate-900/70 backdrop-blur-xs text-white text-[10px] font-bold px-2 py-0.5 rounded-md flex items-center gap-1">
+                      <Layers className="w-3 h-3 text-slate-300" />
+                      {photoCount} photo{photoCount > 1 ? 's' : ''}
                     </span>
-                  )}
 
-                  <div className="absolute top-2.5 right-2.5">
+                    {product.badge && (
+                      <span className="absolute top-2.5 left-2.5 bg-red-600 text-white font-black text-[10px] px-2 py-0.5 rounded-md shadow-xs">
+                        {product.badge}
+                      </span>
+                    )}
+
+                    <div className="absolute top-2.5 right-2.5">
+                      <button
+                        onClick={() => setEditingProduct(product)}
+                        className="px-3 py-1.5 bg-white hover:bg-red-50 text-red-600 rounded-xl shadow-md font-black text-xs flex items-center gap-1.5 transition cursor-pointer border border-red-200"
+                      >
+                        <Edit3 className="w-3.5 h-3.5 text-red-600" />
+                        <span>Modifier</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="p-4 space-y-2">
+                    <div className="text-[11px] font-bold text-red-600">
+                      {product.brand ? `${product.brand} • ` : ''}{product.categoryLabel}
+                    </div>
+                    <h3 className="font-black text-slate-900 text-sm line-clamp-2 leading-snug">
+                      {product.name}
+                    </h3>
+                    <p className="text-xs text-slate-500 line-clamp-2">
+                      {product.shortDescription}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="p-4 pt-0 space-y-3 border-t border-slate-50 mt-2">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <div className="font-black text-lg text-slate-900 font-heading">
+                        {product.price} DH
+                      </div>
+                      {product.originalPrice && (
+                        <div className="text-xs text-slate-400 line-through font-bold">
+                          {product.originalPrice} DH
+                        </div>
+                      )}
+                    </div>
+
+                    <span className="text-[11px] font-bold text-slate-500 bg-slate-100 px-2 py-1 rounded-md">
+                      {product.inStock ? '✓ En stock' : 'Épuisé'}
+                    </span>
+                  </div>
+
+                  {/* Actions bar: Modifier, Dupliquer, Supprimer */}
+                  <div className="flex items-center gap-2">
                     <button
                       onClick={() => setEditingProduct(product)}
-                      className="px-3.5 py-2 bg-white hover:bg-red-50 text-red-600 rounded-xl shadow-md font-black text-xs flex items-center gap-1.5 transition cursor-pointer border border-red-200"
+                      className="flex-1 py-2.5 px-3 bg-red-600 hover:bg-red-700 active:scale-98 text-white font-black text-xs rounded-xl flex items-center justify-center gap-1.5 shadow-sm transition cursor-pointer"
                     >
-                      <Edit3 className="w-4 h-4 text-red-600" />
+                      <Edit3 className="w-3.5 h-3.5" />
                       <span>Modifier</span>
+                    </button>
+
+                    <button
+                      onClick={(e) => handleDuplicateProduct(product, e)}
+                      className="p-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl transition cursor-pointer"
+                      title="Dupliquer / Créer une copie de ce produit"
+                    >
+                      <Copy className="w-3.5 h-3.5" />
+                    </button>
+
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setProductToDelete(product);
+                      }}
+                      className="p-2.5 bg-red-50 hover:bg-red-100 text-red-600 rounded-xl transition cursor-pointer"
+                      title="Supprimer ce produit"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
                     </button>
                   </div>
                 </div>
-
-                <div className="p-4 space-y-2">
-                  <div className="text-[11px] font-bold text-red-600">{product.categoryLabel}</div>
-                  <h3 className="font-black text-slate-900 text-sm line-clamp-2 leading-snug">
-                    {product.name}
-                  </h3>
-                  <p className="text-xs text-slate-500 line-clamp-2">
-                    {product.shortDescription}
-                  </p>
-                </div>
               </div>
+            );
+          })}
+        </div>
+      )}
 
-              <div className="p-4 pt-0 space-y-3 border-t border-slate-50 mt-2">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <div className="font-black text-lg text-slate-900 font-heading">
-                      {product.price} DH
-                    </div>
-                    {product.originalPrice && (
-                      <div className="text-xs text-slate-400 line-through font-bold">
-                        {product.originalPrice} DH
-                      </div>
-                    )}
-                  </div>
-
-                  <span className="text-[11px] font-bold text-slate-500 bg-slate-100 px-2 py-1 rounded-md">
-                    {product.inStock ? '✓ En stock' : 'Épuisé'}
-                  </span>
-                </div>
-
-                {/* BIG PROMINENT ACTION BUTTON (ESPECIALLY VISIBLE ON MOBILE) */}
-                <button
-                  onClick={() => setEditingProduct(product)}
-                  className="w-full py-3 px-4 bg-red-600 hover:bg-red-700 active:scale-98 text-white font-black text-xs rounded-xl flex items-center justify-center gap-2 shadow-sm transition cursor-pointer"
-                >
-                  <Edit3 className="w-4 h-4" />
-                  <span>Modifier (Photos, Textes, IA)</span>
-                </button>
-              </div>
+      {/* MODAL DE CONFIRMATION DE SUPPRESSION */}
+      {productToDelete && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-200 space-y-5 animate-in zoom-in-95 duration-200">
+            <div className="w-12 h-12 rounded-2xl bg-red-100 text-red-600 flex items-center justify-center mx-auto">
+              <Trash2 className="w-6 h-6" />
             </div>
-          );
-        })}
-      </div>
+
+            <div className="text-center space-y-2">
+              <h3 className="text-lg font-black text-slate-900 font-heading">
+                Supprimer ce produit ?
+              </h3>
+              <p className="text-xs text-slate-500">
+                Êtes-vous certain de vouloir retirer définitivement le produit <span className="font-bold text-slate-900">« {productToDelete.name} »</span> du catalogue ?
+              </p>
+              <p className="text-[11px] text-amber-700 bg-amber-50 p-2 rounded-xl border border-amber-200">
+                ⚠️ Cette action est irréversible et retirera ce produit de la boutique en ligne.
+              </p>
+            </div>
+
+            <div className="flex gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => setProductToDelete(null)}
+                className="flex-1 py-2.5 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl transition cursor-pointer"
+              >
+                Annuler
+              </button>
+              <button
+                type="button"
+                onClick={confirmDeleteProduct}
+                className="flex-1 py-2.5 px-4 bg-red-600 hover:bg-red-700 text-white font-black text-xs rounded-xl shadow-sm transition cursor-pointer flex items-center justify-center gap-1.5"
+              >
+                <Trash2 className="w-4 h-4" />
+                <span>Oui, Supprimer</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

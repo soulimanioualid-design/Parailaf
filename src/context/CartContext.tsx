@@ -4,7 +4,7 @@ import { BRAND_CONFIG } from '../data/config';
 import { INITIAL_SEED_ORDERS } from '../data/seedOrders';
 import { PRODUCTS as INITIAL_PRODUCTS } from '../data/products';
 import { sendOrderEmailNotification } from '../utils/notificationService';
-import { doc, onSnapshot, setDoc } from 'firebase/firestore';
+import { doc, onSnapshot, setDoc, deleteDoc } from 'firebase/firestore';
 import { db } from '../utils/firebase';
 
 interface CartContextType {
@@ -43,6 +43,8 @@ interface CartContextType {
   // Catalog / Products
   allProducts: Product[];
   updateProduct: (product: Product) => void;
+  addProduct: (product: Product) => Promise<void>;
+  deleteProduct: (productId: string) => Promise<void>;
   
   // Product Images Override (Admin controlled)
   productCustomImages: Record<string, string>;
@@ -70,24 +72,48 @@ const CartContext = createContext<CartContextType | undefined>(undefined);
 
 const CART_STORAGE_KEY = 'parailaf_cart_v1';
 const ORDERS_STORAGE_KEY = 'parailaf_all_orders_v2';
+const PRODUCTS_STORAGE_KEY = 'parailaf_catalog_v2';
 
 export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [allProducts, setAllProducts] = useState<Product[]>(INITIAL_PRODUCTS);
+  const [allProducts, setAllProducts] = useState<Product[]>(() => {
+    try {
+      const saved = localStorage.getItem(PRODUCTS_STORAGE_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return parsed;
+        }
+      }
+    } catch (e) {
+      console.error("Erreur chargement catalogue local:", e);
+    }
+    return INITIAL_PRODUCTS;
+  });
   const [productsLoaded, setProductsLoaded] = useState(false);
 
+  // Sync products catalog with Firestore
   useEffect(() => {
     try {
       const unsub = onSnapshot(doc(db, 'products', 'parailaf_catalog_v1'), (snap) => {
         if (snap.exists()) {
           const data = snap.data();
-          if (data && Array.isArray(data.products)) {
+          if (data && Array.isArray(data.products) && data.products.length > 0) {
             setAllProducts(data.products);
+            try {
+              localStorage.setItem(PRODUCTS_STORAGE_KEY, JSON.stringify(data.products));
+            } catch {}
           }
         } else {
-           if (INITIAL_PRODUCTS.length > 0) {
-              setDoc(doc(db, 'products', 'parailaf_catalog_v1'), { products: INITIAL_PRODUCTS }).catch(console.error);
+           if (allProducts.length > 0) {
+              setDoc(doc(db, 'products', 'parailaf_catalog_v1'), { 
+                products: allProducts,
+                lastUpdated: new Date().toISOString()
+              }).catch(console.error);
            }
         }
+        setProductsLoaded(true);
+      }, (err) => {
+        console.warn("Firebase products onSnapshot warning:", err);
         setProductsLoaded(true);
       });
       return () => unsub();
@@ -97,15 +123,93 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, []);
 
-  const updateProduct = (updatedProduct: Product) => {
-    setAllProducts(prev => {
-      const updated = prev.map(p => p.id === updatedProduct.id ? updatedProduct : p);
-      if (productsLoaded) {
-        setDoc(doc(db, 'products', 'parailaf_catalog_v1'), { products: updated }).catch(console.error);
-      }
-      return updated;
-    });
-    showToast(`✓ Produit "${updatedProduct.name}" mis à jour`);
+  // Save allProducts to localStorage whenever it changes
+  useEffect(() => {
+    try {
+      localStorage.setItem(PRODUCTS_STORAGE_KEY, JSON.stringify(allProducts));
+    } catch (e) {
+      console.error("Erreur sauvegarde catalogue local:", e);
+    }
+  }, [allProducts]);
+
+  const updateProduct = async (updatedProduct: Product) => {
+    const updated = allProducts.map(p => p.id === updatedProduct.id ? updatedProduct : p);
+    
+    // 1. Immediate React state update
+    setAllProducts(updated);
+
+    // 2. Immediate LocalStorage persistence
+    try {
+      localStorage.setItem(PRODUCTS_STORAGE_KEY, JSON.stringify(updated));
+    } catch (e) {
+      console.error("Erreur sauvegarde localStorage:", e);
+    }
+
+    // 3. Immediate Cloud Firestore persistence (both individual and full catalog doc)
+    try {
+      await setDoc(doc(db, 'products', updatedProduct.id), updatedProduct, { merge: true });
+      await setDoc(doc(db, 'products', 'parailaf_catalog_v1'), { 
+        products: updated,
+        lastUpdated: new Date().toISOString()
+      }, { merge: true });
+    } catch (err) {
+      console.warn("Sauvegarde Cloud Firestore différée:", err);
+    }
+
+    showToast(`✓ Produit "${updatedProduct.name}" enregistré avec succès !`);
+  };
+
+  const addProduct = async (newProduct: Product) => {
+    // Ensure unique ID
+    let finalProduct = { ...newProduct };
+    if (!finalProduct.id || allProducts.some(p => p.id === finalProduct.id)) {
+      finalProduct.id = `prod_${Date.now()}`;
+    }
+
+    const updated = [finalProduct, ...allProducts];
+    setAllProducts(updated);
+
+    try {
+      localStorage.setItem(PRODUCTS_STORAGE_KEY, JSON.stringify(updated));
+    } catch (e) {
+      console.error("Erreur sauvegarde localStorage:", e);
+    }
+
+    try {
+      await setDoc(doc(db, 'products', finalProduct.id), finalProduct, { merge: true });
+      await setDoc(doc(db, 'products', 'parailaf_catalog_v1'), { 
+        products: updated,
+        lastUpdated: new Date().toISOString()
+      }, { merge: true });
+    } catch (err) {
+      console.warn("Sauvegarde Cloud Firestore différée:", err);
+    }
+
+    showToast(`✓ Nouveau produit "${finalProduct.name || 'Produit'}" ajouté au catalogue !`);
+  };
+
+  const deleteProduct = async (productId: string) => {
+    const toDelete = allProducts.find(p => p.id === productId);
+    const updated = allProducts.filter(p => p.id !== productId);
+    setAllProducts(updated);
+
+    try {
+      localStorage.setItem(PRODUCTS_STORAGE_KEY, JSON.stringify(updated));
+    } catch (e) {
+      console.error("Erreur sauvegarde localStorage:", e);
+    }
+
+    try {
+      await deleteDoc(doc(db, 'products', productId)).catch(() => {});
+      await setDoc(doc(db, 'products', 'parailaf_catalog_v1'), { 
+        products: updated,
+        lastUpdated: new Date().toISOString()
+      }, { merge: true });
+    } catch (err) {
+      console.warn("Suppression Cloud Firestore différée:", err);
+    }
+
+    showToast(`✓ Produit "${toDelete?.name || ''}" supprimé.`);
   };
 
   const [cart, setCart] = useState<CartItem[]>(() => {
@@ -490,6 +594,8 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         showToast,
         allProducts,
         updateProduct,
+        addProduct,
+        deleteProduct,
         lastOrder,
         allOrders,
         createOrder,
