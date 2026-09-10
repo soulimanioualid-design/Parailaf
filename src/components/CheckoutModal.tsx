@@ -90,10 +90,11 @@ export const CheckoutModal: React.FC = () => {
         paymentMethod
       };
       
-      if (email.trim()) {
+      // Do not use undefined here, Firestore rejects it
+      if (email && email.trim()) {
         customerInfo.email = email.trim();
       }
-      if (notes.trim()) {
+      if (notes && notes.trim()) {
         customerInfo.notes = notes.trim();
       }
 
