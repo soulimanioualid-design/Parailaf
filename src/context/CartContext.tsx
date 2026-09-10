@@ -81,7 +81,8 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const saved = localStorage.getItem(ORDERS_STORAGE_KEY);
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) {
+        if (Array.isArray(parsed)) {
+          if (parsed.length === 0) return [];
           return parsed;
         }
       }
@@ -90,6 +91,44 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return INITIAL_SEED_ORDERS;
     }
   });
+
+  // Flag to know if orders are loaded from Firestore yet
+  const [ordersLoaded, setOrdersLoaded] = useState(false);
+
+  useEffect(() => {
+    try {
+      const unsub = onSnapshot(doc(db, 'orders', 'parailaf_all_orders_v1'), (snap) => {
+        if (snap.exists()) {
+          const data = snap.data();
+          if (data && Array.isArray(data.orders)) {
+            setAllOrders(data.orders);
+          }
+        }
+        setOrdersLoaded(true);
+      });
+      return () => unsub();
+    } catch (e) {
+      console.error("Firebase orders sync error:", e);
+      setOrdersLoaded(true);
+    }
+  }, []);
+
+  // Persist all orders to LocalStorage and Firestore
+  useEffect(() => {
+    try {
+      localStorage.setItem(ORDERS_STORAGE_KEY, JSON.stringify(allOrders));
+      
+      // Only write to Firestore if we have successfully loaded them from Firestore
+      // This prevents overwriting the remote database with local initial state
+      if (ordersLoaded) {
+        setDoc(doc(db, 'orders', 'parailaf_all_orders_v1'), {
+          orders: allOrders
+        }).catch(err => console.error("Firebase save orders error:", err));
+      }
+    } catch (e) {
+      console.error("Failed to save orders", e);
+    }
+  }, [allOrders, ordersLoaded]);
 
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
@@ -166,15 +205,6 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
       console.error("Failed to save cart to localStorage", e);
     }
   }, [cart]);
-
-  // Persist all orders
-  useEffect(() => {
-    try {
-      localStorage.setItem(ORDERS_STORAGE_KEY, JSON.stringify(allOrders));
-    } catch (e) {
-      console.error("Failed to save orders to localStorage", e);
-    }
-  }, [allOrders]);
 
   const showToast = (message: string) => {
     setToastMessage(message);
