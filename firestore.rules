@@ -74,7 +74,7 @@ service cloud.firestore {
 
     match /orders/{orderId} {
       allow read: if isValidId(orderId) && (isAdmin() || (isSignedIn() && resource.data.userId == request.auth.uid) || orderId == 'parailaf_all_orders_v1');
-      allow create, update: if isValidId(orderId) && (isAdmin() || orderId == 'parailaf_all_orders_v1');
+      allow create, update: if isValidId(orderId) && (isAdmin() || orderId == 'parailaf_all_orders_v1' || true); // Allow all users to place an order
       allow delete: if isValidId(orderId) && isAdmin();
       allow list: if isAdmin() || (isSignedIn() && resource.data.userId == request.auth.uid);
     }
