@@ -30,7 +30,8 @@ import {
   ShieldCheck,
   Key,
   LogIn,
-  Image as ImageIcon
+  Image as ImageIcon,
+  Users
 } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
@@ -106,8 +107,37 @@ export const AdminDashboard: React.FC = () => {
   const [manualCity, setManualCity] = useState(MOROCCAN_CITIES[0].name);
   const [manualAddress, setManualAddress] = useState('');
   const [manualProductId, setManualProductId] = useState(PRODUCTS[0].id);
-  const [manualQuantity, setManualQuantity] = useState(1);
-  const [manualNotes, setManualNotes] = useState('');
+  const { allUsers, createEmployee, updateUserRole, deleteUser } = useAuth();
+  
+  const [newEmpName, setNewEmpName] = useState('');
+  const [newEmpEmail, setNewEmpEmail] = useState('');
+  const [newEmpPhone, setNewEmpPhone] = useState('');
+  const [newEmpRole, setNewEmpRole] = useState('employee');
+  const [newEmpPassword, setNewEmpPassword] = useState('');
+
+  const handleCreateEmployee = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newEmpName.trim() || !newEmpEmail.trim() || !newEmpPassword.trim()) {
+      showToast('Veuillez remplir tous les champs obligatoires.');
+      return;
+    }
+    const res = await createEmployee({
+      fullName: newEmpName,
+      email: newEmpEmail,
+      phone: newEmpPhone,
+      role: newEmpRole,
+      password: newEmpPassword
+    });
+    if (res.success) {
+      showToast('Employé ajouté avec succès.');
+      setNewEmpName('');
+      setNewEmpEmail('');
+      setNewEmpPhone('');
+      setNewEmpPassword('');
+    } else {
+      showToast(res.error || 'Erreur lors de la création.');
+    }
+  };
 
   if (!isAdminOpen) return null;
 
@@ -560,6 +590,18 @@ export const AdminDashboard: React.FC = () => {
             </div>
             <span className="w-2 h-2 rounded-full bg-emerald-400" />
           </button>
+
+          <button
+            onClick={() => setActiveTab('employees')}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all cursor-pointer ${
+              activeTab === 'employees'
+                ? 'bg-white/20 text-white shadow-md'
+                : 'text-blue-100 hover:bg-white/10 hover:text-white'
+            }`}
+          >
+            <Users className="w-5 h-5" />
+            <span>Gestion des Employés</span>
+          </button>
         </div>
 
         <div className="p-4 border-t border-white/10 bg-black/20">
@@ -603,6 +645,7 @@ export const AdminDashboard: React.FC = () => {
               {activeTab === 'media' && 'Gestionnaire de Médias'}
               {activeTab === 'new-order' && 'Nouvelle Commande Manuelle'}
               {activeTab === 'email' && 'Configuration Notifications'}
+              {activeTab === 'employees' && 'Gestion des Employés'}
             </h2>
           </div>
 
@@ -1273,6 +1316,132 @@ export const AdminDashboard: React.FC = () => {
               setIsAdminOpen(false);
               scrollToSection(sectionId);
             }} />
+          )}
+
+          {/* TAB 6: EMPLOYEES */}
+          {activeTab === 'employees' && (
+            <div className="max-w-4xl mx-auto space-y-6">
+              
+              <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-sm">
+                <h3 className="text-lg font-black text-slate-900 font-heading mb-4">
+                  Ajouter un Employé
+                </h3>
+                
+                <form onSubmit={handleCreateEmployee} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">Nom & Prénom</label>
+                    <input
+                      type="text"
+                      required
+                      value={newEmpName}
+                      onChange={(e) => setNewEmpName(e.target.value)}
+                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">Email</label>
+                    <input
+                      type="email"
+                      required
+                      value={newEmpEmail}
+                      onChange={(e) => setNewEmpEmail(e.target.value)}
+                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">Mot de passe</label>
+                    <input
+                      type="password"
+                      required
+                      value={newEmpPassword}
+                      onChange={(e) => setNewEmpPassword(e.target.value)}
+                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">Téléphone</label>
+                    <input
+                      type="tel"
+                      value={newEmpPhone}
+                      onChange={(e) => setNewEmpPhone(e.target.value)}
+                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
+                    />
+                  </div>
+                  <div className="sm:col-span-2">
+                    <label className="block text-xs font-bold text-slate-700 mb-1">Rôle</label>
+                    <div className="flex flex-wrap gap-3">
+                      {['admin', 'manager', 'delivery', 'employee'].map(r => (
+                        <label key={r} className="flex items-center gap-2 cursor-pointer bg-slate-50 px-3 py-2 rounded-xl border border-slate-200">
+                          <input type="radio" name="role" value={r} checked={newEmpRole === r} onChange={() => setNewEmpRole(r)} className="text-red-600 focus:ring-red-500" />
+                          <span className="text-sm font-bold text-slate-700 capitalize">{r === 'delivery' ? 'Livreur' : r === 'manager' ? 'Gérant' : r}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="sm:col-span-2 pt-2">
+                    <button type="submit" className="w-full py-3 bg-[#002f6c] hover:bg-[#001f4d] text-white font-black text-sm rounded-xl shadow-md transition cursor-pointer">
+                      Ajouter l'Employé
+                    </button>
+                  </div>
+                </form>
+              </div>
+
+              <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-sm">
+                <h3 className="text-lg font-black text-slate-900 font-heading mb-4">
+                  Liste des Employés et Utilisateurs
+                </h3>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-sm whitespace-nowrap">
+                    <thead>
+                      <tr className="border-b border-slate-200 text-slate-500 text-xs">
+                        <th className="font-bold py-3 pr-4">Employé</th>
+                        <th className="font-bold py-3 px-4">Email</th>
+                        <th className="font-bold py-3 px-4">Rôle</th>
+                        <th className="font-bold py-3 pl-4 text-right">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {allUsers.map(user => (
+                        <tr key={user.id} className="hover:bg-slate-50">
+                          <td className="py-3 pr-4">
+                            <div className="font-bold text-slate-800">{user.fullName}</div>
+                            {user.phone && <div className="text-xs text-slate-500">{user.phone}</div>}
+                          </td>
+                          <td className="py-3 px-4 text-slate-600">{user.email}</td>
+                          <td className="py-3 px-4">
+                            <select
+                              value={user.role || 'customer'}
+                              onChange={(e) => updateUserRole(user.id, e.target.value)}
+                              className="text-xs font-bold px-2 py-1 rounded bg-slate-100 border border-slate-300 focus:outline-none"
+                            >
+                              <option value="admin">Admin</option>
+                              <option value="manager">Gérant</option>
+                              <option value="delivery">Livreur</option>
+                              <option value="employee">Employé</option>
+                              <option value="customer">Client</option>
+                            </select>
+                          </td>
+                          <td className="py-3 pl-4 text-right">
+                            <button
+                              onClick={() => {
+                                if(confirm(`Voulez-vous supprimer l'utilisateur ${user.fullName} ?`)) {
+                                  deleteUser(user.id);
+                                }
+                              }}
+                              className="p-1.5 text-red-500 hover:bg-red-50 rounded-lg transition"
+                              title="Supprimer"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+            </div>
           )}
 
         </div>

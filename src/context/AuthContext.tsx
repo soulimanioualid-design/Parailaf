@@ -1,5 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { User, StoredUserAccount } from '../types';
+import { db } from '../utils/firebase';
+import { doc, onSnapshot, setDoc } from 'firebase/firestore';
 
 interface AuthContextType {
   currentUser: User | null;
@@ -26,6 +28,10 @@ interface AuthContextType {
   updateProfile: (data: Partial<User>) => Promise<{ success: boolean; error?: string }>;
   verifyAdminAccess: (passcodeOrPassword: string, email?: string) => Promise<{ success: boolean; error?: string }>;
   lockAdminSession: () => void;
+  allUsers: StoredUserAccount[];
+  createEmployee: (data: any) => Promise<{ success: boolean; error?: string }>;
+  updateUserRole: (userId: string, role: string) => void;
+  deleteUser: (userId: string) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -99,6 +105,34 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const isAdmin = currentUser?.role === 'admin' || (currentUser?.email?.toLowerCase() === 'soulimani.oualid@gmail.com');
 
+  // Sync users with Firestore
+  const [usersLoaded, setUsersLoaded] = useState(false);
+
+  useEffect(() => {
+    try {
+      const unsub = onSnapshot(doc(db, 'users', 'parailaf_all_users_v1'), (snap) => {
+        if (snap.exists()) {
+          const data = snap.data();
+          if (data && Array.isArray(data.users)) {
+            // Update local storage with fresh data from Firestore
+            localStorage.setItem(ACCOUNTS_STORAGE_KEY, JSON.stringify(data.users));
+          }
+        } else {
+          // Document doesn't exist yet, seed it if we have local users
+          const localUsers = localStorage.getItem(ACCOUNTS_STORAGE_KEY);
+          if (localUsers) {
+             setDoc(doc(db, 'users', 'parailaf_all_users_v1'), { users: JSON.parse(localUsers) }).catch(console.error);
+          }
+        }
+        setUsersLoaded(true);
+      });
+      return () => unsub();
+    } catch (e) {
+      console.error("Firebase users sync error:", e);
+      setUsersLoaded(true);
+    }
+  }, []);
+
   // Initialize seed accounts if not already present
   useEffect(() => {
     try {
@@ -139,6 +173,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const saveStoredUsers = (users: StoredUserAccount[]) => {
     try {
       localStorage.setItem(ACCOUNTS_STORAGE_KEY, JSON.stringify(users));
+      if (usersLoaded) {
+        setDoc(doc(db, 'users', 'parailaf_all_users_v1'), { users }).catch(console.error);
+      }
     } catch (e) {
       console.error('Failed to save users', e);
     }
@@ -416,6 +453,56 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } catch {}
   };
 
+  const [allUsers, setAllUsers] = useState<StoredUserAccount[]>([]);
+
+  // Update allUsers when getStoredUsers is updated or from Firestore directly
+  useEffect(() => {
+    setAllUsers(getStoredUsers());
+  }, [usersLoaded]);
+
+  const createEmployee = async (data: any): Promise<{ success: boolean; error?: string }> => {
+    const cleanEmail = data.email.trim().toLowerCase();
+    const users = getStoredUsers();
+    
+    if (users.some(u => u.email.toLowerCase() === cleanEmail)) {
+      return { success: false, error: 'Cette adresse email est déjà utilisée par un autre compte.' };
+    }
+
+    const newUser: StoredUserAccount = {
+      id: `emp_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
+      fullName: data.fullName,
+      email: cleanEmail,
+      phone: data.phone,
+      createdAt: new Date().toISOString(),
+      role: data.role || 'employee',
+      passwordHash: data.password || '123456', // Simple password for now
+    };
+
+    const updatedUsers = [newUser, ...users];
+    saveStoredUsers(updatedUsers);
+    setAllUsers(updatedUsers);
+    return { success: true };
+  };
+
+  const updateUserRole = (userId: string, role: string) => {
+    const users = getStoredUsers();
+    const updatedUsers = users.map(u => u.id === userId ? { ...u, role: role as any } : u);
+    saveStoredUsers(updatedUsers);
+    setAllUsers(updatedUsers);
+    
+    // Update current user if it's them
+    if (currentUser?.id === userId) {
+      setCurrentUser(prev => prev ? { ...prev, role: role as any } : prev);
+    }
+  };
+
+  const deleteUser = (userId: string) => {
+    const users = getStoredUsers();
+    const updatedUsers = users.filter(u => u.id !== userId);
+    saveStoredUsers(updatedUsers);
+    setAllUsers(updatedUsers);
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -436,6 +523,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         updateProfile,
         verifyAdminAccess,
         lockAdminSession,
+        allUsers,
+        createEmployee,
+        updateUserRole,
+        deleteUser,
       }}
     >
       {children}

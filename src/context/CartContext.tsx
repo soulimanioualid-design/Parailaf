@@ -27,9 +27,9 @@ interface CartContextType {
   setIsCheckoutOpen: (open: boolean) => void;
   isAdminOpen: boolean;
   setIsAdminOpen: (open: boolean) => void;
-  adminActiveTab: 'orders' | 'email' | 'analytics' | 'new-order' | 'media';
-  setAdminActiveTab: (tab: 'orders' | 'email' | 'analytics' | 'new-order' | 'media') => void;
-  openAdmin: (tab?: 'orders' | 'email' | 'analytics' | 'new-order' | 'media') => void;
+  adminActiveTab: 'orders' | 'email' | 'analytics' | 'new-order' | 'media' | 'employees';
+  setAdminActiveTab: (tab: 'orders' | 'email' | 'analytics' | 'new-order' | 'media' | 'employees') => void;
+  openAdmin: (tab?: 'orders' | 'email' | 'analytics' | 'new-order' | 'media' | 'employees') => void;
   quickBuyProduct: Product | null;
   setQuickBuyProduct: (product: Product | null) => void;
   selectedProductForModal: Product | null;
@@ -94,6 +94,8 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   // Flag to know if orders are loaded from Firestore yet
   const [ordersLoaded, setOrdersLoaded] = useState(false);
+  // Ref to track if we should skip the first local save to prevent overwriting cloud
+  const isFirstLoad = React.useRef(true);
 
   useEffect(() => {
     try {
@@ -103,6 +105,11 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
           if (data && Array.isArray(data.orders)) {
             setAllOrders(data.orders);
           }
+        } else {
+           // Document doesn't exist, we can push local state to it
+           if (allOrders.length > 0) {
+              setDoc(doc(db, 'orders', 'parailaf_all_orders_v1'), { orders: allOrders }).catch(console.error);
+           }
         }
         setOrdersLoaded(true);
       });
@@ -118,9 +125,13 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       localStorage.setItem(ORDERS_STORAGE_KEY, JSON.stringify(allOrders));
       
-      // Only write to Firestore if we have successfully loaded them from Firestore
-      // This prevents overwriting the remote database with local initial state
+      // Prevent the local state (which might be INITIAL_SEED_ORDERS or empty) from
+      // immediately overwriting the cloud state on page load before the cloud state is fetched.
       if (ordersLoaded) {
+        if (isFirstLoad.current) {
+           isFirstLoad.current = false;
+           return;
+        }
         setDoc(doc(db, 'orders', 'parailaf_all_orders_v1'), {
           orders: allOrders
         }).catch(err => console.error("Firebase save orders error:", err));
@@ -133,9 +144,9 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
   const [isAdminOpen, setIsAdminOpen] = useState(false);
-  const [adminActiveTab, setAdminActiveTab] = useState<'orders' | 'email' | 'analytics' | 'new-order' | 'media'>('orders');
+  const [adminActiveTab, setAdminActiveTab] = useState<'orders' | 'email' | 'analytics' | 'new-order' | 'media' | 'employees'>('orders');
 
-  const openAdmin = (tab: 'orders' | 'email' | 'analytics' | 'new-order' | 'media' = 'orders') => {
+  const openAdmin = (tab: 'orders' | 'email' | 'analytics' | 'new-order' | 'media' | 'employees' = 'orders') => {
     setAdminActiveTab(tab);
     setIsAdminOpen(true);
   };
