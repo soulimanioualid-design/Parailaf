@@ -87,13 +87,18 @@ export const CheckoutModal: React.FC = () => {
         phone,
         city,
         address,
-        paymentMethod,
-        email: email.trim() || undefined,
-        notes: notes.trim() || undefined
+        paymentMethod
       };
+      
+      if (email.trim()) {
+        customerInfo.email = email.trim();
+      }
+      if (notes.trim()) {
+        customerInfo.notes = notes.trim();
+      }
 
       const source = quickBuyProduct ? 'Achat Express 1-Clic' : 'Panier';
-      const newOrder = createOrder(customerInfo, source, currentUser?.id);
+      const newOrder = createOrder(customerInfo, source, currentUser?.id || null);
       setConfirmedOrder(newOrder);
       setOrderCompleted(true);
       setIsSubmitting(false);

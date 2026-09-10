@@ -270,7 +270,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const createOrder = (customer: OrderCustomerInfo, orderSource?: Order['source'], userId?: string): Order => {
+  const createOrder = (customer: OrderCustomerInfo, orderSource?: Order['source'], userId?: string | null): Order => {
     const itemsToOrder = quickBuyProduct 
       ? [{ product: quickBuyProduct, quantity: 1 }] 
       : [...cart];
@@ -299,8 +299,11 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
       status: 'pending',
       source: orderSource || (quickBuyProduct ? 'Achat Express 1-Clic' : 'Panier'),
       emailNotified: true,
-      userId: userId || undefined,
     };
+
+    if (userId) {
+      newOrder.userId = userId;
+    }
 
     // 1. Save locally to all orders array and sync to cloud
     setAllOrders(prev => {
@@ -325,11 +328,14 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setAllOrders(prev => {
       const updated = prev.map(order => {
         if (order.id === orderId) {
-          return {
+          const updatedOrder = {
             ...order,
-            status,
-            adminNotes: adminNotes !== undefined ? adminNotes : order.adminNotes
+            status
           };
+          if (adminNotes !== undefined) {
+            updatedOrder.adminNotes = adminNotes;
+          }
+          return updatedOrder;
         }
         return order;
       });
