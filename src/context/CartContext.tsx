@@ -120,26 +120,14 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, []);
 
-  // Persist all orders to LocalStorage and Firestore
+  // Persist all orders to LocalStorage
   useEffect(() => {
     try {
       localStorage.setItem(ORDERS_STORAGE_KEY, JSON.stringify(allOrders));
-      
-      // Prevent the local state (which might be INITIAL_SEED_ORDERS or empty) from
-      // immediately overwriting the cloud state on page load before the cloud state is fetched.
-      if (ordersLoaded) {
-        if (isFirstLoad.current) {
-           isFirstLoad.current = false;
-           return;
-        }
-        setDoc(doc(db, 'orders', 'parailaf_all_orders_v1'), {
-          orders: allOrders
-        }).catch(err => console.error("Firebase save orders error:", err));
-      }
     } catch (e) {
       console.error("Failed to save orders", e);
     }
-  }, [allOrders, ordersLoaded]);
+  }, [allOrders]);
 
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
@@ -274,6 +262,14 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const amountNeededForFreeShipping = 0;
   const totalAmount = subtotal + shippingFee;
 
+  const updateCloudOrders = (newOrders: Order[]) => {
+    if (ordersLoaded) {
+      setDoc(doc(db, 'orders', 'parailaf_all_orders_v1'), {
+        orders: newOrders
+      }).catch(err => console.error("Firebase save orders error:", err));
+    }
+  };
+
   const createOrder = (customer: OrderCustomerInfo, orderSource?: Order['source'], userId?: string): Order => {
     const itemsToOrder = quickBuyProduct 
       ? [{ product: quickBuyProduct, quantity: 1 }] 
@@ -306,8 +302,12 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
       userId: userId || undefined,
     };
 
-    // 1. Save locally to all orders array
-    setAllOrders(prev => [newOrder, ...prev]);
+    // 1. Save locally to all orders array and sync to cloud
+    setAllOrders(prev => {
+      const updated = [newOrder, ...prev];
+      updateCloudOrders(updated);
+      return updated;
+    });
     setLastOrder(newOrder);
 
     // 2. Dispatch Email Notification to admin
@@ -322,26 +322,38 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const updateOrderStatus = (orderId: string, status: Order['status'], adminNotes?: string) => {
-    setAllOrders(prev => prev.map(order => {
-      if (order.id === orderId) {
-        return {
-          ...order,
-          status,
-          adminNotes: adminNotes !== undefined ? adminNotes : order.adminNotes
-        };
-      }
-      return order;
-    }));
+    setAllOrders(prev => {
+      const updated = prev.map(order => {
+        if (order.id === orderId) {
+          return {
+            ...order,
+            status,
+            adminNotes: adminNotes !== undefined ? adminNotes : order.adminNotes
+          };
+        }
+        return order;
+      });
+      updateCloudOrders(updated);
+      return updated;
+    });
     showToast(`✓ Statut de la commande #${orderId} mis à jour : ${status}`);
   };
 
   const deleteOrder = (orderId: string) => {
-    setAllOrders(prev => prev.filter(order => order.id !== orderId));
+    setAllOrders(prev => {
+      const updated = prev.filter(order => order.id !== orderId);
+      updateCloudOrders(updated);
+      return updated;
+    });
     showToast(`✓ Commande #${orderId} supprimée.`);
   };
 
   const addManualOrder = (order: Order) => {
-    setAllOrders(prev => [order, ...prev]);
+    setAllOrders(prev => {
+      const updated = [order, ...prev];
+      updateCloudOrders(updated);
+      return updated;
+    });
     showToast(`✓ Commande manuelle #${order.id} ajoutée.`);
   };
 
