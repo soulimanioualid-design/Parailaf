@@ -36,7 +36,6 @@ import {
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 import { Order, Product } from '../types';
-import { PRODUCTS } from '../data/products';
 import { MOROCCAN_CITIES, BRAND_CONFIG } from '../data/config';
 import { 
   getAdminEmailSettings, 
@@ -46,6 +45,7 @@ import {
   formatOrderEmailContent
 } from '../utils/notificationService';
 import { AdminMediaManager } from './AdminMediaManager';
+import { AdminProductManager } from './AdminProductManager';
 
 export const AdminDashboard: React.FC = () => {
   const { 
@@ -58,7 +58,8 @@ export const AdminDashboard: React.FC = () => {
     deleteOrder, 
     addManualOrder,
     showToast,
-    scrollToSection
+    scrollToSection,
+    allProducts
   } = useCart();
 
   const { 
@@ -102,11 +103,14 @@ export const AdminDashboard: React.FC = () => {
   });
 
   // Manual Order Form State
+  const [selectedProductIdForEdit, setSelectedProductIdForEdit] = useState<string | null>(null);
   const [manualName, setManualName] = useState('');
   const [manualPhone, setManualPhone] = useState('');
   const [manualCity, setManualCity] = useState(MOROCCAN_CITIES[0].name);
   const [manualAddress, setManualAddress] = useState('');
-  const [manualProductId, setManualProductId] = useState(PRODUCTS[0].id);
+  const [manualNotes, setManualNotes] = useState('');
+  const [manualProductId, setManualProductId] = useState(allProducts[0].id);
+  const [manualQuantity, setManualQuantity] = useState(1);
   const { allUsers, createEmployee, updateUserRole, deleteUser } = useAuth();
   
   const [newEmpName, setNewEmpName] = useState('');
@@ -461,7 +465,7 @@ export const AdminDashboard: React.FC = () => {
   // Create Manual Order
   const handleCreateManualOrder = (e: React.FormEvent) => {
     e.preventDefault();
-    const product = PRODUCTS.find(p => p.id === manualProductId) || PRODUCTS[0];
+    const product = allProducts.find(p => p.id === manualProductId) || allProducts[0];
     const subtotal = product.price * manualQuantity;
     const shipping = 40; // Frais fixe 40 DH partout au Maroc quel que soit le montant
     
@@ -602,6 +606,18 @@ export const AdminDashboard: React.FC = () => {
             <Users className="w-5 h-5" />
             <span>Gestion des Employés</span>
           </button>
+
+          <button
+            onClick={() => setActiveTab('products')}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all cursor-pointer ${
+              activeTab === 'products'
+                ? 'bg-white/20 text-white shadow-md'
+                : 'text-blue-100 hover:bg-white/10 hover:text-white'
+            }`}
+          >
+            <Package className="w-5 h-5" />
+            <span>Catalogue Produits</span>
+          </button>
         </div>
 
         <div className="p-4 border-t border-white/10 bg-black/20">
@@ -631,15 +647,27 @@ export const AdminDashboard: React.FC = () => {
       <div className="flex-1 flex flex-col h-screen overflow-hidden bg-slate-50 relative">
         {/* Top Header */}
         <div className="bg-white border-b border-slate-200 px-4 sm:px-6 py-4 flex items-center justify-between z-10 shrink-0">
-          <div className="flex md:hidden items-center gap-3">
+          <div className="flex md:hidden items-center gap-2">
             <div className="w-8 h-8 bg-gradient-to-br from-[#002f6c] to-[#004080] rounded-lg flex items-center justify-center shadow-sm">
               <ShieldCheck className="w-5 h-5 text-white" />
             </div>
-            <h1 className="text-base font-black text-slate-900 tracking-tight">Admin</h1>
+            <div>
+              <h1 className="text-sm font-black text-slate-900 tracking-tight leading-none">
+                {activeTab === 'products' && 'Modifier les Produits'}
+                {activeTab === 'orders' && 'Commandes'}
+                {activeTab === 'media' && 'Gestion Médias'}
+                {activeTab === 'analytics' && 'Statistiques'}
+                {activeTab === 'employees' && 'Employés'}
+                {activeTab === 'email' && 'Notifications Email'}
+                {activeTab === 'new-order' && 'Nouvelle Commande'}
+              </h1>
+              <p className="text-[10px] text-slate-400 font-medium">Panneau Administrateur</p>
+            </div>
           </div>
 
           <div className="hidden md:flex items-center gap-4">
             <h2 className="text-xl font-black text-slate-800 tracking-tight capitalize">
+              {activeTab === 'products' && 'Catalogue & Modification des Produits'}
               {activeTab === 'orders' && 'Gestion des Commandes'}
               {activeTab === 'analytics' && 'Statistiques & Villes'}
               {activeTab === 'media' && 'Gestionnaire de Médias'}
@@ -672,31 +700,88 @@ export const AdminDashboard: React.FC = () => {
           </div>
         </div>
 
-        {/* Mobile Tab Navigation */}
-        <div className="md:hidden bg-white border-b border-slate-200 flex overflow-x-auto hide-scrollbar">
+        {/* Mobile Tab Navigation - ALL TABS VISIBLE WITH HORIZONTAL SCROLL */}
+        <div className="md:hidden bg-white border-b border-slate-200 flex items-center gap-1.5 px-3 py-2.5 overflow-x-auto hide-scrollbar shrink-0 shadow-xs">
           <button
-            onClick={() => setActiveTab('orders')}
-            className={`flex-1 py-3 px-4 font-bold text-xs whitespace-nowrap border-b-2 transition-colors ${activeTab === 'orders' ? 'border-red-600 text-red-600' : 'border-transparent text-slate-500'}`}
+            onClick={() => setActiveTab('products')}
+            className={`flex items-center gap-1.5 py-2 px-3 rounded-xl font-black text-xs whitespace-nowrap transition-all shrink-0 cursor-pointer ${
+              activeTab === 'products' 
+                ? 'bg-red-600 text-white shadow-sm ring-2 ring-red-200' 
+                : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+            }`}
           >
-            Commandes
+            <Package className="w-4 h-4 text-inherit" />
+            <span>Modifier Produits</span>
           </button>
           <button
-            onClick={() => setActiveTab('analytics')}
-            className={`flex-1 py-3 px-4 font-bold text-xs whitespace-nowrap border-b-2 transition-colors ${activeTab === 'analytics' ? 'border-red-600 text-red-600' : 'border-transparent text-slate-500'}`}
+            onClick={() => setActiveTab('orders')}
+            className={`flex items-center gap-1.5 py-2 px-3 rounded-xl font-bold text-xs whitespace-nowrap transition-all shrink-0 cursor-pointer ${
+              activeTab === 'orders' 
+                ? 'bg-red-600 text-white shadow-sm ring-2 ring-red-200' 
+                : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+            }`}
           >
-            Stats
+            <span>Commandes</span>
+            {pendingOrdersCount > 0 && (
+              <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-black ${activeTab === 'orders' ? 'bg-white text-red-600' : 'bg-red-500 text-white'}`}>
+                {pendingOrdersCount}
+              </span>
+            )}
           </button>
           <button
             onClick={() => setActiveTab('media')}
-            className={`flex-1 py-3 px-4 font-bold text-xs whitespace-nowrap border-b-2 transition-colors ${activeTab === 'media' ? 'border-amber-400 text-amber-600' : 'border-transparent text-slate-500'}`}
+            className={`flex items-center gap-1.5 py-2 px-3 rounded-xl font-bold text-xs whitespace-nowrap transition-all shrink-0 cursor-pointer ${
+              activeTab === 'media' 
+                ? 'bg-amber-500 text-white shadow-sm' 
+                : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+            }`}
           >
-            Médias
+            <ImageIcon className="w-4 h-4 text-inherit" />
+            <span>Médias & Images</span>
+          </button>
+          <button
+            onClick={() => setActiveTab('analytics')}
+            className={`flex items-center gap-1.5 py-2 px-3 rounded-xl font-bold text-xs whitespace-nowrap transition-all shrink-0 cursor-pointer ${
+              activeTab === 'analytics' 
+                ? 'bg-red-600 text-white shadow-sm' 
+                : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+            }`}
+          >
+            <BarChart3 className="w-4 h-4 text-inherit" />
+            <span>Stats</span>
+          </button>
+          <button
+            onClick={() => setActiveTab('employees')}
+            className={`flex items-center gap-1.5 py-2 px-3 rounded-xl font-bold text-xs whitespace-nowrap transition-all shrink-0 cursor-pointer ${
+              activeTab === 'employees' 
+                ? 'bg-red-600 text-white shadow-sm' 
+                : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+            }`}
+          >
+            <Users className="w-4 h-4 text-inherit" />
+            <span>Employés</span>
           </button>
           <button
             onClick={() => setActiveTab('email')}
-            className={`flex-1 py-3 px-4 font-bold text-xs whitespace-nowrap border-b-2 transition-colors ${activeTab === 'email' ? 'border-red-600 text-red-600' : 'border-transparent text-slate-500'}`}
+            className={`flex items-center gap-1.5 py-2 px-3 rounded-xl font-bold text-xs whitespace-nowrap transition-all shrink-0 cursor-pointer ${
+              activeTab === 'email' 
+                ? 'bg-red-600 text-white shadow-sm' 
+                : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+            }`}
           >
-            Email
+            <Mail className="w-4 h-4 text-inherit" />
+            <span>Email</span>
+          </button>
+          <button
+            onClick={() => setActiveTab('new-order')}
+            className={`flex items-center gap-1.5 py-2 px-3 rounded-xl font-bold text-xs whitespace-nowrap transition-all shrink-0 cursor-pointer ${
+              activeTab === 'new-order' 
+                ? 'bg-red-600 text-white shadow-sm' 
+                : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+            }`}
+          >
+            <Plus className="w-4 h-4 text-inherit" />
+            <span>+ Commande</span>
           </button>
         </div>
 
@@ -1163,7 +1248,7 @@ export const AdminDashboard: React.FC = () => {
                   </h3>
 
                   <div className="space-y-3">
-                    {PRODUCTS.slice(0, 5).map((prod) => (
+                    {allProducts.slice(0, 5).map((prod) => (
                       <div key={prod.id} className="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-200">
                         <div className="flex items-center gap-3">
                           <img src={prod.image} alt={prod.name} className="w-10 h-10 object-contain rounded-lg bg-white p-1 border border-slate-200" />
@@ -1266,7 +1351,7 @@ export const AdminDashboard: React.FC = () => {
                       onChange={(e) => setManualProductId(e.target.value)}
                       className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-bold text-slate-800"
                     >
-                      {PRODUCTS.map(p => (
+                      {allProducts.map(p => (
                         <option key={p.id} value={p.id}>{p.name} ({p.price} DH)</option>
                       ))}
                     </select>
@@ -1312,10 +1397,16 @@ export const AdminDashboard: React.FC = () => {
 
           {/* TAB 5: MEDIA & BANNERS MANAGER */}
           {activeTab === 'media' && (
-            <AdminMediaManager onPreviewSection={(sectionId) => {
-              setIsAdminOpen(false);
-              scrollToSection(sectionId);
-            }} />
+            <AdminMediaManager 
+              onPreviewSection={(sectionId) => {
+                setIsAdminOpen(false);
+                scrollToSection(sectionId);
+              }}
+              onOpenProductManager={(productId) => {
+                if (productId) setSelectedProductIdForEdit(productId);
+                setActiveTab('products');
+              }}
+            />
           )}
 
           {/* TAB 6: EMPLOYEES */}
@@ -1442,6 +1533,10 @@ export const AdminDashboard: React.FC = () => {
               </div>
 
             </div>
+          )}
+
+          {activeTab === 'products' && (
+            <AdminProductManager initialProductId={selectedProductIdForEdit} />
           )}
 
         </div>

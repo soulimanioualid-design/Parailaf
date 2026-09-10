@@ -17,12 +17,12 @@ import { useCart } from '../context/CartContext';
 import { BRAND_CONFIG } from '../data/config';
 
 export const ProductGrid: React.FC = () => {
-  const { activeCategory, setActiveCategory, searchQuery, setSearchQuery } = useCart();
+  const { allProducts, activeCategory, setActiveCategory, searchQuery, setSearchQuery } = useCart();
   const [sortBy, setSortBy] = useState<'popular' | 'price-asc' | 'price-desc' | 'rating'>('popular');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
 
   const filteredProducts = useMemo(() => {
-    return PRODUCTS.filter((product) => {
+    return allProducts.filter((product) => {
       // Category filter
       const matchesCategory = 
         activeCategory === 'all' || 

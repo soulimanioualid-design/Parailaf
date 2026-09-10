@@ -17,13 +17,14 @@ import {
   X,
   ExternalLink,
   Video,
-  Check
+  Check,
+  Edit3,
+  Package
 } from 'lucide-react';
 import { doc, onSnapshot, setDoc } from 'firebase/firestore';
 import { db } from '../utils/firebase';
 import { compressImageFile } from '../utils/imageCompressor';
 import { useCart } from '../context/CartContext';
-import { PRODUCTS } from '../data/products';
 
 import defaultHeroFlyer from '../assets/images/freestyle_promo_flyer_1788255081953.jpg';
 import defaultFlyerFL2 from '../assets/images/freestyle_promo_oujda_1788441986495.jpg';
@@ -32,6 +33,7 @@ import defaultFlyerOmnipod from '../assets/images/omnipod_5_promo_flyer_17884542
 
 interface AdminMediaManagerProps {
   onPreviewSection?: (sectionId: string) => void;
+  onOpenProductManager?: (productId?: string) => void;
 }
 
 interface UrlModalState {
@@ -42,8 +44,8 @@ interface UrlModalState {
   url: string;
 }
 
-export const AdminMediaManager: React.FC<AdminMediaManagerProps> = ({ onPreviewSection }) => {
-  const { showToast, productCustomImages, updateProductImage } = useCart();
+export const AdminMediaManager: React.FC<AdminMediaManagerProps> = ({ onPreviewSection, onOpenProductManager }) => {
+  const { showToast, productCustomImages, updateProductImage, allProducts } = useCart();
 
   // Sub tab inside Media Manager
   const [mediaSubTab, setMediaSubTab] = useState<'banners' | 'promos' | 'products' | 'video'>('banners');
@@ -295,7 +297,7 @@ export const AdminMediaManager: React.FC<AdminMediaManagerProps> = ({ onPreviewS
         break;
       case 'product':
         if (urlModal.targetId) {
-          const prod = PRODUCTS.find(p => p.id === urlModal.targetId);
+          const prod = allProducts.find(p => p.id === urlModal.targetId);
           await updateProductImage(urlModal.targetId, cleanUrl);
           showToast(`✓ Image URL assignée au produit "${prod?.name || ''}" !`);
         }
@@ -307,7 +309,7 @@ export const AdminMediaManager: React.FC<AdminMediaManagerProps> = ({ onPreviewS
   };
 
   // Filtered Products
-  const filteredProducts = PRODUCTS.filter(prod => {
+  const filteredProducts = allProducts.filter(prod => {
     const matchesSearch = prod.name.toLowerCase().includes(productSearch.toLowerCase()) || 
                           prod.id.toLowerCase().includes(productSearch.toLowerCase());
     const matchesCat = productCategoryFilter === 'all' || prod.category === productCategoryFilter;
@@ -386,7 +388,7 @@ export const AdminMediaManager: React.FC<AdminMediaManagerProps> = ({ onPreviewS
           }`}
         >
           <ShoppingBag className="w-4 h-4 text-rose-400" />
-          <span>3. Catalogue Produits ({PRODUCTS.length})</span>
+          <span>3. Catalogue Produits ({allProducts.length})</span>
         </button>
 
         <button
@@ -873,7 +875,7 @@ export const AdminMediaManager: React.FC<AdminMediaManagerProps> = ({ onPreviewS
       )}
 
       {/* ======================================================== */}
-      {/* SUBTAB 3: CATALOG PRODUCTS                               */}
+      {/* SUBTAB 3: CATALOG allProducts                               */}
       {/* ======================================================== */}
       {mediaSubTab === 'products' && (
         <div className="space-y-4">
@@ -929,6 +931,32 @@ export const AdminMediaManager: React.FC<AdminMediaManagerProps> = ({ onPreviewS
           <p className="text-xs text-slate-500">
             Personnalisez la photo principale de chaque produit dans le catalogue. Les modifications s'appliquent immédiatement sur les cartes produits, le panier et la vue détaillée.
           </p>
+
+          {/* Quick link banner to the full Product Manager */}
+          <div className="bg-gradient-to-r from-red-600 via-rose-600 to-amber-600 text-white p-4 rounded-3xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-sm">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-2xl bg-white/20 backdrop-blur-xs flex items-center justify-center shrink-0">
+                <Package className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <h4 className="font-bold text-sm text-white font-heading">
+                  Modifier les Titres, Descriptions, Prix ou supprimer/ajouter des Photos ?
+                </h4>
+                <p className="text-xs text-red-100">
+                  Utilisez l'éditeur complet de produits avec assistant IA et gestionnaire de galerie multi-photos.
+                </p>
+              </div>
+            </div>
+            {onOpenProductManager && (
+              <button
+                onClick={() => onOpenProductManager()}
+                className="px-4 py-2 bg-white hover:bg-red-50 text-red-700 text-xs font-black rounded-xl shadow-xs transition flex items-center gap-1.5 cursor-pointer whitespace-nowrap self-stretch sm:self-auto justify-center"
+              >
+                <Edit3 className="w-3.5 h-3.5" />
+                <span>Ouvrir Gestionnaire Produits & IA</span>
+              </button>
+            )}
+          </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
             {filteredProducts.map((prod) => {
@@ -1026,6 +1054,17 @@ export const AdminMediaManager: React.FC<AdminMediaManagerProps> = ({ onPreviewS
                       </button>
                     )}
                   </div>
+
+                  {onOpenProductManager && (
+                    <button
+                      onClick={() => onOpenProductManager(prod.id)}
+                      className="w-full py-2 px-2.5 bg-red-50 hover:bg-red-100 active:bg-red-200 text-red-700 text-xs font-black rounded-xl flex items-center justify-center gap-1.5 transition cursor-pointer border border-red-200 shadow-xs"
+                      title="Modifier les textes, les descriptions, les photos et le prix"
+                    >
+                      <Edit3 className="w-3.5 h-3.5 text-red-600" />
+                      <span>Modifier Fiche (Textes, Photos & IA)</span>
+                    </button>
+                  )}
                 </div>
               );
             })}

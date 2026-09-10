@@ -12,16 +12,15 @@ import {
   ArrowRight
 } from 'lucide-react';
 import { useCart } from '../context/CartContext';
-import { PRODUCTS } from '../data/products';
 import { BRAND_CONFIG } from '../data/config';
 
 export const PromoOffersBottomSection: React.FC = () => {
-  const { addToCart, setIsCartOpen } = useCart();
+  const { addToCart, setIsCartOpen, allProducts } = useCart();
 
-  const pack4 = PRODUCTS.find(p => p.id === 'pack-4-fsl2-plus') || PRODUCTS[0];
-  const pack10 = PRODUCTS.find(p => p.id === 'pack-10-fsl2-plus') || PRODUCTS[1];
-  const libre3 = PRODUCTS.find(p => p.id === 'fsl3-plus-nouveau') || PRODUCTS[2];
-  const omnipod = PRODUCTS.find(p => p.id === 'omnipod-5-pods-10pack') || PRODUCTS[3];
+  const pack4 = allProducts.find(p => p.id === 'pack-4-fsl2-plus') || allProducts[0];
+  const pack10 = allProducts.find(p => p.id === 'pack-10-fsl2-plus') || allProducts[1];
+  const libre3 = allProducts.find(p => p.id === 'fsl3-plus-nouveau') || allProducts[2];
+  const omnipod = allProducts.find(p => p.id === 'omnipod-5-pods-10pack') || allProducts[3];
 
   return (
     <section id="offres-promo" className="py-14 sm:py-16 bg-gradient-to-b from-slate-100/90 via-white to-slate-50 border-t border-b border-slate-200 relative overflow-hidden">

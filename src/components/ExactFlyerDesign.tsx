@@ -13,7 +13,6 @@ import {
   PhoneCall
 } from 'lucide-react';
 import { useCart } from '../context/CartContext';
-import { PRODUCTS } from '../data/products';
 import flyerGenerated from '../assets/images/freestyle_promo_flyer_1788255081953.jpg';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { db } from '../utils/firebase';
@@ -23,13 +22,13 @@ interface ExactFlyerDesignProps {
 }
 
 export const ExactFlyerDesign: React.FC<ExactFlyerDesignProps> = ({ onZoom }) => {
-  const { addToCart, setIsCartOpen } = useCart();
+  const { addToCart, setIsCartOpen, allProducts } = useCart();
   const [images, setImages] = useState<{ desktop: string | null; mobile: string | null }>({ desktop: null, mobile: null });
 
-  const pack4 = PRODUCTS.find(p => p.id === 'pack-4-fsl2-plus') || PRODUCTS[0];
-  const pack10 = PRODUCTS.find(p => p.id === 'pack-10-fsl2-plus') || PRODUCTS[1];
-  const libre3 = PRODUCTS.find(p => p.id === 'fsl3-plus-nouveau') || PRODUCTS[2];
-  const omnipod = PRODUCTS.find(p => p.id === 'omnipod-5-pods-10pack') || PRODUCTS[3];
+  const pack4 = allProducts.find(p => p.id === 'pack-4-fsl2-plus') || allProducts[0];
+  const pack10 = allProducts.find(p => p.id === 'pack-10-fsl2-plus') || allProducts[1];
+  const libre3 = allProducts.find(p => p.id === 'fsl3-plus-nouveau') || allProducts[2];
+  const omnipod = allProducts.find(p => p.id === 'omnipod-5-pods-10pack') || allProducts[3];
 
   // Load saved custom image from Firestore if available
   useEffect(() => {

@@ -9,10 +9,12 @@ import {
   Sparkles,
   Clock,
   ArrowRight,
-  Flame
+  Flame,
+  Edit3
 } from 'lucide-react';
 import { Product } from '../types';
 import { useCart } from '../context/CartContext';
+import { useAuth } from '../context/AuthContext';
 import { BRAND_CONFIG } from '../data/config';
 
 interface ProductCardProps {
@@ -26,8 +28,12 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, viewMode = 'l
     setSelectedProductForModal,
     setQuickBuyProduct,
     setIsCheckoutOpen,
-    getProductImage
+    getProductImage,
+    openAdmin
   } = useCart();
+
+  const { isAdmin, isAdminSessionActive } = useAuth();
+  const hasAdminAccess = isAdmin || isAdminSessionActive;
 
   const [isAddedRecently, setIsAddedRecently] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
@@ -120,17 +126,32 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, viewMode = 'l
           )}
         </div>
 
-        {/* Quick View Floating Action */}
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            setSelectedProductForModal(product);
-          }}
-          className="absolute top-2 right-2 sm:top-3 sm:right-3 z-10 w-7 h-7 sm:w-9 sm:h-9 rounded-full bg-white/95 text-slate-700 hover:text-red-600 hover:bg-slate-50 shadow-md border border-slate-100 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-200"
-          title="Aperçu rapide"
-        >
-          <Eye className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-        </button>
+        {/* Admin Quick Edit Button - Always visible on mobile & desktop for authenticated admins */}
+        {hasAdminAccess ? (
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              openAdmin('products');
+            }}
+            className="absolute top-2 right-2 sm:top-3 sm:right-3 z-20 px-2.5 py-1 bg-red-600 hover:bg-red-700 active:scale-95 text-white rounded-lg text-[10px] font-black shadow-md flex items-center gap-1 transition cursor-pointer"
+            title="Modifier ce produit dans l'espace Admin"
+          >
+            <Edit3 className="w-3 h-3" />
+            <span>Modifier</span>
+          </button>
+        ) : (
+          /* Quick View Floating Action */
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              setSelectedProductForModal(product);
+            }}
+            className="absolute top-2 right-2 sm:top-3 sm:right-3 z-10 w-7 h-7 sm:w-9 sm:h-9 rounded-full bg-white/95 text-slate-700 hover:text-red-600 hover:bg-slate-50 shadow-md border border-slate-100 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-200"
+            title="Aperçu rapide"
+          >
+            <Eye className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+          </button>
+        )}
 
         {/* Product Image */}
         <div className="w-full h-full flex items-center justify-center bg-white overflow-hidden">

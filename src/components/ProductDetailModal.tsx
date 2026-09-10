@@ -13,9 +13,11 @@ import {
   Package, 
   Share2,
   Sparkles,
-  Flame
+  Flame,
+  Edit3
 } from 'lucide-react';
 import { useCart } from '../context/CartContext';
+import { useAuth } from '../context/AuthContext';
 import { BRAND_CONFIG } from '../data/config';
 
 export const ProductDetailModal: React.FC = () => {
@@ -25,8 +27,13 @@ export const ProductDetailModal: React.FC = () => {
     addToCart,
     setQuickBuyProduct,
     setIsCheckoutOpen,
-    getProductImage
+    getProductImage,
+    allProducts,
+    openAdmin
   } = useCart();
+
+  const { isAdmin, isAdminSessionActive } = useAuth();
+  const hasAdminAccess = isAdmin || isAdminSessionActive;
 
   const [quantity, setQuantity] = useState(1);
   const [activeImageIndex, setActiveImageIndex] = useState(0);
@@ -34,11 +41,15 @@ export const ProductDetailModal: React.FC = () => {
 
   if (!selectedProductForModal) return null;
 
-  const product = selectedProductForModal;
+  // Always use the latest product state from allProducts
+  const product = allProducts.find(p => p.id === selectedProductForModal.id) || selectedProductForModal;
   const mainImage = getProductImage ? getProductImage(product) : product.image;
-  const images = product.gallery && product.gallery.length > 0 
-    ? [mainImage, ...product.gallery.filter(g => g !== product.image)] 
-    : [mainImage];
+  
+  // Build distinct gallery
+  const rawGallery = Array.isArray(product.gallery) ? product.gallery : [];
+  const distinctSecondary = rawGallery.filter(img => img && img !== mainImage && img !== product.image);
+  const images = [mainImage, ...distinctSecondary];
+  const activeImage = images[activeImageIndex] || images[0] || mainImage;
 
   const handleAddToCart = () => {
     addToCart(product, quantity);
@@ -84,7 +95,7 @@ export const ProductDetailModal: React.FC = () => {
             <div className="md:col-span-6 bg-white p-6 sm:p-8 flex flex-col justify-between border-b md:border-b-0 md:border-r border-slate-200">
               <div>
                 {/* Badge */}
-                <div className="flex items-center gap-2 mb-4">
+                <div className="flex flex-wrap items-center gap-2 mb-4">
                   {product.badge && (
                     <span className="bg-red-600 text-white font-black text-xs px-2.5 py-1 rounded-lg uppercase tracking-wide flex items-center gap-1 shadow-sm">
                       <Flame className="w-3.5 h-3.5 fill-amber-300 text-amber-300" />
@@ -94,12 +105,26 @@ export const ProductDetailModal: React.FC = () => {
                   <span className="text-xs font-bold text-red-800 bg-red-50 px-2 py-0.5 rounded-md border border-red-200 flex items-center gap-1">
                     <Check className="w-3.5 h-3.5 text-red-600" /> En stock au Maroc
                   </span>
+
+                  {hasAdminAccess && (
+                    <button
+                      onClick={() => {
+                        setSelectedProductForModal(null);
+                        openAdmin('products');
+                      }}
+                      className="ml-auto bg-slate-900 hover:bg-slate-800 text-white font-black text-xs px-3 py-1.5 rounded-xl flex items-center gap-1.5 shadow-sm transition cursor-pointer"
+                      title="Modifier les photos, le titre ou la description"
+                    >
+                      <Edit3 className="w-3.5 h-3.5 text-amber-400" />
+                      <span>Modifier (Admin)</span>
+                    </button>
+                  )}
                 </div>
 
                 {/* Main Large Image */}
                 <div className="bg-white rounded-2xl p-2 sm:p-4 border border-slate-100 aspect-square flex items-center justify-center shadow-xs overflow-hidden">
                   <img
-                    src={images[activeImageIndex] || product.image}
+                    src={activeImage}
                     alt={product.name}
                     className="w-full h-full max-h-96 object-contain transition-all duration-300 hover:scale-105"
                   />

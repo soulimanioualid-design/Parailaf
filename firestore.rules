@@ -83,5 +83,10 @@ service cloud.firestore {
       allow create, update: if isValidId(imageId);
       allow delete: if isValidId(imageId);
     }
+
+    match /products/{productId} {
+      allow read: if true;
+      allow write: if isAdmin() || productId == 'parailaf_catalog_v1';
+    }
   }
 }

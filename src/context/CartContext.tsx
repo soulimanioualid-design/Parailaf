@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { Product, CartItem, Order, OrderCustomerInfo } from '../types';
 import { BRAND_CONFIG } from '../data/config';
 import { INITIAL_SEED_ORDERS } from '../data/seedOrders';
+import { PRODUCTS as INITIAL_PRODUCTS } from '../data/products';
 import { sendOrderEmailNotification } from '../utils/notificationService';
 import { doc, onSnapshot, setDoc } from 'firebase/firestore';
 import { db } from '../utils/firebase';
@@ -27,9 +28,9 @@ interface CartContextType {
   setIsCheckoutOpen: (open: boolean) => void;
   isAdminOpen: boolean;
   setIsAdminOpen: (open: boolean) => void;
-  adminActiveTab: 'orders' | 'email' | 'analytics' | 'new-order' | 'media' | 'employees';
-  setAdminActiveTab: (tab: 'orders' | 'email' | 'analytics' | 'new-order' | 'media' | 'employees') => void;
-  openAdmin: (tab?: 'orders' | 'email' | 'analytics' | 'new-order' | 'media' | 'employees') => void;
+  adminActiveTab: 'orders' | 'email' | 'analytics' | 'new-order' | 'media' | 'employees' | 'products';
+  setAdminActiveTab: (tab: 'orders' | 'email' | 'analytics' | 'new-order' | 'media' | 'employees' | 'products') => void;
+  openAdmin: (tab?: 'orders' | 'email' | 'analytics' | 'new-order' | 'media' | 'employees' | 'products') => void;
   quickBuyProduct: Product | null;
   setQuickBuyProduct: (product: Product | null) => void;
   selectedProductForModal: Product | null;
@@ -38,6 +39,10 @@ interface CartContextType {
   // Toasts
   toastMessage: string | null;
   showToast: (message: string) => void;
+  
+  // Catalog / Products
+  allProducts: Product[];
+  updateProduct: (product: Product) => void;
   
   // Product Images Override (Admin controlled)
   productCustomImages: Record<string, string>;
@@ -67,6 +72,42 @@ const CART_STORAGE_KEY = 'parailaf_cart_v1';
 const ORDERS_STORAGE_KEY = 'parailaf_all_orders_v2';
 
 export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [allProducts, setAllProducts] = useState<Product[]>(INITIAL_PRODUCTS);
+  const [productsLoaded, setProductsLoaded] = useState(false);
+
+  useEffect(() => {
+    try {
+      const unsub = onSnapshot(doc(db, 'products', 'parailaf_catalog_v1'), (snap) => {
+        if (snap.exists()) {
+          const data = snap.data();
+          if (data && Array.isArray(data.products)) {
+            setAllProducts(data.products);
+          }
+        } else {
+           if (INITIAL_PRODUCTS.length > 0) {
+              setDoc(doc(db, 'products', 'parailaf_catalog_v1'), { products: INITIAL_PRODUCTS }).catch(console.error);
+           }
+        }
+        setProductsLoaded(true);
+      });
+      return () => unsub();
+    } catch (e) {
+      console.error("Firebase products sync error:", e);
+      setProductsLoaded(true);
+    }
+  }, []);
+
+  const updateProduct = (updatedProduct: Product) => {
+    setAllProducts(prev => {
+      const updated = prev.map(p => p.id === updatedProduct.id ? updatedProduct : p);
+      if (productsLoaded) {
+        setDoc(doc(db, 'products', 'parailaf_catalog_v1'), { products: updated }).catch(console.error);
+      }
+      return updated;
+    });
+    showToast(`✓ Produit "${updatedProduct.name}" mis à jour`);
+  };
+
   const [cart, setCart] = useState<CartItem[]>(() => {
     try {
       const saved = localStorage.getItem(CART_STORAGE_KEY);
@@ -132,9 +173,9 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
   const [isAdminOpen, setIsAdminOpen] = useState(false);
-  const [adminActiveTab, setAdminActiveTab] = useState<'orders' | 'email' | 'analytics' | 'new-order' | 'media' | 'employees'>('orders');
+  const [adminActiveTab, setAdminActiveTab] = useState<'orders' | 'email' | 'analytics' | 'new-order' | 'media' | 'employees' | 'products'>('orders');
 
-  const openAdmin = (tab: 'orders' | 'email' | 'analytics' | 'new-order' | 'media' | 'employees' = 'orders') => {
+  const openAdmin = (tab: 'orders' | 'email' | 'analytics' | 'new-order' | 'media' | 'employees' | 'products' = 'orders') => {
     setAdminActiveTab(tab);
     setIsAdminOpen(true);
   };
@@ -447,6 +488,8 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setSelectedProductForModal,
         toastMessage,
         showToast,
+        allProducts,
+        updateProduct,
         lastOrder,
         allOrders,
         createOrder,

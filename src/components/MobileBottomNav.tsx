@@ -1,5 +1,5 @@
 import React from 'react';
-import { Home, Grid, ShoppingBag, User as UserIcon, Image as ImageIcon } from 'lucide-react';
+import { Home, Grid, ShoppingBag, User as UserIcon, Package } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 import { BRAND_CONFIG } from '../data/config';
@@ -80,23 +80,23 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
           </span>
         </button>
 
-        {/* 5. Espace Admin & Modification des Images - VISIBLE ONLY FOR AUTHENTICATED ADMIN */}
+        {/* 5. Espace Admin & Modification des Produits - VISIBLE ONLY FOR AUTHENTICATED ADMIN */}
         {hasAdminAccess && (
           <button
-            onClick={() => openAdmin('media')}
-            className="flex flex-col items-center justify-center py-1 px-0.5 text-slate-600 active:text-amber-600 focus:outline-none transition group cursor-pointer"
-            title="Modifier les images & Panneau d'administration"
+            onClick={() => openAdmin('products')}
+            className="flex flex-col items-center justify-center py-1 px-0.5 text-slate-600 active:text-red-600 focus:outline-none transition group cursor-pointer"
+            title="Modifier les produits, textes et photos"
           >
             <div className="relative">
-              <div className="w-5 h-5 mb-0.5 rounded-md bg-amber-100 flex items-center justify-center text-amber-800 group-hover:bg-amber-200">
-                <ImageIcon className="w-3.5 h-3.5 text-amber-700" />
+              <div className="w-5 h-5 mb-0.5 rounded-md bg-red-100 flex items-center justify-center text-red-800 group-hover:bg-red-200">
+                <Package className="w-3.5 h-3.5 text-red-700" />
               </div>
               <span className="absolute -top-1 -right-2 bg-red-600 text-white font-black text-[7px] px-1 py-0.2 rounded-full uppercase">
                 Admin
               </span>
             </div>
-            <span className="text-[10px] font-bold text-amber-900 group-hover:text-amber-700 truncate max-w-[50px]">
-              Images
+            <span className="text-[10px] font-bold text-red-700 group-hover:text-red-800 truncate max-w-[50px]">
+              Produits
             </span>
           </button>
         )}

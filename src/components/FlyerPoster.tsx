@@ -13,7 +13,6 @@ import {
   ShieldCheck
 } from 'lucide-react';
 import { useCart } from '../context/CartContext';
-import { PRODUCTS } from '../data/products';
 import { BRAND_CONFIG } from '../data/config';
 import flyerImage from '../assets/images/freestyle_promo_flyer_1788255081953.jpg';
 
@@ -23,17 +22,17 @@ interface FlyerPosterProps {
 }
 
 export const FlyerPoster: React.FC<FlyerPosterProps> = ({ onZoom, showTabs = true }) => {
-  const { addToCart, setIsCartOpen } = useCart();
+  const { addToCart, setIsCartOpen, allProducts } = useCart();
   const [viewMode, setViewMode] = useState<'image' | 'interactive'>('image');
 
-  const pack4 = PRODUCTS.find(p => p.id === 'pack-4-fsl2-plus') || PRODUCTS[0];
-  const pack10 = PRODUCTS.find(p => p.id === 'pack-10-fsl2-plus') || PRODUCTS[1];
-  const libre3 = PRODUCTS.find(p => p.id === 'fsl3-plus-nouveau') || PRODUCTS[2];
-  const omnipod = PRODUCTS.find(p => p.id === 'omnipod-5-pods-10pack') || PRODUCTS[3];
-  const lecteur = PRODUCTS.find(p => p.id === 'fsl2-lecteur-officiel') || PRODUCTS[4];
-  const patchs = PRODUCTS.find(p => p.id === 'patch-fixation-pack-10') || PRODUCTS[5];
-  const lingettes = PRODUCTS.find(p => p.id === 'lingettes-alcoolisees-100') || PRODUCTS[6];
-  const trousse = PRODUCTS.find(p => p.id === 'trousse-transport-rigide') || PRODUCTS[7];
+  const pack4 = allProducts.find(p => p.id === 'pack-4-fsl2-plus') || allProducts[0];
+  const pack10 = allProducts.find(p => p.id === 'pack-10-fsl2-plus') || allProducts[1];
+  const libre3 = allProducts.find(p => p.id === 'fsl3-plus-nouveau') || allProducts[2];
+  const omnipod = allProducts.find(p => p.id === 'omnipod-5-pods-10pack') || allProducts[3];
+  const lecteur = allProducts.find(p => p.id === 'fsl2-lecteur-officiel') || allProducts[4];
+  const patchs = allProducts.find(p => p.id === 'patch-fixation-pack-10') || allProducts[5];
+  const lingettes = allProducts.find(p => p.id === 'lingettes-alcoolisees-100') || allProducts[6];
+  const trousse = allProducts.find(p => p.id === 'trousse-transport-rigide') || allProducts[7];
 
   const handleOrder = (product: typeof pack4, e?: React.MouseEvent) => {
     if (e) e.stopPropagation();

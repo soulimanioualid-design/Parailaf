@@ -20,7 +20,8 @@ import {
   User as UserIcon,
   LogIn,
   UserPlus,
-  Image as ImageIcon
+  Image as ImageIcon,
+  Edit3
 } from 'lucide-react';
 import { BRAND_CONFIG } from '../data/config';
 import { useCart } from '../context/CartContext';
@@ -520,8 +521,8 @@ export const Header: React.FC<HeaderProps> = ({ onOpenAbout, onOpenContact }) =>
                     <ChevronRight className="w-4 h-4 text-slate-400" />
                   </button>
 
-                  {/* Espace Admin & Modification des Images (Mobile Drawer) - ONLY for authenticated Admin */}
-                  {hasAdminAccess && (
+                  {/* Espace Admin & Modification des Produits (Mobile Drawer) */}
+                  {hasAdminAccess ? (
                     <div className="mt-3 p-3.5 bg-gradient-to-br from-slate-900 via-slate-800 to-[#002f6c] rounded-2xl text-white shadow-md border border-slate-700">
                       <div className="flex items-center justify-between mb-2.5">
                         <div className="flex items-center gap-2">
@@ -530,41 +531,70 @@ export const Header: React.FC<HeaderProps> = ({ onOpenAbout, onOpenContact }) =>
                           </div>
                           <div>
                             <div className="text-xs font-black flex items-center gap-1.5">
-                              <span>Panneau d'Administration</span>
-                              <span className="text-[9px] font-black px-1.5 py-0.2 bg-red-600 text-white rounded uppercase">ADMIN</span>
+                              <span>Espace Administrateur</span>
+                              <span className="text-[9px] font-black px-1.5 py-0.2 bg-red-600 text-white rounded uppercase">ACTIF</span>
                             </div>
-                            <div className="text-[11px] text-slate-300">Modifier images, affiches & commandes</div>
+                            <div className="text-[11px] text-slate-300">Catalogue, textes IA & photos</div>
                           </div>
                         </div>
                       </div>
 
-                      <div className="grid grid-cols-2 gap-2 mt-2">
+                      <div className="space-y-2 mt-2">
+                        {/* Primary button: Edit Products */}
                         <button
                           onClick={() => {
                             setIsMobileMenuOpen(false);
-                            openAdmin('media');
+                            openAdmin('products');
                           }}
-                          className="bg-amber-400 hover:bg-amber-300 text-slate-950 text-xs font-extrabold py-2 px-2.5 rounded-xl flex items-center justify-center gap-1.5 transition shadow-xs cursor-pointer"
+                          className="w-full bg-red-600 hover:bg-red-700 active:scale-98 text-white text-xs font-black py-2.5 px-3 rounded-xl flex items-center justify-center gap-2 transition shadow-sm cursor-pointer"
                         >
-                          <ImageIcon className="w-3.5 h-3.5 text-slate-950" />
-                          <span>Changer Images</span>
+                          <Edit3 className="w-4 h-4" />
+                          <span>Modifier les Produits (Textes & Photos)</span>
                         </button>
 
-                        <button
-                          onClick={() => {
-                            setIsMobileMenuOpen(false);
-                            openAdmin('orders');
-                          }}
-                          className="bg-white/10 hover:bg-white/20 text-white text-xs font-bold py-2 px-2.5 rounded-xl flex items-center justify-center gap-1.5 transition border border-white/20 cursor-pointer"
-                        >
-                          <Package className="w-3.5 h-3.5" />
-                          <span>Commandes</span>
-                          {pendingOrdersCount > 0 && (
-                            <span className="w-2 h-2 rounded-full bg-amber-300 animate-pulse" />
-                          )}
-                        </button>
+                        <div className="grid grid-cols-2 gap-2">
+                          <button
+                            onClick={() => {
+                              setIsMobileMenuOpen(false);
+                              openAdmin('media');
+                            }}
+                            className="bg-amber-400 hover:bg-amber-300 text-slate-950 text-xs font-extrabold py-2 px-2.5 rounded-xl flex items-center justify-center gap-1.5 transition shadow-xs cursor-pointer"
+                          >
+                            <ImageIcon className="w-3.5 h-3.5 text-slate-950" />
+                            <span>Bannières</span>
+                          </button>
+
+                          <button
+                            onClick={() => {
+                              setIsMobileMenuOpen(false);
+                              openAdmin('orders');
+                            }}
+                            className="bg-white/10 hover:bg-white/20 text-white text-xs font-bold py-2 px-2.5 rounded-xl flex items-center justify-center gap-1.5 transition border border-white/20 cursor-pointer"
+                          >
+                            <Package className="w-3.5 h-3.5" />
+                            <span>Commandes</span>
+                            {pendingOrdersCount > 0 && (
+                              <span className="w-2 h-2 rounded-full bg-amber-300 animate-pulse" />
+                            )}
+                          </button>
+                        </div>
                       </div>
                     </div>
+                  ) : (
+                    /* Admin Login shortcut on mobile */
+                    <button
+                      onClick={() => {
+                        setIsMobileMenuOpen(false);
+                        openAdmin('products');
+                      }}
+                      className="w-full mt-3 flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-bold text-slate-600 hover:text-slate-900 bg-slate-50 hover:bg-slate-100 border border-slate-200 transition cursor-pointer"
+                    >
+                      <div className="flex items-center gap-2">
+                        <Lock className="w-3.5 h-3.5 text-slate-500" />
+                        <span>Accès Admin / Modifier les Produits</span>
+                      </div>
+                      <ChevronRight className="w-4 h-4 text-slate-400" />
+                    </button>
                   )}
                 </div>
               </div>
