@@ -1,7 +1,7 @@
 export interface Product {
   id: string;
   name: string;
-  category: 'libre-2' | 'libre-3' | 'capteurs' | 'lecteurs' | 'accessoires' | 'packs' | 'offres-speciales' | 'omnipod';
+  category: 'libre-2' | 'libre-3' | 'capteurs' | 'lecteurs' | 'accessoires' | 'packs' | 'offres-speciales' | 'omnipod' | 'dexcom';
   categoryLabel: string;
   brand: string;
   shortDescription: string;

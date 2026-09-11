@@ -7,6 +7,7 @@ import {
   Smartphone, 
   Shield, 
   Package, 
+  Activity,
   ChevronRight 
 } from 'lucide-react';
 import { useCart } from '../context/CartContext';
@@ -47,6 +48,17 @@ export const CategoryPills: React.FC = () => {
       badgeColor: 'bg-blue-100 text-blue-900',
       borderHover: 'hover:border-blue-500',
       activeBg: 'border-[#002f6c] bg-blue-50/80',
+    },
+    {
+      id: 'dexcom',
+      title: 'Dexcom G6',
+      subtitle: 'Kit CGM Complet',
+      description: 'Capteurs + Transmetteur + 20 Patchs Shield',
+      icon: Activity,
+      badge: 'Nouveau',
+      badgeColor: 'bg-emerald-100 text-emerald-900 border border-emerald-300',
+      borderHover: 'hover:border-emerald-500',
+      activeBg: 'border-emerald-600 bg-emerald-50/80',
     },
     {
       id: 'omnipod',

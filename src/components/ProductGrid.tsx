@@ -26,7 +26,10 @@ export const ProductGrid: React.FC = () => {
       // Category filter
       const matchesCategory = 
         activeCategory === 'all' || 
-        product.category === activeCategory;
+        product.category === activeCategory ||
+        (activeCategory === 'dexcom' && (product.category === 'dexcom' || product.brand.toLowerCase().includes('dexcom'))) ||
+        (activeCategory === 'capteurs' && (product.category === 'capteurs' || product.category === 'libre-2' || product.category === 'libre-3' || product.category === 'dexcom' || product.id.includes('capteur'))) ||
+        (activeCategory === 'packs' && (product.category === 'packs' || product.id.includes('pack') || product.id.includes('kit')));
 
       // Search filter
       const matchesSearch = 

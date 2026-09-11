@@ -163,15 +163,6 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, viewMode = 'l
             loading="lazy"
           />
         </div>
-        
-        {/* Optional Duration tag on bottom of image */}
-        {product.specs?.duration && (
-          <div className="absolute bottom-1.5 right-2 sm:bottom-2.5 sm:right-3 flex items-center text-[10px] sm:text-[11px] z-10">
-            <span className="text-[10px] text-slate-700 font-bold bg-white/95 px-2 py-0.5 rounded border border-slate-200 shadow-xs backdrop-blur-xs">
-              {product.specs.duration}
-            </span>
-          </div>
-        )}
       </div>
 
       {/* Card Body */}
@@ -202,13 +193,9 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, viewMode = 'l
             {product.name}
           </h3>
 
-          {/* Short description (only in list mode or tablet/desktop) */}
-          {!isGrid ? (
+          {/* Short description (only in list mode, never in compact grid) */}
+          {!isGrid && (
             <p className="text-xs text-slate-500 mt-1.5 line-clamp-2 leading-relaxed font-normal">
-              {product.shortDescription}
-            </p>
-          ) : (
-            <p className="hidden sm:block text-[11px] text-slate-500 mt-1 line-clamp-1">
               {product.shortDescription}
             </p>
           )}

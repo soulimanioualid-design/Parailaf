@@ -12,15 +12,17 @@ import imgSingle2 from '../assets/images/freestyle_libre2_single_1788260930453.j
 import imgPromoOujda from '../assets/images/freestyle_promo_oujda_1788441986495.jpg';
 import imgPromoLibre3 from '../assets/images/freestyle_libre3_promo_flyer_1788452962096.jpg';
 import imgPromoOmnipod from '../assets/images/omnipod_5_promo_flyer_1788454250818.jpg';
+import imgDexcomG6Pack from '../assets/images/dexcom_g6_clean_1789129052228.jpg';
 
 export const CATEGORIES = [
-  { id: 'all', name: 'Tous les produits', count: 9 },
+  { id: 'all', name: 'Tous les produits', count: 10 },
   { id: 'offres-speciales', name: 'Offres Spéciales', count: 3 },
+  { id: 'dexcom', name: 'Dexcom G6', count: 1 },
   { id: 'libre-2', name: 'FreeStyle Libre 2 PLUS', count: 3 },
   { id: 'libre-3', name: 'FreeStyle Libre 3 PLUS', count: 2 },
-  { id: 'capteurs', name: 'Capteurs de Glycémie', count: 2 },
-  { id: 'packs', name: 'Packs Économiques', count: 2 },
   { id: 'omnipod', name: 'Omnipod 5', count: 1 },
+  { id: 'capteurs', name: 'Capteurs de Glycémie', count: 3 },
+  { id: 'packs', name: 'Packs Économiques', count: 3 },
   { id: 'lecteurs', name: 'Lecteurs & Kits', count: 1 },
   { id: 'accessoires', name: 'Accessoires & Soins', count: 3 },
 ];
@@ -573,5 +575,53 @@ export const PRODUCTS: Product[] = [
       'Notice en Français'
     ],
     isPopular: false,
+  },
+  {
+    id: 'dexcom-g6-kit-complet',
+    name: 'Kit Complet Dexcom G6 - Système CGM & 20 Patchs Sensor Shield',
+    category: 'dexcom',
+    categoryLabel: 'Dexcom G6',
+    brand: 'Dexcom',
+    shortDescription: 'Pack tout-en-un Dexcom G6 avec capteurs, applicateur automatique en 1 clic, transmetteur officiel Bluetooth et 20 patchs étanches Sensor Shield. Suivi continu sans piqûre au doigt.',
+    fullDescription: 'Le système Dexcom G6 révolutionne la gestion du diabète grâce à sa technologie de surveillance continue du glucose (CGM) en temps réel. Sans aucune piqûre au bout du doigt ni étalonnage requis, vos mesures de glycémie sont transmises toutes les 5 minutes directement sur votre smartphone compatible (iOS / Android) ou votre récepteur. Ce kit complet exclusif comprend les capteurs Dexcom G6 avec applicateur automatique indolore en un clic, le transmetteur officiel Dexcom G6 à connexion Bluetooth sécurisée, ainsi qu’une pochette de 20 patchs étanches Sensor Shield White pour une protection optimale lors de vos activités sportives, sous la douche et au quotidien. Produit 100% original, certifié et scellé d’origine avec livraison express partout au Maroc et paiement sécurisé à la livraison.',
+    price: 500,
+    originalPrice: 650,
+    discountPercentage: 23,
+    badge: 'Offre Spéciale',
+    inStock: true,
+    stockCount: 30,
+    rating: 5.0,
+    reviewsCount: 47,
+    image: imgDexcomG6Pack,
+    gallery: [
+      imgDexcomG6Pack,
+    ],
+    features: [
+      'Mesure continue du glucose en temps réel toutes les 5 minutes',
+      'Zéro piqûre au bout du doigt & aucune calibration requise',
+      'Transmetteur officiel Dexcom G6 Bluetooth inclus',
+      'Applicateur automatique en un seul clic, rapide et indolore',
+      'Alertes personnalisables et alerte d’urgence hypoglycémie prédictive',
+      'Pochette de 20 patchs adhésifs étanches Sensor Shield White incluse',
+      'Partage des données en direct avec vos proches et médecin (Dexcom Follow)',
+      'Livraison express 24h à 48h partout au Maroc avec paiement sécurisé à la livraison'
+    ],
+    specs: {
+      duration: '10 jours par capteur / 90 jours transmetteur',
+      waterproof: 'IP28 (résistant à l’eau)',
+      bloodSample: 'Sans piqûre au doigt (Zero fingersticks)',
+      alarms: 'Alertes d’urgence sonores & prédictives',
+      dimensions: 'Capteur ultra-plat et discret',
+      memory: 'Historique continu automatique dans l’app Dexcom G6',
+      appCompatibility: 'iOS et Android (Dexcom G6 & Dexcom Follow)',
+      calibration: 'Calibré en usine (aucun étalonnage requis)'
+    },
+    boxContents: [
+      'Boîte de capteurs Dexcom G6 avec applicateur automatique',
+      '1 Transmetteur officiel Dexcom G6 Bluetooth scellé',
+      '1 Pochette de 20 patchs adhésifs étanches Sensor Shield White',
+      'Guide d’utilisation complet et notice en français'
+    ],
+    isPopular: true,
   }
 ];
