@@ -6,6 +6,7 @@ import { PRODUCTS as INITIAL_PRODUCTS } from '../data/products';
 import { sendOrderEmailNotification } from '../utils/notificationService';
 import { doc, onSnapshot, setDoc, deleteDoc } from 'firebase/firestore';
 import { db } from '../utils/firebase';
+import { sanitizeProductForFirestore } from '../utils/productUtils';
 
 interface CartContextType {
   cart: CartItem[];
@@ -133,30 +134,34 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, [allProducts]);
 
   const updateProduct = async (updatedProduct: Product) => {
-    const updated = allProducts.map(p => p.id === updatedProduct.id ? updatedProduct : p);
+    const cleanProduct = sanitizeProductForFirestore(updatedProduct);
     
-    // 1. Immediate React state update
-    setAllProducts(updated);
+    // 1. Immediate React state update using functional updater
+    let updatedList: Product[] = [];
+    setAllProducts((prev) => {
+      updatedList = prev.map(p => p.id === cleanProduct.id ? cleanProduct : p);
+      return updatedList;
+    });
 
     // 2. Immediate LocalStorage persistence
     try {
-      localStorage.setItem(PRODUCTS_STORAGE_KEY, JSON.stringify(updated));
+      localStorage.setItem(PRODUCTS_STORAGE_KEY, JSON.stringify(updatedList));
     } catch (e) {
       console.error("Erreur sauvegarde localStorage:", e);
     }
 
-    // 3. Immediate Cloud Firestore persistence (both individual and full catalog doc)
+    // 3. Immediate Cloud Firestore persistence (clean object without undefined values)
     try {
-      await setDoc(doc(db, 'products', updatedProduct.id), updatedProduct, { merge: true });
+      await setDoc(doc(db, 'products', cleanProduct.id), cleanProduct, { merge: true });
       await setDoc(doc(db, 'products', 'parailaf_catalog_v1'), { 
-        products: updated,
+        products: updatedList,
         lastUpdated: new Date().toISOString()
       }, { merge: true });
     } catch (err) {
-      console.warn("Sauvegarde Cloud Firestore différée:", err);
+      console.error("Erreur Cloud Firestore lors de l'enregistrement du produit:", err);
     }
 
-    showToast(`✓ Produit "${updatedProduct.name}" enregistré avec succès !`);
+    showToast(`✓ Produit "${cleanProduct.name}" enregistré avec succès !`);
   };
 
   const addProduct = async (newProduct: Product) => {
@@ -166,35 +171,49 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
       finalProduct.id = `prod_${Date.now()}`;
     }
 
-    const updated = [finalProduct, ...allProducts];
-    setAllProducts(updated);
+    const cleanProduct = sanitizeProductForFirestore(finalProduct);
 
+    // 1. Immediate React state update with newly created product at the top
+    let updatedList: Product[] = [];
+    setAllProducts((prev) => {
+      const filtered = prev.filter(p => p.id !== cleanProduct.id);
+      updatedList = [cleanProduct, ...filtered];
+      return updatedList;
+    });
+
+    // 2. Immediate LocalStorage persistence
     try {
-      localStorage.setItem(PRODUCTS_STORAGE_KEY, JSON.stringify(updated));
+      localStorage.setItem(PRODUCTS_STORAGE_KEY, JSON.stringify(updatedList));
     } catch (e) {
       console.error("Erreur sauvegarde localStorage:", e);
     }
 
+    // 3. Immediate Cloud Firestore persistence
     try {
-      await setDoc(doc(db, 'products', finalProduct.id), finalProduct, { merge: true });
+      await setDoc(doc(db, 'products', cleanProduct.id), cleanProduct, { merge: true });
       await setDoc(doc(db, 'products', 'parailaf_catalog_v1'), { 
-        products: updated,
+        products: updatedList,
         lastUpdated: new Date().toISOString()
       }, { merge: true });
     } catch (err) {
-      console.warn("Sauvegarde Cloud Firestore différée:", err);
+      console.error("Erreur Cloud Firestore lors de l'ajout du produit:", err);
     }
 
-    showToast(`✓ Nouveau produit "${finalProduct.name || 'Produit'}" ajouté au catalogue !`);
+    showToast(`✓ Nouveau produit "${cleanProduct.name}" ajouté au catalogue !`);
   };
 
   const deleteProduct = async (productId: string) => {
-    const toDelete = allProducts.find(p => p.id === productId);
-    const updated = allProducts.filter(p => p.id !== productId);
-    setAllProducts(updated);
+    let toDeleteName = '';
+    let updatedList: Product[] = [];
+    setAllProducts((prev) => {
+      const toDelete = prev.find(p => p.id === productId);
+      toDeleteName = toDelete?.name || 'Produit';
+      updatedList = prev.filter(p => p.id !== productId);
+      return updatedList;
+    });
 
     try {
-      localStorage.setItem(PRODUCTS_STORAGE_KEY, JSON.stringify(updated));
+      localStorage.setItem(PRODUCTS_STORAGE_KEY, JSON.stringify(updatedList));
     } catch (e) {
       console.error("Erreur sauvegarde localStorage:", e);
     }
@@ -202,14 +221,14 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       await deleteDoc(doc(db, 'products', productId)).catch(() => {});
       await setDoc(doc(db, 'products', 'parailaf_catalog_v1'), { 
-        products: updated,
+        products: updatedList,
         lastUpdated: new Date().toISOString()
       }, { merge: true });
     } catch (err) {
-      console.warn("Suppression Cloud Firestore différée:", err);
+      console.error("Erreur suppression Cloud Firestore:", err);
     }
 
-    showToast(`✓ Produit "${toDelete?.name || ''}" supprimé.`);
+    showToast(`✓ Produit "${toDeleteName}" supprimé.`);
   };
 
   const [cart, setCart] = useState<CartItem[]>(() => {

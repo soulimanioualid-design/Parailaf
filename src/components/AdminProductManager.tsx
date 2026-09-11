@@ -34,6 +34,7 @@ export const AdminProductManager: React.FC<AdminProductManagerProps> = ({ initia
   const [search, setSearch] = useState('');
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [productToDelete, setProductToDelete] = useState<Product | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     if (initialProductId) {
@@ -334,34 +335,61 @@ export const AdminProductManager: React.FC<AdminProductManagerProps> = ({ initia
     setProductToDelete(null);
   };
 
-  // Save changes to Firestore
-  const handleSave = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!editingProduct) return;
+  // Save changes to Firestore and local catalog state
+  const handleSave = async (e?: React.FormEvent) => {
+    if (e && typeof e.preventDefault === 'function') {
+      e.preventDefault();
+    }
+    if (!editingProduct || isSaving) return;
 
-    if (!editingProduct.name.trim()) {
-      showToast("Veuillez renseigner au moins le nom du produit.");
+    if (!editingProduct.name || !editingProduct.name.trim()) {
+      showToast("⚠️ Veuillez renseigner le nom du produit.");
       return;
     }
 
-    const currentMain = getCurrentMainImage(editingProduct);
-    const secondary = getDistinctGallery(editingProduct);
-    const finalProduct: Product = {
-      ...editingProduct,
-      image: currentMain,
-      gallery: [currentMain, ...secondary]
-    };
+    try {
+      setIsSaving(true);
+      const currentMain = getCurrentMainImage(editingProduct);
+      const secondary = getDistinctGallery(editingProduct);
 
-    const isNew = !allProducts.some(p => p.id === finalProduct.id);
-    if (isNew) {
-      await addProduct(finalProduct);
-    } else {
-      await updateProduct(finalProduct);
+      // Auto fallback descriptions if empty so user is never blocked
+      const fallbackShort = editingProduct.shortDescription?.trim() 
+        || `${editingProduct.name.trim()} - Dispositif médical certifié disponible en stock au Maroc.`;
+      const fallbackFull = editingProduct.fullDescription?.trim() 
+        || `${editingProduct.name.trim()} - Matériel médical original certifié sous scellé d'origine. Livraison express 24h à 48h partout au Maroc et paiement sécurisé à la livraison.`;
+
+      const finalProduct: Product = {
+        ...editingProduct,
+        name: editingProduct.name.trim(),
+        price: typeof editingProduct.price === 'number' && !isNaN(editingProduct.price) && editingProduct.price >= 0 ? editingProduct.price : Number(editingProduct.price) || 0,
+        originalPrice: editingProduct.originalPrice && Number(editingProduct.originalPrice) > 0 ? Number(editingProduct.originalPrice) : undefined,
+        badge: editingProduct.badge?.trim() || undefined,
+        shortDescription: fallbackShort,
+        fullDescription: fallbackFull,
+        image: currentMain,
+        gallery: [currentMain, ...secondary.filter(img => img !== currentMain)]
+      };
+
+      const isNew = !allProducts.some(p => p.id === finalProduct.id);
+      if (isNew) {
+        await addProduct(finalProduct);
+      } else {
+        await updateProduct(finalProduct);
+      }
+
+      // Ensure custom image matches
+      if (currentMain) {
+        await updateProductImage(finalProduct.id, currentMain);
+      }
+
+      setSearch('');
+      setEditingProduct(null);
+    } catch (err: any) {
+      console.error("Erreur enregistrement produit:", err);
+      showToast("❌ Erreur lors de l'enregistrement. Veuillez réessayer.");
+    } finally {
+      setIsSaving(false);
     }
-
-    // Ensure custom image matches
-    updateProductImage(finalProduct.id, currentMain);
-    setEditingProduct(null);
   };
 
   // EDITING VIEW
@@ -422,18 +450,24 @@ export const AdminProductManager: React.FC<AdminProductManagerProps> = ({ initia
             )}
             <button 
               type="button"
+              disabled={isSaving}
               onClick={() => setEditingProduct(null)} 
-              className="px-3.5 py-2 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-xl transition cursor-pointer"
+              className="px-3.5 py-2 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-xl transition cursor-pointer disabled:opacity-50"
             >
               Annuler
             </button>
             <button 
-              type="submit"
-              form="product-edit-form"
-              className="px-4 py-2 bg-red-600 hover:bg-red-700 active:scale-98 text-white font-black text-xs rounded-xl flex items-center gap-1.5 shadow-sm transition cursor-pointer"
+              type="button"
+              onClick={() => handleSave()}
+              disabled={isSaving}
+              className="px-4 py-2 bg-red-600 hover:bg-red-700 active:scale-98 text-white font-black text-xs rounded-xl flex items-center gap-1.5 shadow-sm transition cursor-pointer disabled:opacity-50"
             >
-              <Save className="w-3.5 h-3.5" />
-              <span>{isNewProduct ? 'Créer le Produit' : 'Sauvegarder'}</span>
+              {isSaving ? (
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              ) : (
+                <Save className="w-3.5 h-3.5" />
+              )}
+              <span>{isSaving ? 'Enregistrement...' : isNewProduct ? 'Créer le Produit' : 'Sauvegarder'}</span>
             </button>
           </div>
         </div>
@@ -693,9 +727,9 @@ export const AdminProductManager: React.FC<AdminProductManagerProps> = ({ initia
               </div>
               <textarea
                 rows={2}
-                required
                 value={editingProduct.shortDescription}
                 onChange={e => setEditingProduct({ ...editingProduct, shortDescription: e.target.value })}
+                placeholder="Ex: Système de mesure en continu du glucose sans piqûre au doigt..."
                 className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-red-500"
               />
             </div>
@@ -716,9 +750,9 @@ export const AdminProductManager: React.FC<AdminProductManagerProps> = ({ initia
               </div>
               <textarea
                 rows={5}
-                required
                 value={editingProduct.fullDescription}
                 onChange={e => setEditingProduct({ ...editingProduct, fullDescription: e.target.value })}
+                placeholder="Ex: Description complète du produit, mode de fonctionnement, compatibilité..."
                 className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-red-500 leading-relaxed"
               />
             </div>
@@ -984,17 +1018,24 @@ export const AdminProductManager: React.FC<AdminProductManagerProps> = ({ initia
           <div className="pt-4 border-t border-slate-100 flex justify-end gap-3">
             <button
               type="button"
+              disabled={isSaving}
               onClick={() => setEditingProduct(null)}
-              className="px-5 py-2.5 text-slate-600 font-bold hover:bg-slate-100 rounded-xl transition cursor-pointer text-sm"
+              className="px-5 py-2.5 text-slate-600 font-bold hover:bg-slate-100 rounded-xl transition cursor-pointer text-sm disabled:opacity-50"
             >
               Annuler
             </button>
             <button
-              type="submit"
-              className="px-6 py-2.5 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl flex items-center gap-2 shadow-md transition cursor-pointer text-sm"
+              type="button"
+              disabled={isSaving}
+              onClick={() => handleSave()}
+              className="px-6 py-2.5 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl flex items-center gap-2 shadow-md transition cursor-pointer text-sm disabled:opacity-50"
             >
-              <Save className="w-4 h-4" />
-              <span>Sauvegarder les modifications</span>
+              {isSaving ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Save className="w-4 h-4" />
+              )}
+              <span>{isSaving ? 'Enregistrement en cours...' : isNewProduct ? 'Créer le Produit' : 'Sauvegarder les modifications'}</span>
             </button>
           </div>
         </form>

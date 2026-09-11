@@ -87,6 +87,13 @@ export const ProductGrid: React.FC = () => {
                 >
                   {isSpecial && <Flame className="w-3.5 h-3.5" />}
                   <span>{cat.name}</span>
+                  <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold ${
+                    isSelected 
+                      ? 'bg-white/20 text-white' 
+                      : 'bg-slate-200/80 text-slate-600'
+                  }`}>
+                    {cat.id === 'all' ? allProducts.length : allProducts.filter(p => p.category === cat.id).length}
+                  </span>
                 </button>
               );
             })}

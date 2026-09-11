@@ -18,6 +18,8 @@ export const CATEGORIES = [
   { id: 'offres-speciales', name: 'Offres Spéciales', count: 3 },
   { id: 'libre-2', name: 'FreeStyle Libre 2 PLUS', count: 3 },
   { id: 'libre-3', name: 'FreeStyle Libre 3 PLUS', count: 2 },
+  { id: 'capteurs', name: 'Capteurs de Glycémie', count: 2 },
+  { id: 'packs', name: 'Packs Économiques', count: 2 },
   { id: 'omnipod', name: 'Omnipod 5', count: 1 },
   { id: 'lecteurs', name: 'Lecteurs & Kits', count: 1 },
   { id: 'accessoires', name: 'Accessoires & Soins', count: 3 },
