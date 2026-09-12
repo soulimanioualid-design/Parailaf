@@ -43,7 +43,7 @@ export const ProductGrid: React.FC = () => {
       if (sortBy === 'price-asc') return a.price - b.price;
       if (sortBy === 'price-desc') return b.price - a.price;
       if (sortBy === 'rating') return b.rating - a.rating;
-      return (b.isPopular ? 1 : 0) - (a.isPopular ? 1 : 0);
+      return (a.sortOrder ?? 999) - (b.sortOrder ?? 999);
     });
   }, [allProducts, activeCategory, searchQuery, sortBy]);
 
