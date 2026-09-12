@@ -121,14 +121,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           // Document doesn't exist yet, seed it if we have local users
           const localUsers = localStorage.getItem(ACCOUNTS_STORAGE_KEY);
           if (localUsers) {
-             setDoc(doc(db, 'users', 'parailaf_all_users_v1'), { users: JSON.parse(localUsers) }).catch(console.error);
+             setDoc(doc(db, 'users', 'parailaf_all_users_v1'), { users: JSON.parse(localUsers) }).catch(() => {});
           }
         }
+        setUsersLoaded(true);
+      }, (err) => {
+        console.warn("Firebase users onSnapshot notice:", err?.message || err);
         setUsersLoaded(true);
       });
       return () => unsub();
     } catch (e) {
-      console.error("Firebase users sync error:", e);
+      console.warn("Firebase users sync notice:", e);
       setUsersLoaded(true);
     }
   }, []);

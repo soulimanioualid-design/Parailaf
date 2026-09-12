@@ -286,18 +286,19 @@ export const PRODUCTS: Product[] = [
     "stockCount": 22
   },
   {
-    "originalPrice": 550,
-    "badge": "Essentiel",
+    "originalPrice": 1000,
+    "badge": "Officiel",
     "features": [
       "Écran tactile couleur haute lisibilité",
       "Alarmes sonores et vibrations personnalisables",
+      "Scan sans contact NFC rapide en moins d'une seconde",
       "Conservation des données de glycémie pendant 90 jours",
       "Rechargeable via câble USB standard",
       "Port intégré pour bandelettes de secours FreeStyle Optium"
     ],
-    "image": "/src/assets/images/freestyle_reader_device_1788260869630.jpg",
+    "image": "/src/assets/images/freestyle_libre2_reader_1789237795597.jpg",
     "gallery": [
-      "/src/assets/images/freestyle_reader_device_1788260869630.jpg"
+      "/src/assets/images/freestyle_libre2_reader_1789237795597.jpg"
     ],
     "stockCount": 20,
     "reviewsCount": 52,
@@ -326,9 +327,9 @@ export const PRODUCTS: Product[] = [
     "inStock": true,
     "rating": 4.8,
     "isPopular": false,
-    "price": 450,
+    "price": 800,
     "name": "Lecteur Officiel FreeStyle Libre 2",
-    "shortDescription": "Appareil de lecture tactile dédié avec alarmes sonores et écran couleur haute lisibilité."
+    "shortDescription": "Lecteur officiel Abbott FreeStyle Libre 2 avec écran tactile couleur, alarmes sonores et scan sans contact."
   },
   {
     "categoryLabel": "Accessoires & Soins",

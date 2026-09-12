@@ -67,6 +67,8 @@ export const ExactFlyerDesign: React.FC<ExactFlyerDesignProps> = ({ onZoom }) =>
             localStorage.removeItem('parailaf_flyer_mobile');
           } catch {}
         }
+      }, (err) => {
+        console.warn("Firestore flyer image notice:", err?.message || err);
       });
       return () => unsub();
     } catch {

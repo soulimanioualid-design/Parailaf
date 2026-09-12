@@ -83,6 +83,8 @@ const PromoFlyerCard: React.FC<PromoFlyerItemProps> = ({
           setCustomImage(null);
           try { localStorage.removeItem(storageKey); } catch {}
         }
+      }, (err) => {
+        console.warn(`Firestore promo image notice [${storageKey}]:`, err?.message || err);
       });
       return () => unsub();
     } catch {

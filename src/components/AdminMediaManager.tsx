@@ -101,20 +101,26 @@ export const AdminMediaManager: React.FC<AdminMediaManagerProps> = ({ onPreviewS
         } else {
           setHeroImages({ desktop: null, mobile: null });
         }
+      }, (err) => {
+        console.warn("Firestore hero images notice:", err?.message || err);
       });
       return () => unsub();
     } catch (e) {
-      console.error(e);
+      console.warn("Hero images subscription notice:", e);
     }
   }, []);
 
   // 2. Subscribe to Solo Promos
   useEffect(() => {
     try {
-      const u1 = onSnapshot(doc(db, 'images', 'parailaf_flyer_fl2'), (s) => setPromoFL2(s.exists() && s.data().data ? s.data().data : null));
-      const u2 = onSnapshot(doc(db, 'images', 'parailaf_flyer_fl3'), (s) => setPromoFL3(s.exists() && s.data().data ? s.data().data : null));
-      const u3 = onSnapshot(doc(db, 'images', 'parailaf_flyer_omnipod5'), (s) => setPromoOmnipod(s.exists() && s.data().data ? s.data().data : null));
-      const u4 = onSnapshot(doc(db, 'images', 'parailaf_video_thumbnail'), (s) => setVideoThumbnail(s.exists() && s.data()?.data ? s.data().data : null));
+      const onError = (key: string) => (err: any) => {
+        console.warn(`Firestore promo image notice [${key}]:`, err?.message || err);
+      };
+
+      const u1 = onSnapshot(doc(db, 'images', 'parailaf_flyer_fl2'), (s) => setPromoFL2(s.exists() && s.data().data ? s.data().data : null), onError('fl2'));
+      const u2 = onSnapshot(doc(db, 'images', 'parailaf_flyer_fl3'), (s) => setPromoFL3(s.exists() && s.data().data ? s.data().data : null), onError('fl3'));
+      const u3 = onSnapshot(doc(db, 'images', 'parailaf_flyer_omnipod5'), (s) => setPromoOmnipod(s.exists() && s.data().data ? s.data().data : null), onError('omnipod5'));
+      const u4 = onSnapshot(doc(db, 'images', 'parailaf_video_thumbnail'), (s) => setVideoThumbnail(s.exists() && s.data()?.data ? s.data().data : null), onError('video_thumb'));
 
       return () => {
         u1();
@@ -123,7 +129,7 @@ export const AdminMediaManager: React.FC<AdminMediaManagerProps> = ({ onPreviewS
         u4();
       };
     } catch (e) {
-      console.error(e);
+      console.warn("Promo images subscription notice:", e);
     }
   }, []);
 

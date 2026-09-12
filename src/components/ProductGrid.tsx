@@ -27,6 +27,8 @@ export const ProductGrid: React.FC = () => {
       const matchesCategory = 
         activeCategory === 'all' || 
         product.category === activeCategory ||
+        (activeCategory === 'libre-2' && (product.category === 'libre-2' || product.id.includes('fsl2') || product.name.toLowerCase().includes('libre 2'))) ||
+        (activeCategory === 'lecteurs' && (product.category === 'lecteurs' || product.id.includes('lecteur') || product.categoryLabel?.toLowerCase().includes('lecteur'))) ||
         (activeCategory === 'dexcom' && (product.category === 'dexcom' || product.brand.toLowerCase().includes('dexcom'))) ||
         (activeCategory === 'capteurs' && (product.category === 'capteurs' || product.category === 'libre-2' || product.category === 'libre-3' || product.category === 'dexcom' || product.id.includes('capteur'))) ||
         (activeCategory === 'packs' && (product.category === 'packs' || product.id.includes('pack') || product.id.includes('kit')));

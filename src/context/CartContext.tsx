@@ -7,6 +7,7 @@ import imgPack4Custom from '../assets/images/custom_pack-4-fsl2-plus.jpg';
 import imgDexcomG6Pack from '../assets/images/dexcom_g6_clean_1789129052228.jpg';
 import imgDexcomG7 from '../assets/images/dexcom_g7_box_sensor_1789135976489.jpg';
 import imgTrousseIsotherme from '../assets/images/trousse_isotherme_bleue_1789135961656.jpg';
+import imgFsl2Lecteur from '../assets/images/freestyle_libre2_reader_1789237795597.jpg';
 import { sendOrderEmailNotification } from '../utils/notificationService';
 import { doc, onSnapshot, setDoc, deleteDoc, collection, writeBatch } from 'firebase/firestore';
 import { db } from '../utils/firebase';
@@ -78,7 +79,7 @@ const CartContext = createContext<CartContextType | undefined>(undefined);
 
 const CART_STORAGE_KEY = 'parailaf_cart_v1';
 const ORDERS_STORAGE_KEY = 'parailaf_all_orders_v2';
-const PRODUCTS_STORAGE_KEY = 'parailaf_catalog_v3';
+const PRODUCTS_STORAGE_KEY = 'parailaf_catalog_v4';
 
 export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [allProducts, setAllProducts] = useState<Product[]>(() => {
@@ -113,10 +114,9 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // Sync products catalog with Firestore
   useEffect(() => {
     let unsubCatalog: (() => void) | null = null;
-    let unsubCollection: (() => void) | null = null;
 
     try {
-      // 1. Listen to aggregate catalog document
+      // Listen to aggregate catalog document (1 read instead of N reads)
       unsubCatalog = onSnapshot(doc(db, 'products', 'parailaf_catalog_v1'), (snap) => {
         if (snap.exists()) {
           const data = snap.data();
@@ -137,43 +137,17 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
         setProductsLoaded(true);
       }, (err) => {
-        console.warn("Firebase products onSnapshot warning:", err);
+        console.warn("Firebase products onSnapshot notice:", err?.message || err);
         setProductsLoaded(true);
       });
 
-      // 2. Also listen to individual product documents in 'products' collection
-      unsubCollection = onSnapshot(collection(db, 'products'), (snapshot) => {
-        const individualProducts: Product[] = [];
-        snapshot.forEach((d) => {
-          if (d.id !== 'parailaf_catalog_v1') {
-            const prodData = d.data() as Product;
-            if (prodData && prodData.name && prodData.price !== undefined) {
-              individualProducts.push(sanitizeProductForFirestore(prodData));
-            }
-          }
-        });
-
-        if (individualProducts.length > 0) {
-          setAllProducts((prev) => {
-            const merged = individualProducts.sort((a, b) => (a.sortOrder ?? 999) - (b.sortOrder ?? 999));
-            try {
-              localStorage.setItem(PRODUCTS_STORAGE_KEY, JSON.stringify(merged));
-            } catch {}
-            return merged;
-          });
-        }
-      }, (err) => {
-        console.warn("Collection products snapshot warning:", err);
-      });
-
     } catch (e) {
-      console.error("Firebase products sync error:", e);
+      console.warn("Firebase products sync error:", e);
       setProductsLoaded(true);
     }
 
     return () => {
       if (unsubCatalog) unsubCatalog();
-      if (unsubCollection) unsubCollection();
     };
   }, []);
 
@@ -348,14 +322,17 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         } else {
            // Document doesn't exist, we can push local state to it
            if (allOrders.length > 0) {
-              setDoc(doc(db, 'orders', 'parailaf_all_orders_v1'), { orders: allOrders }).catch(console.error);
+              setDoc(doc(db, 'orders', 'parailaf_all_orders_v1'), { orders: allOrders }).catch(() => {});
            }
         }
+        setOrdersLoaded(true);
+      }, (err) => {
+        console.warn("Firebase orders onSnapshot notice:", err?.message || err);
         setOrdersLoaded(true);
       });
       return () => unsub();
     } catch (e) {
-      console.error("Firebase orders sync error:", e);
+      console.warn("Firebase orders sync error:", e);
       setOrdersLoaded(true);
     }
   }, []);
@@ -391,6 +368,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     'dexcom-g6-kit-complet': imgDexcomG6Pack,
     'dexcom-g7-capteur': imgDexcomG7,
     'trousse-isotherme-diabete': imgTrousseIsotherme,
+    'fsl2-lecteur-officiel': imgFsl2Lecteur,
   };
 
   const [productCustomImages, setProductCustomImages] = useState<Record<string, string>>(() => {
@@ -418,10 +396,12 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
             localStorage.setItem('parailaf_product_images', JSON.stringify(merged));
           } catch {}
         }
+      }, (err) => {
+        console.warn("Firebase product images onSnapshot notice:", err?.message || err);
       });
       return () => unsub();
     } catch (e) {
-      console.error(e);
+      console.warn("Product images sync notice:", e);
     }
   }, []);
 

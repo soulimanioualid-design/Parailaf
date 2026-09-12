@@ -45,6 +45,8 @@ export const FlyerPoster: React.FC<FlyerPosterProps> = ({ onZoom, showTabs = tru
             setFlyerImg(img);
           }
         }
+      }, (err) => {
+        console.warn("Firestore flyer poster image notice:", err?.message || err);
       });
       return () => unsub();
     } catch {}

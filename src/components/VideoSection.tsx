@@ -47,6 +47,8 @@ export const VideoSection: React.FC = () => {
           setCustomThumbnail(null);
           try { localStorage.removeItem('parailaf_video_thumbnail'); } catch {}
         }
+      }, (err) => {
+        console.warn("Firestore video thumbnail notice:", err?.message || err);
       });
       return () => unsub();
     } catch {
