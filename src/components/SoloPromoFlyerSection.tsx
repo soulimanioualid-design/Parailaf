@@ -174,27 +174,9 @@ const PromoFlyerCard: React.FC<PromoFlyerItemProps> = ({
         </div>
       </div>
 
-      {/* Price & The Two Action Buttons: Commande & WhatsApp */}
+      {/* Action Buttons: Commande & WhatsApp */}
       <div className="p-5 bg-white space-y-4 text-center">
         
-        {/* Price Display */}
-        <div className="flex flex-col items-center justify-center gap-2">
-          <div className="flex items-baseline gap-2">
-            <span className="text-3xl sm:text-4xl font-black text-red-600 tracking-tight">
-              {product.price} DH
-            </span>
-            {product.originalPrice && (
-              <span className="text-base text-slate-400 line-through font-bold">
-                {product.originalPrice} DH
-              </span>
-            )}
-          </div>
-          <span className="inline-flex items-center gap-1 text-xs bg-emerald-100 text-emerald-800 font-bold px-3 py-1 rounded-full border border-emerald-300 text-center">
-            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-            En stock • Paiement à la livraison
-          </span>
-        </div>
-
         {/* The 2 Requested Buttons */}
         <div className="flex flex-col items-stretch justify-center gap-3.5 max-w-xl mx-auto pt-2">
           
@@ -204,7 +186,7 @@ const PromoFlyerCard: React.FC<PromoFlyerItemProps> = ({
             className="flex-1 py-4 px-6 bg-red-600 hover:bg-red-700 active:scale-[0.98] text-white font-extrabold text-base rounded-2xl shadow-xl shadow-red-600/25 flex items-center justify-center gap-2.5 transition cursor-pointer"
           >
             <ShoppingBag className="w-5 h-5" />
-            <span>Passer Commande ({product.price} DH)</span>
+            <span>Passer Commande</span>
           </button>
 
           {/* Button 2: WhatsApp */}
@@ -217,7 +199,6 @@ const PromoFlyerCard: React.FC<PromoFlyerItemProps> = ({
             <MessageCircle className="w-5 h-5 fill-white text-emerald-600" />
             <span>Commander par WhatsApp</span>
           </a>
-
         </div>
 
         {/* Reassurance Guarantees & Contact Info */}
@@ -265,7 +246,7 @@ const PromoFlyerCard: React.FC<PromoFlyerItemProps> = ({
                 className="px-5 py-2.5 bg-red-600 hover:bg-red-700 text-white font-bold text-xs rounded-xl shadow-lg flex items-center gap-2 cursor-pointer"
               >
                 <ShoppingBag className="w-4 h-4" />
-                <span>Commander ({product.price} DH)</span>
+                <span>Commander</span>
               </button>
 
               <a
@@ -324,8 +305,8 @@ export const SoloPromoFlyerSection: React.FC = () => {
             defaultImage={imgPromoFSL2}
             storageKey="parailaf_promo_flyer_custom_img"
             badgeLabel={`PROMOTION ${prodFSL2.price} DH`}
-            title={prodFSL2.name || "FreeStyle Libre 2"}
-            versionHighlight="PLUS"
+            title="FreeStyle Libre 2"
+            versionHighlight=""
             subtitle={prodFSL2.shortDescription || "Système officiel de mesure du glucose en continu 24h/24 sans piqûre au bout des doigts."}
             durationLabel="Jusqu’à 14-15 Jours"
             whatsappMessageText={`Bonjour, je souhaite commander l'Offre Spéciale ${prodFSL2.name} à ${prodFSL2.price} DH.`}
@@ -333,15 +314,14 @@ export const SoloPromoFlyerSection: React.FC = () => {
             badgeColorClass="bg-amber-400"
             certLabel="Dispositif Médical Certifié Abbott"
           />
-
           {/* 2ème Produit Affiche : FreeStyle Libre 3 PLUS */}
           <PromoFlyerCard
             product={prodFSL3}
             defaultImage={imgPromoFSL3}
             storageKey="parailaf_promo_flyer_fsl3_custom_img"
             badgeLabel={`PROMOTION ${prodFSL3.price} DH`}
-            title={prodFSL3.name || "FreeStyle Libre 3"}
-            versionHighlight="PLUS"
+            title="FreeStyle Libre 3"
+            versionHighlight=""
             subtitle={prodFSL3.shortDescription || "Capteur nouvelle génération ultra-discret, mesure continue sans piqûres, alertes en temps réel."}
             durationLabel="Jusqu’à 15 Jours"
             whatsappMessageText={`Bonjour, je souhaite commander l'Offre Spéciale ${prodFSL3.name} à ${prodFSL3.price} DH.`}
@@ -349,15 +329,15 @@ export const SoloPromoFlyerSection: React.FC = () => {
             badgeColorClass="bg-amber-400"
             certLabel="Dispositif Médical Certifié Abbott"
           />
-
           {/* 3ème Produit Affiche : Omnipod 5 (Boîte de 5 Pods) */}
           <PromoFlyerCard
             product={prodOmnipod}
             defaultImage={imgPromoOmnipod}
             storageKey="parailaf_promo_flyer_omnipod_custom_img"
             badgeLabel={`PROMOTION ${prodOmnipod.price} DH`}
-            title={prodOmnipod.name || "Omnipod 5"}
-            versionHighlight="(Boîte 5 Pods)"
+            title="Omnipod DASH"
+            versionHighlight=""
+
             subtitle={prodOmnipod.shortDescription || "Système automatisé d'administration d'insuline tubeless (sans tubulure) de nouvelle génération."}
             durationLabel="Pack 5 Pods (15 Jours)"
             whatsappMessageText={`Bonjour, je souhaite commander l'Offre Spéciale ${prodOmnipod.name} à ${prodOmnipod.price} DH.`}
