@@ -78,7 +78,7 @@ const CartContext = createContext<CartContextType | undefined>(undefined);
 
 const CART_STORAGE_KEY = 'parailaf_cart_v1';
 const ORDERS_STORAGE_KEY = 'parailaf_all_orders_v2';
-const PRODUCTS_STORAGE_KEY = 'parailaf_catalog_v2';
+const PRODUCTS_STORAGE_KEY = 'parailaf_catalog_v3';
 
 export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [allProducts, setAllProducts] = useState<Product[]>(() => {
@@ -122,12 +122,8 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
           const data = snap.data();
           if (data && Array.isArray(data.products) && data.products.length > 0) {
             setAllProducts((prev) => {
-              const map = new Map<string, Product>();
-              data.products.forEach((p: Product) => map.set(p.id, sanitizeProductForFirestore(p)));
-              prev.forEach(p => {
-                if (!map.has(p.id)) map.set(p.id, p);
-              });
-              const merged = Array.from(map.values()).sort((a, b) => (a.sortOrder ?? 999) - (b.sortOrder ?? 999));
+              const catalogProds = data.products.map((p: Product) => sanitizeProductForFirestore(p));
+              const merged = catalogProds.sort((a, b) => (a.sortOrder ?? 999) - (b.sortOrder ?? 999));
               try {
                 localStorage.setItem(PRODUCTS_STORAGE_KEY, JSON.stringify(merged));
               } catch {}
@@ -159,10 +155,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
         if (individualProducts.length > 0) {
           setAllProducts((prev) => {
-            const map = new Map<string, Product>();
-            prev.forEach(p => map.set(p.id, p));
-            individualProducts.forEach(p => map.set(p.id, p));
-            const merged = Array.from(map.values()).sort((a, b) => (a.sortOrder ?? 999) - (b.sortOrder ?? 999));
+            const merged = individualProducts.sort((a, b) => (a.sortOrder ?? 999) - (b.sortOrder ?? 999));
             try {
               localStorage.setItem(PRODUCTS_STORAGE_KEY, JSON.stringify(merged));
             } catch {}
