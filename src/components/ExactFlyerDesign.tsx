@@ -13,7 +13,7 @@ import {
   PhoneCall
 } from 'lucide-react';
 import { useCart } from '../context/CartContext';
-import flyerGenerated from '../assets/images/freestyle_promo_flyer_1788255081953.jpg';
+import flyerGenerated from '../assets/images/active_parailaf_flyer_image_custom.jpg';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { db } from '../utils/firebase';
 
@@ -23,7 +23,7 @@ interface ExactFlyerDesignProps {
 
 export const ExactFlyerDesign: React.FC<ExactFlyerDesignProps> = ({ onZoom }) => {
   const { addToCart, setIsCartOpen, allProducts } = useCart();
-  const [images, setImages] = useState<{ desktop: string | null; mobile: string | null }>({ desktop: null, mobile: null });
+  const [images, setImages] = useState<{ desktop: string | null; mobile: string | null }>({ desktop: flyerGenerated, mobile: flyerGenerated });
 
   const pack4 = allProducts.find(p => p.id === 'pack-4-fsl2-plus') || allProducts[0];
   const pack10 = allProducts.find(p => p.id === 'pack-10-fsl2-plus') || allProducts[1];

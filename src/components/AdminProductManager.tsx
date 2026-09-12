@@ -19,7 +19,9 @@ import {
   ListPlus,
   ArrowLeft,
   Copy,
-  CheckCircle2
+  CheckCircle2,
+  ArrowUp,
+  ArrowDown
 } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 import { Product } from '../types';
@@ -30,7 +32,7 @@ interface AdminProductManagerProps {
 }
 
 export const AdminProductManager: React.FC<AdminProductManagerProps> = ({ initialProductId }) => {
-  const { allProducts, updateProduct, addProduct, deleteProduct, productCustomImages, updateProductImage, showToast } = useCart();
+  const { allProducts, updateProduct, addProduct, deleteProduct, reorderProducts, productCustomImages, updateProductImage, showToast } = useCart();
   const [search, setSearch] = useState('');
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [productToDelete, setProductToDelete] = useState<Product | null>(null);
@@ -59,6 +61,25 @@ export const AdminProductManager: React.FC<AdminProductManagerProps> = ({ initia
   const replaceIndexRef = useRef<number | null>(null);
 
   const filtered = allProducts.filter(p => p.name.toLowerCase().includes(search.toLowerCase()));
+
+  const handleMoveProduct = (index: number, direction: 'up' | 'down') => {
+    if (search.trim() !== '') {
+      showToast("Veuillez vider la recherche pour réorganiser les produits.");
+      return;
+    }
+    const list = [...allProducts];
+    if (direction === 'up' && index > 0) {
+      const temp = list[index];
+      list[index] = list[index - 1];
+      list[index - 1] = temp;
+      reorderProducts(list);
+    } else if (direction === 'down' && index < list.length - 1) {
+      const temp = list[index];
+      list[index] = list[index + 1];
+      list[index + 1] = temp;
+      reorderProducts(list);
+    }
+  };
 
   // AI Generator function
   const handleAiAction = async (mode: 'all' | 'improve_title' | 'improve_short' | 'improve_full' | 'improve_specs' | 'improve_box') => {
@@ -192,7 +213,7 @@ export const AdminProductManager: React.FC<AdminProductManagerProps> = ({ initia
 
     try {
       showToast('Optimisation de la photo...');
-      const compressed = await compressImageFile(file, 1200, 0.85);
+      const compressed = await compressImageFile(file, 800, 0.75);
 
       const currentMain = getCurrentMainImage(editingProduct);
       const secondary = getDistinctGallery(editingProduct);
@@ -1101,7 +1122,7 @@ export const AdminProductManager: React.FC<AdminProductManagerProps> = ({ initia
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-          {filtered.map(product => {
+          {filtered.map((product, index) => {
             const mainImg = getCurrentMainImage(product);
             const gallery = getDistinctGallery(product);
             const photoCount = 1 + gallery.length;
@@ -1173,6 +1194,32 @@ export const AdminProductManager: React.FC<AdminProductManagerProps> = ({ initia
 
                   {/* Actions bar: Modifier, Dupliquer, Supprimer */}
                   <div className="flex items-center gap-2">
+                    {/* Reorder Buttons */}
+                    <div className="flex items-center gap-1 bg-slate-100 rounded-xl p-1">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleMoveProduct(index, 'up');
+                        }}
+                        disabled={index === 0 || search.trim() !== ''}
+                        className="p-1.5 hover:bg-white text-slate-500 hover:text-slate-900 rounded-lg transition disabled:opacity-30 disabled:hover:bg-transparent"
+                        title="Déplacer vers le haut"
+                      >
+                        <ArrowUp className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleMoveProduct(index, 'down');
+                        }}
+                        disabled={index === filtered.length - 1 || search.trim() !== ''}
+                        className="p-1.5 hover:bg-white text-slate-500 hover:text-slate-900 rounded-lg transition disabled:opacity-30 disabled:hover:bg-transparent"
+                        title="Déplacer vers le bas"
+                      >
+                        <ArrowDown className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+
                     <button
                       onClick={() => setEditingProduct(product)}
                       className="flex-1 py-2.5 px-3 bg-red-600 hover:bg-red-700 active:scale-98 text-white font-black text-xs rounded-xl flex items-center justify-center gap-1.5 shadow-sm transition cursor-pointer"

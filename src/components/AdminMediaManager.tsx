@@ -26,10 +26,10 @@ import { db } from '../utils/firebase';
 import { compressImageFile } from '../utils/imageCompressor';
 import { useCart } from '../context/CartContext';
 
-import defaultHeroFlyer from '../assets/images/freestyle_promo_flyer_1788255081953.jpg';
-import defaultFlyerFL2 from '../assets/images/freestyle_promo_oujda_1788441986495.jpg';
-import defaultFlyerFL3 from '../assets/images/freestyle_libre3_promo_flyer_1788452962096.jpg';
-import defaultFlyerOmnipod from '../assets/images/omnipod_5_promo_flyer_1788454250818.jpg';
+import defaultHeroFlyer from '../assets/images/active_parailaf_flyer_image_custom.jpg';
+import defaultFlyerFL2 from '../assets/images/active_parailaf_promo_flyer_custom_img.jpg';
+import defaultFlyerFL3 from '../assets/images/active_parailaf_promo_flyer_fsl3_custom_img.jpg';
+import defaultFlyerOmnipod from '../assets/images/active_parailaf_promo_flyer_omnipod_custom_img.jpg';
 
 interface AdminMediaManagerProps {
   onPreviewSection?: (sectionId: string) => void;

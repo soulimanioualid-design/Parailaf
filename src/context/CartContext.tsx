@@ -3,10 +3,14 @@ import { Product, CartItem, Order, OrderCustomerInfo } from '../types';
 import { BRAND_CONFIG } from '../data/config';
 import { INITIAL_SEED_ORDERS } from '../data/seedOrders';
 import { PRODUCTS as INITIAL_PRODUCTS } from '../data/products';
+import imgPack4Custom from '../assets/images/custom_pack-4-fsl2-plus.jpg';
+import imgDexcomG6Pack from '../assets/images/dexcom_g6_clean_1789129052228.jpg';
+import imgDexcomG7 from '../assets/images/dexcom_g7_box_sensor_1789135976489.jpg';
+import imgTrousseIsotherme from '../assets/images/trousse_isotherme_bleue_1789135961656.jpg';
 import { sendOrderEmailNotification } from '../utils/notificationService';
-import { doc, onSnapshot, setDoc, deleteDoc } from 'firebase/firestore';
+import { doc, onSnapshot, setDoc, deleteDoc, collection, writeBatch } from 'firebase/firestore';
 import { db } from '../utils/firebase';
-import { sanitizeProductForFirestore } from '../utils/productUtils';
+import { sanitizeProductForFirestore, prepareCatalogForFirestore } from '../utils/productUtils';
 
 interface CartContextType {
   cart: CartItem[];
@@ -46,6 +50,7 @@ interface CartContextType {
   updateProduct: (product: Product) => void;
   addProduct: (product: Product) => Promise<void>;
   deleteProduct: (productId: string) => Promise<void>;
+  reorderProducts: (reorderedProducts: Product[]) => Promise<void>;
   
   // Product Images Override (Admin controlled)
   productCustomImages: Record<string, string>;
@@ -82,7 +87,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (saved) {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed) && parsed.length > 0) {
-          return parsed;
+          return parsed.sort((a, b) => (a.sortOrder ?? 999) - (b.sortOrder ?? 999));
         }
       }
     } catch (e) {
@@ -92,24 +97,46 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   });
   const [productsLoaded, setProductsLoaded] = useState(false);
 
+  // Safe helper to sync parailaf_catalog_v1 without exceeding Firestore 1MB limit
+  const safeSyncCatalogDocument = async (products: Product[]) => {
+    try {
+      const safeCatalog = prepareCatalogForFirestore(products);
+      await setDoc(doc(db, 'products', 'parailaf_catalog_v1'), { 
+        products: safeCatalog,
+        lastUpdated: new Date().toISOString()
+      }, { merge: true });
+    } catch (err: any) {
+      console.warn("Notice: Sync to parailaf_catalog_v1 skipped/failed, individual product docs remain authoritative:", err?.message || err);
+    }
+  };
+
   // Sync products catalog with Firestore
   useEffect(() => {
+    let unsubCatalog: (() => void) | null = null;
+    let unsubCollection: (() => void) | null = null;
+
     try {
-      const unsub = onSnapshot(doc(db, 'products', 'parailaf_catalog_v1'), (snap) => {
+      // 1. Listen to aggregate catalog document
+      unsubCatalog = onSnapshot(doc(db, 'products', 'parailaf_catalog_v1'), (snap) => {
         if (snap.exists()) {
           const data = snap.data();
           if (data && Array.isArray(data.products) && data.products.length > 0) {
-            setAllProducts(data.products);
-            try {
-              localStorage.setItem(PRODUCTS_STORAGE_KEY, JSON.stringify(data.products));
-            } catch {}
+            setAllProducts((prev) => {
+              const map = new Map<string, Product>();
+              data.products.forEach((p: Product) => map.set(p.id, sanitizeProductForFirestore(p)));
+              prev.forEach(p => {
+                if (!map.has(p.id)) map.set(p.id, p);
+              });
+              const merged = Array.from(map.values()).sort((a, b) => (a.sortOrder ?? 999) - (b.sortOrder ?? 999));
+              try {
+                localStorage.setItem(PRODUCTS_STORAGE_KEY, JSON.stringify(merged));
+              } catch {}
+              return merged;
+            });
           }
         } else {
            if (allProducts.length > 0) {
-              setDoc(doc(db, 'products', 'parailaf_catalog_v1'), { 
-                products: allProducts,
-                lastUpdated: new Date().toISOString()
-              }).catch(console.error);
+              safeSyncCatalogDocument(allProducts);
            }
         }
         setProductsLoaded(true);
@@ -117,11 +144,44 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         console.warn("Firebase products onSnapshot warning:", err);
         setProductsLoaded(true);
       });
-      return () => unsub();
+
+      // 2. Also listen to individual product documents in 'products' collection
+      unsubCollection = onSnapshot(collection(db, 'products'), (snapshot) => {
+        const individualProducts: Product[] = [];
+        snapshot.forEach((d) => {
+          if (d.id !== 'parailaf_catalog_v1') {
+            const prodData = d.data() as Product;
+            if (prodData && prodData.name && prodData.price !== undefined) {
+              individualProducts.push(sanitizeProductForFirestore(prodData));
+            }
+          }
+        });
+
+        if (individualProducts.length > 0) {
+          setAllProducts((prev) => {
+            const map = new Map<string, Product>();
+            prev.forEach(p => map.set(p.id, p));
+            individualProducts.forEach(p => map.set(p.id, p));
+            const merged = Array.from(map.values()).sort((a, b) => (a.sortOrder ?? 999) - (b.sortOrder ?? 999));
+            try {
+              localStorage.setItem(PRODUCTS_STORAGE_KEY, JSON.stringify(merged));
+            } catch {}
+            return merged;
+          });
+        }
+      }, (err) => {
+        console.warn("Collection products snapshot warning:", err);
+      });
+
     } catch (e) {
       console.error("Firebase products sync error:", e);
       setProductsLoaded(true);
     }
+
+    return () => {
+      if (unsubCatalog) unsubCatalog();
+      if (unsubCollection) unsubCollection();
+    };
   }, []);
 
   // Save allProducts to localStorage whenever it changes
@@ -150,16 +210,16 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
       console.error("Erreur sauvegarde localStorage:", e);
     }
 
-    // 3. Immediate Cloud Firestore persistence (clean object without undefined values)
+    // 3. Immediate Cloud Firestore persistence
     try {
+      // Always persist the individual document (has its own full 1MB budget)
       await setDoc(doc(db, 'products', cleanProduct.id), cleanProduct, { merge: true });
-      await setDoc(doc(db, 'products', 'parailaf_catalog_v1'), { 
-        products: updatedList,
-        lastUpdated: new Date().toISOString()
-      }, { merge: true });
     } catch (err) {
-      console.error("Erreur Cloud Firestore lors de l'enregistrement du produit:", err);
+      console.error("Erreur Cloud Firestore enregistrement doc individuel:", err);
     }
+
+    // Safely sync the aggregate catalog
+    await safeSyncCatalogDocument(updatedList);
 
     showToast(`✓ Produit "${cleanProduct.name}" enregistré avec succès !`);
   };
@@ -190,14 +250,14 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     // 3. Immediate Cloud Firestore persistence
     try {
+      // Always persist the individual document (has its own full 1MB budget)
       await setDoc(doc(db, 'products', cleanProduct.id), cleanProduct, { merge: true });
-      await setDoc(doc(db, 'products', 'parailaf_catalog_v1'), { 
-        products: updatedList,
-        lastUpdated: new Date().toISOString()
-      }, { merge: true });
     } catch (err) {
-      console.error("Erreur Cloud Firestore lors de l'ajout du produit:", err);
+      console.error("Erreur Cloud Firestore ajout doc individuel:", err);
     }
+
+    // Safely sync the aggregate catalog
+    await safeSyncCatalogDocument(updatedList);
 
     showToast(`✓ Nouveau produit "${cleanProduct.name}" ajouté au catalogue !`);
   };
@@ -220,15 +280,38 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     try {
       await deleteDoc(doc(db, 'products', productId)).catch(() => {});
-      await setDoc(doc(db, 'products', 'parailaf_catalog_v1'), { 
-        products: updatedList,
-        lastUpdated: new Date().toISOString()
-      }, { merge: true });
     } catch (err) {
-      console.error("Erreur suppression Cloud Firestore:", err);
+      console.error("Erreur suppression doc Firestore:", err);
     }
 
+    await safeSyncCatalogDocument(updatedList);
+
     showToast(`✓ Produit "${toDeleteName}" supprimé.`);
+  };
+
+  const reorderProducts = async (reorderedProducts: Product[]) => {
+    // assign sortOrder based on index
+    const updatedList = reorderedProducts.map((p, index) => ({ ...p, sortOrder: index }));
+    
+    setAllProducts(updatedList);
+    
+    try {
+      localStorage.setItem(PRODUCTS_STORAGE_KEY, JSON.stringify(updatedList));
+    } catch (e) {
+      console.error("Erreur sauvegarde localStorage:", e);
+    }
+    
+    // Save to Firestore catalog (the aggregate doc)
+    await safeSyncCatalogDocument(updatedList);
+    
+    // Update sortOrder on individual documents in the background in a single batch
+    const batch = writeBatch(db);
+    updatedList.forEach(p => {
+      batch.set(doc(db, 'products', p.id), { sortOrder: p.sortOrder }, { merge: true });
+    });
+    batch.commit().catch(err => console.error("Erreur lors de la mise à jour de l'ordre:", err));
+    
+    showToast(`✓ L'ordre des produits a été mis à jour.`);
   };
 
   const [cart, setCart] = useState<CartItem[]>(() => {
@@ -310,13 +393,24 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [searchQuery, setSearchQuery] = useState<string>('');
 
   // Product Custom Images (Admin Managed)
+  const DEFAULT_PRODUCT_IMAGES: Record<string, string> = {
+    'pack-4-fsl2-plus': imgPack4Custom,
+    'dexcom-g6-kit-complet': imgDexcomG6Pack,
+    'dexcom-g7-capteur': imgDexcomG7,
+    'trousse-isotherme-diabete': imgTrousseIsotherme,
+  };
+
   const [productCustomImages, setProductCustomImages] = useState<Record<string, string>>(() => {
     try {
       const saved = localStorage.getItem('parailaf_product_images');
-      return saved ? JSON.parse(saved) : {};
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        return { ...DEFAULT_PRODUCT_IMAGES, ...parsed };
+      }
     } catch {
-      return {};
+      // ignore
     }
+    return DEFAULT_PRODUCT_IMAGES;
   });
 
   // Sync custom product images from Firestore
@@ -325,9 +419,10 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const unsub = onSnapshot(doc(db, 'images', 'parailaf_product_images_custom'), (snap) => {
         if (snap.exists()) {
           const data = snap.data() as Record<string, string>;
-          setProductCustomImages(data || {});
+          const merged = { ...DEFAULT_PRODUCT_IMAGES, ...(data || {}) };
+          setProductCustomImages(merged);
           try {
-            localStorage.setItem('parailaf_product_images', JSON.stringify(data || {}));
+            localStorage.setItem('parailaf_product_images', JSON.stringify(merged));
           } catch {}
         }
       });
@@ -615,6 +710,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         updateProduct,
         addProduct,
         deleteProduct,
+        reorderProducts,
         lastOrder,
         allOrders,
         createOrder,

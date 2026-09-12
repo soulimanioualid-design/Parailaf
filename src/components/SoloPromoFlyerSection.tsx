@@ -18,9 +18,9 @@ import { useCart } from '../context/CartContext';
 import { STANDALONE_PROMO_550, STANDALONE_PROMO_850, STANDALONE_PROMO_3000 } from '../data/products';
 import { BRAND_CONFIG } from '../data/config';
 import { Product } from '../types';
-import imgPromoFSL2 from '../assets/images/freestyle_promo_oujda_1788441986495.jpg';
-import imgPromoFSL3 from '../assets/images/freestyle_libre3_promo_flyer_1788452962096.jpg';
-import imgPromoOmnipod from '../assets/images/omnipod_5_promo_flyer_1788454250818.jpg';
+import imgPromoFSL2 from '../assets/images/active_parailaf_promo_flyer_custom_img.jpg';
+import imgPromoFSL3 from '../assets/images/active_parailaf_promo_flyer_fsl3_custom_img.jpg';
+import imgPromoOmnipod from '../assets/images/active_parailaf_promo_flyer_omnipod_custom_img.jpg';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { db } from '../utils/firebase';
 
@@ -56,7 +56,14 @@ const PromoFlyerCard: React.FC<PromoFlyerItemProps> = ({
   certLabel = "Dispositif Médical Certifié Abbott",
 }) => {
   const { addToCart, setIsCartOpen, setIsCheckoutOpen } = useCart();
-  const [customImage, setCustomImage] = useState<string | null>(null);
+  const [customImage, setCustomImage] = useState<string | null>(() => {
+    try {
+      const saved = localStorage.getItem(storageKey);
+      return saved || defaultImage;
+    } catch {
+      return defaultImage;
+    }
+  });
   const [isZoomed, setIsZoomed] = useState(false);
 
   useEffect(() => {

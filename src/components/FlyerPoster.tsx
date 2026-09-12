@@ -14,7 +14,9 @@ import {
 } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 import { BRAND_CONFIG } from '../data/config';
-import flyerImage from '../assets/images/freestyle_promo_flyer_1788255081953.jpg';
+import defaultFlyerImage from '../assets/images/active_parailaf_flyer_image_custom.jpg';
+import { doc, onSnapshot } from 'firebase/firestore';
+import { db } from '../utils/firebase';
 
 interface FlyerPosterProps {
   onZoom?: () => void;
@@ -24,6 +26,29 @@ interface FlyerPosterProps {
 export const FlyerPoster: React.FC<FlyerPosterProps> = ({ onZoom, showTabs = true }) => {
   const { addToCart, setIsCartOpen, allProducts } = useCart();
   const [viewMode, setViewMode] = useState<'image' | 'interactive'>('image');
+  const [flyerImg, setFlyerImg] = useState<string>(() => {
+    try {
+      const saved = localStorage.getItem('parailaf_flyer_desktop') || localStorage.getItem('parailaf_flyer_mobile');
+      return saved || defaultFlyerImage;
+    } catch {
+      return defaultFlyerImage;
+    }
+  });
+
+  React.useEffect(() => {
+    try {
+      const unsub = onSnapshot(doc(db, 'images', 'parailaf_flyer_image_custom'), (snap) => {
+        if (snap.exists()) {
+          const data = snap.data();
+          const img = data.desktop || data.mobile || data.data;
+          if (img) {
+            setFlyerImg(img);
+          }
+        }
+      });
+      return () => unsub();
+    } catch {}
+  }, []);
 
   const pack4 = allProducts.find(p => p.id === 'pack-4-fsl2-plus') || allProducts[0];
   const pack10 = allProducts.find(p => p.id === 'pack-10-fsl2-plus') || allProducts[1];
@@ -99,7 +124,7 @@ export const FlyerPoster: React.FC<FlyerPosterProps> = ({ onZoom, showTabs = tru
           {/* Main Poster Image */}
           <div className="relative w-full cursor-pointer overflow-hidden" onClick={onZoom}>
             <img 
-              src={flyerImage} 
+              src={flyerImg} 
               alt="Affiche Promotionnelle Exclusivité FreeStyle Libre Maroc" 
               referrerPolicy="no-referrer"
               className="w-full h-auto object-contain transition-transform duration-300 group-hover:scale-[1.01]"

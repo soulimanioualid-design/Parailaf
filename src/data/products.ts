@@ -1,6 +1,6 @@
 import { Product } from '../types';
 
-import imgPack4 from '../assets/images/freestyle_libre2_pack4_1788260812490.jpg';
+import imgPack4 from '../assets/images/custom_pack-4-fsl2-plus.jpg';
 import imgPack10 from '../assets/images/freestyle_libre2_pack10_1788260826767.jpg';
 import imgLibre3 from '../assets/images/freestyle_libre3_plus_1788260841456.jpg';
 import imgOmnipod from '../assets/images/omnipod_5_pack10_1788260856591.jpg';
@@ -9,22 +9,24 @@ import imgPatches from '../assets/images/glucose_sensor_patches_1788260886831.jp
 import imgWipes from '../assets/images/alcohol_wipes_box_1788260900680.jpg';
 import imgCase from '../assets/images/travel_case_eva_1788260915608.jpg';
 import imgSingle2 from '../assets/images/freestyle_libre2_single_1788260930453.jpg';
-import imgPromoOujda from '../assets/images/freestyle_promo_oujda_1788441986495.jpg';
-import imgPromoLibre3 from '../assets/images/freestyle_libre3_promo_flyer_1788452962096.jpg';
-import imgPromoOmnipod from '../assets/images/omnipod_5_promo_flyer_1788454250818.jpg';
+import imgPromoOujda from '../assets/images/active_parailaf_promo_flyer_custom_img.jpg';
+import imgPromoLibre3 from '../assets/images/active_parailaf_promo_flyer_fsl3_custom_img.jpg';
+import imgPromoOmnipod from '../assets/images/active_parailaf_promo_flyer_omnipod_custom_img.jpg';
 import imgDexcomG6Pack from '../assets/images/dexcom_g6_clean_1789129052228.jpg';
+import imgDexcomG7 from '../assets/images/dexcom_g7_box_sensor_1789135976489.jpg';
+import imgTrousseIsotherme from '../assets/images/trousse_isotherme_bleue_1789135961656.jpg';
 
 export const CATEGORIES = [
-  { id: 'all', name: 'Tous les produits', count: 10 },
-  { id: 'offres-speciales', name: 'Offres Spéciales', count: 3 },
-  { id: 'dexcom', name: 'Dexcom G6', count: 1 },
+  { id: 'all', name: 'Tous les produits', count: 11 },
+  { id: 'offres-speciales', name: 'Offres Spéciales', count: 4 },
+  { id: 'dexcom', name: 'Dexcom', count: 2 },
   { id: 'libre-2', name: 'FreeStyle Libre 2 PLUS', count: 3 },
   { id: 'libre-3', name: 'FreeStyle Libre 3 PLUS', count: 2 },
   { id: 'omnipod', name: 'Omnipod 5', count: 1 },
   { id: 'capteurs', name: 'Capteurs de Glycémie', count: 3 },
   { id: 'packs', name: 'Packs Économiques', count: 3 },
   { id: 'lecteurs', name: 'Lecteurs & Kits', count: 1 },
-  { id: 'accessoires', name: 'Accessoires & Soins', count: 3 },
+  { id: 'accessoires', name: 'Accessoires & Soins', count: 4 },
 ];
 
 export const STANDALONE_PROMO_550: Product = {
@@ -178,16 +180,110 @@ export const STANDALONE_PROMO_3000: Product = {
 
 export const PRODUCTS: Product[] = [
   {
+    id: 'dexcom-g7-capteur',
+    name: 'Capteur Dexcom G7 - Système CGM Tout-en-un',
+    category: 'dexcom',
+    categoryLabel: 'Dexcom',
+    brand: 'Dexcom',
+    shortDescription: 'La nouvelle génération Dexcom G7. Capteur ultra-fin tout-en-un. Suivi du glucose en continu 24h/24 sans piqûre, avec alertes prédictives en temps réel.',
+    fullDescription: 'Le Dexcom G7 est la toute dernière innovation en matière de surveillance continue du glucose (CGM). Ce dispositif tout-en-un (capteur et transmetteur intégrés) est 60% plus petit que le G6, offrant un confort absolu au quotidien. Le temps de préchauffage est ultra-rapide (seulement 30 minutes). Bénéficiez d\'une précision exceptionnelle et recevez vos taux de glucose directement sur votre smartphone compatible (iOS/Android) sans aucune piqûre au doigt. Ses alertes prédictives intelligentes vous préviennent jusqu\'à 20 minutes avant une hypoglycémie pour une tranquillité d\'esprit totale.',
+    price: 450,
+    originalPrice: 650,
+    discountPercentage: 30,
+    badge: 'Nouveau !',
+    inStock: true,
+    stockCount: 50,
+    rating: 5.0,
+    reviewsCount: 24,
+    image: imgDexcomG7,
+    gallery: [
+      imgDexcomG7,
+    ],
+    features: [
+      'Suivi en continu 24h/24 et 7j/7',
+      'Alertes en temps réel sur votre téléphone',
+      'Haute précision à chaque instant',
+      'Capteur ultra-fin et confortable au quotidien',
+      'Aucun prélèvement (sans douleur, zéro piqûre au doigt)',
+      'Temps de préchauffage ultra-rapide de 30 minutes',
+      'Dispositif tout-en-un (capteur et transmetteur intégrés)'
+    ],
+    specs: {
+      duration: 'Jusqu\'à 10 jours de port',
+      waterproof: 'IP68 (résistant à l\'eau jusqu\'à 2,4m pendant 24h)',
+      bloodSample: 'Sans piqûre au doigt (Zero fingersticks)',
+      alarms: 'Alertes d\'urgence sonores, vibratoires & prédictives',
+      dimensions: '60% plus petit que le Dexcom G6',
+      appCompatibility: 'iOS et Android (Dexcom G7 App)',
+      calibration: 'Sans étalonnage (Préchauffage 30 min)'
+    },
+    boxContents: [
+      '1 Capteur Dexcom G7 Tout-en-un',
+      'Applicateur automatique intégré',
+      'Guide d\'utilisation et notice',
+      'Patch de sur-fixation'
+    ],
+    isPopular: true,
+  },
+  {
+    id: 'dexcom-g6-kit-complet',
+    name: 'Kit Complet Dexcom G6 - Système CGM & 20 Patchs Sensor Shield',
+    category: 'dexcom',
+    categoryLabel: 'Dexcom G6',
+    brand: 'Dexcom',
+    shortDescription: 'Pack tout-en-un Dexcom G6 avec capteurs, applicateur automatique en 1 clic, transmetteur officiel Bluetooth et 20 patchs étanches Sensor Shield. Suivi continu sans piqûre au doigt.',
+    fullDescription: 'Le système Dexcom G6 révolutionne la gestion du diabète grâce à sa technologie de surveillance continue du glucose (CGM) en temps réel. Sans aucune piqûre au bout du doigt ni étalonnage requis, vos mesures de glycémie sont transmises toutes les 5 minutes directement sur votre smartphone compatible (iOS / Android) ou votre récepteur. Ce kit complet exclusif comprend les capteurs Dexcom G6 avec applicateur automatique indolore en un clic, le transmetteur officiel Dexcom G6 à connexion Bluetooth sécurisée, ainsi qu’une pochette de 20 patchs étanches Sensor Shield White pour une protection optimale lors de vos activités sportives, sous la douche et au quotidien. Produit 100% original, certifié et scellé d’origine avec livraison express partout au Maroc et paiement sécurisé à la livraison.',
+    price: 500,
+    originalPrice: 650,
+    discountPercentage: 23,
+    badge: 'Offre Spéciale',
+    inStock: true,
+    stockCount: 30,
+    rating: 5.0,
+    reviewsCount: 47,
+    image: imgDexcomG6Pack,
+    gallery: [
+      imgDexcomG6Pack,
+    ],
+    features: [
+      'Mesure continue du glucose en temps réel toutes les 5 minutes',
+      'Zéro piqûre au bout du doigt & aucune calibration requise',
+      'Transmetteur officiel Dexcom G6 Bluetooth inclus',
+      'Applicateur automatique en un seul clic, rapide et indolore',
+      'Alertes personnalisables et alerte d’urgence hypoglycémie prédictive',
+      'Pochette de 20 patchs adhésifs étanches Sensor Shield White incluse',
+      'Partage des données en direct avec vos proches et médecin (Dexcom Follow)',
+      'Livraison express 24h à 48h partout au Maroc avec paiement sécurisé à la livraison'
+    ],
+    specs: {
+      duration: '10 jours par capteur / 90 jours transmetteur',
+      waterproof: 'IP28 (résistant à l’eau)',
+      bloodSample: 'Sans piqûre au doigt (Zero fingersticks)',
+      alarms: 'Alertes d’urgence sonores & prédictives',
+      dimensions: 'Capteur ultra-plat et discret',
+      memory: 'Historique continu automatique dans l’app Dexcom G6',
+      appCompatibility: 'iOS et Android (Dexcom G6 & Dexcom Follow)',
+      calibration: 'Calibré en usine (aucun étalonnage requis)'
+    },
+    boxContents: [
+      'Boîte de capteurs Dexcom G6 avec applicateur automatique',
+      '1 Transmetteur officiel Dexcom G6 Bluetooth scellé',
+      '1 Pochette de 20 patchs adhésifs étanches Sensor Shield White',
+      'Guide d’utilisation complet et notice en français'
+    ],
+    isPopular: true,
+  },
+  {
     id: 'pack-4-fsl2-plus',
     name: 'Pack 4 Pièces - FreeStyle Libre 2 PLUS',
     category: 'offres-speciales',
     categoryLabel: 'Offres Spéciales',
     brand: 'Abbott',
-    shortDescription: 'Offre Spéciale 4 capteurs FreeStyle Libre 2 PLUS (135 DH / pièce). Suivi continu jusqu’à 15 jours par capteur.',
-    fullDescription: 'Profitez de l’offre exclusive Pack 4 pièces FreeStyle Libre 2 PLUS à 540 DH (soit 135 DH par capteur). Bénéficiez jusqu’à 60 jours de suivi continu en toute simplicité, alertes en temps réel, lecture facile avec l’application LibreLink.',
-    price: 540,
+    shortDescription: 'Offre Spéciale 4 capteurs FreeStyle Libre 2 PLUS (112,5 DH / pièce). Suivi continu jusqu’à 15 jours par capteur.',
+    fullDescription: 'Profitez de l’offre exclusive Pack 4 pièces FreeStyle Libre 2 PLUS à 450 DH (soit 112,5 DH par capteur). Bénéficiez jusqu’à 60 jours de suivi continu en toute simplicité, alertes en temps réel, lecture facile avec l’application LibreLink.',
+    price: 450,
     originalPrice: 720,
-    discountPercentage: 25,
+    discountPercentage: 38,
     badge: 'Offre Spéciale',
     inStock: true,
     stockCount: 45,
@@ -199,7 +295,7 @@ export const PRODUCTS: Product[] = [
       imgSingle2,
     ],
     features: [
-      'Prix imbattable : 540 DH le pack de 4 (135 DH / pièce)',
+      'Prix imbattable : 450 DH le pack de 4 (112,5 DH / pièce)',
       'Jusqu’à 15 jours de suivi continu par capteur (60 jours au total)',
       'Lecture facile avec l’application LibreLink (iOS / Android)',
       'Alertes sonores et vibratoires en temps réel (Hypo / Hyper)',
@@ -577,50 +673,50 @@ export const PRODUCTS: Product[] = [
     isPopular: false,
   },
   {
-    id: 'dexcom-g6-kit-complet',
-    name: 'Kit Complet Dexcom G6 - Système CGM & 20 Patchs Sensor Shield',
-    category: 'dexcom',
-    categoryLabel: 'Dexcom G6',
-    brand: 'Dexcom',
-    shortDescription: 'Pack tout-en-un Dexcom G6 avec capteurs, applicateur automatique en 1 clic, transmetteur officiel Bluetooth et 20 patchs étanches Sensor Shield. Suivi continu sans piqûre au doigt.',
-    fullDescription: 'Le système Dexcom G6 révolutionne la gestion du diabète grâce à sa technologie de surveillance continue du glucose (CGM) en temps réel. Sans aucune piqûre au bout du doigt ni étalonnage requis, vos mesures de glycémie sont transmises toutes les 5 minutes directement sur votre smartphone compatible (iOS / Android) ou votre récepteur. Ce kit complet exclusif comprend les capteurs Dexcom G6 avec applicateur automatique indolore en un clic, le transmetteur officiel Dexcom G6 à connexion Bluetooth sécurisée, ainsi qu’une pochette de 20 patchs étanches Sensor Shield White pour une protection optimale lors de vos activités sportives, sous la douche et au quotidien. Produit 100% original, certifié et scellé d’origine avec livraison express partout au Maroc et paiement sécurisé à la livraison.',
-    price: 500,
-    originalPrice: 650,
-    discountPercentage: 23,
-    badge: 'Offre Spéciale',
+    id: 'trousse-isotherme-diabete',
+    name: 'Trousse Isotherme pour Diabétiques (avec Thermomètre Digital)',
+    category: 'accessoires',
+    categoryLabel: 'Accessoires & Soins',
+    brand: 'Gpt.Store Médical',
+    shortDescription: 'Idéale pour conserver l’insuline et les médicaments au frais lors de vos déplacements. Écran de température digital LCD et 2 ice packs inclus.',
+    fullDescription: 'Trousse isotherme médicale haut de gamme conçue spécifiquement pour transporter et conserver l’insuline et les médicaments sensibles au frais (entre 2°C et 8°C). Équipée d’un écran LCD digital en façade indiquant la température en temps réel, elle assure une surveillance continue sans avoir à ouvrir la trousse. Sa coque rigide EVA antichoc offre une protection maximale lors de vos voyages, sorties et trajets quotidiens. Livrée avec 2 pains de glace réfrigérants (Ice Packs réutilisables Badu), elle dispose d’un intérieur ergonomique avec bandes élastiques pour maintenir jusqu’à 4 stylos à insuline, cartouches, aiguilles, lancettes et lingettes désinfectantes.',
+    price: 300,
+    originalPrice: 420,
+    discountPercentage: 28,
+    badge: 'Idéal Voyage',
     inStock: true,
-    stockCount: 30,
-    rating: 5.0,
-    reviewsCount: 47,
-    image: imgDexcomG6Pack,
+    stockCount: 40,
+    rating: 4.9,
+    reviewsCount: 38,
+    image: imgTrousseIsotherme,
     gallery: [
-      imgDexcomG6Pack,
+      imgTrousseIsotherme,
     ],
     features: [
-      'Mesure continue du glucose en temps réel toutes les 5 minutes',
-      'Zéro piqûre au bout du doigt & aucune calibration requise',
-      'Transmetteur officiel Dexcom G6 Bluetooth inclus',
-      'Applicateur automatique en un seul clic, rapide et indolore',
-      'Alertes personnalisables et alerte d’urgence hypoglycémie prédictive',
-      'Pochette de 20 patchs adhésifs étanches Sensor Shield White incluse',
-      'Partage des données en direct avec vos proches et médecin (Dexcom Follow)',
-      'Livraison express 24h à 48h partout au Maroc avec paiement sécurisé à la livraison'
+      'Conservation au frais longue durée pour insuline et médicaments',
+      'Affichage de la température en temps réel sur écran LCD digital intégré',
+      '2 Pains de gel réfrigérant (Ice Packs réutilisables) inclus',
+      'Coque rigide en EVA haute densité résistante aux chocs et chutes',
+      'Protection thermique multicouche isolante en feuille d’aluminium',
+      'Organisation intérieure optimale avec bandes élastiques pour stylos à insuline',
+      'Format compact et pratique, parfait pour les voyages en avion, train et voiture',
+      'Livraison express 24h/48h partout au Maroc avec paiement sécurisé à la livraison'
     ],
     specs: {
-      duration: '10 jours par capteur / 90 jours transmetteur',
-      waterproof: 'IP28 (résistant à l’eau)',
-      bloodSample: 'Sans piqûre au doigt (Zero fingersticks)',
-      alarms: 'Alertes d’urgence sonores & prédictives',
-      dimensions: 'Capteur ultra-plat et discret',
-      memory: 'Historique continu automatique dans l’app Dexcom G6',
-      appCompatibility: 'iOS et Android (Dexcom G6 & Dexcom Follow)',
-      calibration: 'Calibré en usine (aucun étalonnage requis)'
+      duration: 'Maintien au frais 6 à 10 heures (selon conditions)',
+      waterproof: 'Revêtement déperlant et fermeture éclair étanche',
+      bloodSample: 'N/A',
+      alarms: 'Affichage température LCD numérique',
+      dimensions: '21 cm x 10 cm x 5 cm',
+      memory: 'N/A',
+      appCompatibility: 'Universel (toutes marques de stylos à insuline)',
+      calibration: 'Thermomètre pré-calibré avec pile incluse'
     },
     boxContents: [
-      'Boîte de capteurs Dexcom G6 avec applicateur automatique',
-      '1 Transmetteur officiel Dexcom G6 Bluetooth scellé',
-      '1 Pochette de 20 patchs adhésifs étanches Sensor Shield White',
-      'Guide d’utilisation complet et notice en français'
+      '1 Trousse isotherme rigide bleue avec thermomètre digital intégré',
+      '2 Pains de gel réfrigérants Badu Ice Pack réutilisables',
+      '1 Pile pour l’écran LCD (préinstallée)',
+      'Guide d’utilisation et conseils de conservation de l’insuline'
     ],
     isPopular: true,
   }

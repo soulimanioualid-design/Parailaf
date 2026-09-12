@@ -29,6 +29,7 @@ export interface Product {
   };
   boxContents: string[];
   isPopular?: boolean;
+  sortOrder?: number;
 }
 
 export interface CartItem {

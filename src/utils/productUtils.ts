@@ -25,9 +25,13 @@ export function sanitizeProductForFirestore(prod: Partial<Product>): Product {
   if (Array.isArray(prod.gallery) && prod.gallery.length > 0) {
     gallery = prod.gallery.filter(img => typeof img === 'string' && img.trim().length > 0);
   }
+  // Remove exact duplicates
+  gallery = Array.from(new Set(gallery));
   if (!gallery.includes(mainImage)) {
     gallery = [mainImage, ...gallery];
   }
+  // Cap gallery to max 4 images to keep document sizes well within Firestore limits
+  gallery = gallery.slice(0, 4);
 
   const features = (Array.isArray(prod.features) && prod.features.length > 0)
     ? prod.features.filter(f => typeof f === 'string' && f.trim().length > 0)
@@ -61,6 +65,7 @@ export function sanitizeProductForFirestore(prod: Partial<Product>): Product {
     boxContents,
     inStock: prod.inStock !== false,
     isPopular: !!prod.isPopular,
+    sortOrder: typeof prod.sortOrder === 'number' && !isNaN(prod.sortOrder) ? prod.sortOrder : 999,
     specs: {
       duration: prod.specs?.duration || "Jusqu’à 14-15 jours",
       waterproof: prod.specs?.waterproof || "IP27 (résistant à l'eau)",
@@ -87,3 +92,36 @@ export function sanitizeProductForFirestore(prod: Partial<Product>): Product {
   // Pure JSON round-trip strips any lingering undefined or symbol values
   return JSON.parse(JSON.stringify(cleanProduct)) as Product;
 }
+
+/**
+ * Prepares the aggregated catalog list for saving into parailaf_catalog_v1.
+ * Cloud Firestore has a strict 1,048,576 bytes limit per document.
+ * If the aggregate JSON size approaches the limit (> 650KB), this helper ensures
+ * huge base64 strings in secondary gallery arrays are trimmed down so parailaf_catalog_v1
+ * never exceeds Firestore limits. Full high-res images are always safely preserved in
+ * individual product documents (/products/{productId}).
+ */
+export function prepareCatalogForFirestore(products: Product[]): Product[] {
+  const list = products.map(p => sanitizeProductForFirestore(p));
+  const jsonString = JSON.stringify(list);
+
+  // If comfortably under 650KB, return as is
+  if (jsonString.length < 650000) {
+    return list;
+  }
+
+  // Otherwise, slim down secondary gallery images in the aggregated catalog doc
+  return list.map(p => {
+    // If gallery has large base64 items, keep only mainImage in parailaf_catalog_v1
+    const slimGallery = (p.gallery || []).filter(img => {
+      // keep URLs or static paths, or if base64 keep only if short (< 45KB)
+      return !img.startsWith('data:image/') || img.length < 45000;
+    });
+
+    return {
+      ...p,
+      gallery: slimGallery.length > 0 ? slimGallery : [p.image]
+    };
+  });
+}
+
