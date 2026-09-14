@@ -746,6 +746,8 @@ export const AdminProductManager: React.FC<AdminProductManagerProps> = ({ initia
                     'offres-speciales': 'Offres Spéciales',
                     'libre-2': 'FreeStyle Libre 2',
                     'libre-3': 'FreeStyle Libre 3',
+                    'dexcom': 'Dexcom CGM',
+                    'onetouch': 'OneTouch',
                     'omnipod': 'Omnipod',
                     'lecteurs': 'Lecteurs & Kits',
                     'accessoires': 'Accessoires & Soins',
@@ -762,9 +764,11 @@ export const AdminProductManager: React.FC<AdminProductManagerProps> = ({ initia
               >
                 <option value="libre-2">FreeStyle Libre 2</option>
                 <option value="libre-3">FreeStyle Libre 3</option>
+                <option value="dexcom">Dexcom CGM (G7 / G6)</option>
+                <option value="onetouch">OneTouch Verio®</option>
                 <option value="capteurs">Capteurs de Glycémie</option>
-                <option value="lecteurs">Lecteurs & Kits</option>
-                <option value="accessoires">Accessoires & Soins</option>
+                <option value="lecteurs">Lecteurs de Glycémie & Kits</option>
+                <option value="accessoires">Accessoires, Aiguilles & Soins</option>
                 <option value="omnipod">Omnipod</option>
                 <option value="offres-speciales">Offres Spéciales</option>
                 <option value="packs">Packs Économiques</option>

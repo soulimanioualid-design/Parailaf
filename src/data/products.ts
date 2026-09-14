@@ -1,17 +1,155 @@
 import { Product } from '../types';
 
-export const CATEGORIES = [
-  { id: 'all', name: 'Tous les produits', count: 12 },
-  { id: 'offres-speciales', name: 'Offres Spéciales', count: 3 },
-  { id: 'dexcom', name: 'Dexcom', count: 2 },
-  { id: 'libre-2', name: 'FreeStyle Libre 2 PLUS', count: 2 },
-  { id: 'libre-3', name: 'FreeStyle Libre 3 PLUS', count: 2 },
-  { id: 'omnipod', name: 'Omnipod 5', count: 1 },
-  { id: 'capteurs', name: 'Capteurs de Glycémie', count: 3 },
-  { id: 'packs', name: 'Packs Économiques', count: 3 },
-  { id: 'lecteurs', name: 'Lecteurs & Kits', count: 2 },
-  { id: 'accessoires', name: 'Accessoires & Soins', count: 5 },
+export interface CategoryItem {
+  id: string;
+  name: string;
+  shortName?: string;
+  count?: number;
+  badge?: string;
+}
+
+export const CATEGORIES: CategoryItem[] = [
+  { id: 'all', name: 'Tous les produits', shortName: 'Tous' },
+  { id: 'offres-speciales', name: 'Offres Spéciales & Promos', shortName: 'Promos', badge: 'Promo' },
+  { id: 'capteurs', name: 'Capteurs de Glycémie (CGM)', shortName: 'Capteurs' },
+  { id: 'lecteurs', name: 'Lecteurs de Glycémie', shortName: 'Lecteurs' },
+  { id: 'onetouch', name: 'OneTouch Verio®', shortName: 'OneTouch' },
+  { id: 'dexcom', name: 'Dexcom CGM', shortName: 'Dexcom' },
+  { id: 'libre-2', name: 'FreeStyle Libre 2 PLUS', shortName: 'Libre 2' },
+  { id: 'libre-3', name: 'FreeStyle Libre 3 PLUS', shortName: 'Libre 3' },
+  { id: 'omnipod', name: 'Omnipod DASH / 5', shortName: 'Omnipod' },
+  { id: 'accessoires', name: 'Aiguilles & Accessoires', shortName: 'Aiguilles & Soins' },
+  { id: 'packs', name: 'Packs & Kits Complets', shortName: 'Packs' },
 ];
+
+/**
+ * Checks whether a product belongs to a given category ID with smart keyword, brand, and badge fallbacks.
+ */
+export function matchesProductCategory(product: Product, categoryId: string): boolean {
+  if (!categoryId || categoryId === 'all') return true;
+
+  const cat = (product.category || '').toLowerCase();
+  const label = (product.categoryLabel || '').toLowerCase();
+  const name = (product.name || '').toLowerCase();
+  const brand = (product.brand || '').toLowerCase();
+  const id = (product.id || '').toLowerCase();
+  const badge = (product.badge || '').toLowerCase();
+  const discount = product.discountPercentage || 0;
+
+  switch (categoryId) {
+    case 'offres-speciales':
+      return (
+        cat === 'offres-speciales' ||
+        badge.includes('offre') ||
+        badge.includes('promo') ||
+        badge.includes('remise') ||
+        badge.includes('spéciale') ||
+        badge.includes('special') ||
+        badge.includes('exclusif') ||
+        discount >= 20 ||
+        (typeof product.originalPrice === 'number' && product.originalPrice > product.price && (product.originalPrice - product.price >= 80))
+      );
+
+    case 'capteurs':
+      return (
+        cat === 'capteurs' ||
+        cat === 'libre-2' ||
+        cat === 'libre-3' ||
+        cat === 'dexcom' ||
+        name.includes('capteur') ||
+        name.includes('sensor') ||
+        id.includes('capteur')
+      );
+
+    case 'lecteurs':
+      return (
+        cat === 'lecteurs' ||
+        label.includes('lecteur') ||
+        name.includes('lecteur') ||
+        name.includes('onetouch') ||
+        name.includes('verio') ||
+        id.includes('lecteur') ||
+        id.includes('onetouch')
+      );
+
+    case 'onetouch':
+      return (
+        cat === 'onetouch' ||
+        brand.includes('onetouch') ||
+        name.includes('onetouch') ||
+        name.includes('verio') ||
+        id.includes('onetouch')
+      );
+
+    case 'dexcom':
+      return (
+        cat === 'dexcom' ||
+        brand.includes('dexcom') ||
+        name.includes('dexcom') ||
+        id.includes('dexcom')
+      );
+
+    case 'libre-2':
+      return (
+        cat === 'libre-2' ||
+        name.includes('libre 2') ||
+        id.includes('fsl2') ||
+        name.includes('fsl 2')
+      );
+
+    case 'libre-3':
+      return (
+        cat === 'libre-3' ||
+        name.includes('libre 3') ||
+        id.includes('fsl3') ||
+        name.includes('fsl 3')
+      );
+
+    case 'omnipod':
+      return (
+        cat === 'omnipod' ||
+        brand.includes('insulet') ||
+        name.includes('omnipod') ||
+        id.includes('omnipod')
+      );
+
+    case 'accessoires':
+      return (
+        cat === 'accessoires' ||
+        label.includes('accessoire') ||
+        name.includes('trousse') ||
+        name.includes('patch') ||
+        name.includes('aiguille') ||
+        name.includes('lancette') ||
+        brand.includes('bd') ||
+        id.includes('bd-') ||
+        id.includes('patch') ||
+        id.includes('trousse')
+      );
+
+    case 'packs':
+      return (
+        cat === 'packs' ||
+        name.includes('pack') ||
+        name.includes('kit') ||
+        name.includes('boîte') ||
+        name.includes('boite') ||
+        id.includes('pack') ||
+        id.includes('kit')
+      );
+
+    default:
+      return cat === categoryId || label.includes(categoryId) || id.includes(categoryId);
+  }
+}
+
+/**
+ * Calculates dynamic product count for a given category based on active catalog
+ */
+export function getCategoryCount(categoryId: string, products: Product[]): number {
+  if (categoryId === 'all') return products.length;
+  return products.filter(p => matchesProductCategory(p, categoryId)).length;
+}
 
 export const PRODUCTS: Product[] = [
   {
@@ -469,6 +607,56 @@ export const PRODUCTS: Product[] = [
       "memory": "N/A",
       "bloodSample": "N/A",
       "waterproof": "N/A"
+    }
+  },
+  {
+    "id": "onetouch-verio-reflect",
+    "name": "Lecteur de glycémie OneTouch Verio Reflect®",
+    "category": "lecteurs",
+    "categoryLabel": "Lecteurs & Kits",
+    "brand": "OneTouch",
+    "price": 250,
+    "originalPrice": 350,
+    "discountPercentage": 29,
+    "inStock": true,
+    "stockCount": 45,
+    "rating": 5.0,
+    "reviewsCount": 36,
+    "badge": "Top Qualité",
+    "sortOrder": 9,
+    "image": "/src/assets/images/onetouch_verio_reflect_1789383799712.jpg",
+    "gallery": [
+      "/src/assets/images/onetouch_verio_reflect_1789383799712.jpg",
+      "/src/assets/images/onetouch_verio_strips_1789383815558.jpg"
+    ],
+    "shortDescription": "Lecteur de glycémie intelligent OneTouch Verio Reflect® avec fonction Blood Sugar Mentor et indicateur d'objectif ColourSure® Plus. Kit complet avec autopiqueur, lancettes et étui.",
+    "fullDescription": "Le lecteur de glycémie OneTouch Verio Reflect® est doté de la technologie innovante Blood Sugar Mentor qui analyse vos résultats et vous délivre des conseils personnalisés, des alertes de tendances et des messages d'encouragement directement sur son écran couleur haute définition. Grâce à l'indicateur d'objectif dynamique ColourSure® Plus, vous savez immédiatement si votre taux de sucre se situe dans la cible, proche de la limite basse ou haute, ou en zone critique. Connectivité Bluetooth® intégrée avec l'application gratuite OneTouch Reveal® (compatible iOS et Android) pour un suivi complet et un partage facile avec votre médecin. Fonctionne avec les bandelettes OneTouch Verio® d'une précision clinique prouvée. Fourni en kit complet prêt à l'emploi.",
+    "features": [
+      "Blood Sugar Mentor : conseils personnalisés, alertes de tendances et encouragements en temps réel",
+      "Indicateur dynamique d'objectif ColourSure® Plus à code couleur instantané",
+      "Connexion Bluetooth® vers l'application gratuite OneTouch Reveal®",
+      "Écran couleur haute définition rétroéclairé pour un confort de lecture optimal",
+      "Résultats rapides en 5 secondes avec seulement 0,4 µl de sang",
+      "Compatible avec les bandelettes réactives OneTouch Verio®",
+      "Mémoire interne de 750 mesures de glycémie horodatées",
+      "Kit complet prêt à l'emploi avec autopiqueur Delica® Plus et trousse de transport"
+    ],
+    "boxContents": [
+      "1 Lecteur de glycémie OneTouch Verio Reflect® (piles incluses)",
+      "1 Stylo autopiqueur OneTouch Delica® Plus",
+      "10 Lancettes stériles OneTouch Delica® Plus",
+      "1 Trousse de transport rigide",
+      "1 Manuel d'utilisation et guide de démarrage rapide"
+    ],
+    "specs": {
+      "bloodSample": "0,4 µL de sang capillaire",
+      "duration": "Mesure rapide en 5 secondes",
+      "memory": "750 résultats de glycémie horodatés",
+      "appCompatibility": "Application OneTouch Reveal® (iOS et Android)",
+      "calibration": "Automatique (technologie sans codage)",
+      "alarms": "Alertes d'hypo/hyperglycémie et tendances glycémiques",
+      "dimensions": "Design compact ergonomique avec écran couleur",
+      "waterproof": "Dispositif médical certifié CE"
     }
   }
 ];

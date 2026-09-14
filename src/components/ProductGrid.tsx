@@ -11,7 +11,7 @@ import {
   LayoutGrid,
   LayoutList
 } from 'lucide-react';
-import { PRODUCTS, CATEGORIES } from '../data/products';
+import { CATEGORIES, matchesProductCategory, getCategoryCount } from '../data/products';
 import { ProductCard } from './ProductCard';
 import { useCart } from '../context/CartContext';
 import { BRAND_CONFIG } from '../data/config';
@@ -23,16 +23,8 @@ export const ProductGrid: React.FC = () => {
 
   const filteredProducts = useMemo(() => {
     return allProducts.filter((product) => {
-      // Category filter
-      const matchesCategory = 
-        activeCategory === 'all' || 
-        product.category === activeCategory ||
-        (activeCategory === 'libre-2' && (product.category === 'libre-2' || product.id.includes('fsl2') || product.name.toLowerCase().includes('libre 2'))) ||
-        (activeCategory === 'libre-3' && (product.category === 'libre-3' || product.id.includes('fsl3') || product.name.toLowerCase().includes('libre 3'))) ||
-        (activeCategory === 'lecteurs' && (product.category === 'lecteurs' || product.id.includes('lecteur') || product.categoryLabel?.toLowerCase().includes('lecteur'))) ||
-        (activeCategory === 'dexcom' && (product.category === 'dexcom' || product.brand.toLowerCase().includes('dexcom'))) ||
-        (activeCategory === 'capteurs' && (product.category === 'capteurs' || product.category === 'libre-2' || product.category === 'libre-3' || product.category === 'dexcom' || product.id.includes('capteur'))) ||
-        (activeCategory === 'packs' && (product.category === 'packs' || product.id.includes('pack') || product.id.includes('kit')));
+      // Category filter with smart keyword matching
+      const matchesCategory = matchesProductCategory(product, activeCategory);
 
       // Search filter
       const matchesSearch = 
@@ -50,21 +42,6 @@ export const ProductGrid: React.FC = () => {
     });
   }, [allProducts, activeCategory, searchQuery, sortBy]);
 
-  const getCategoryCount = (catId: string) => {
-    if (catId === 'all') return allProducts.length;
-    return allProducts.filter((product) => {
-      return (
-        product.category === catId ||
-        (catId === 'libre-2' && (product.category === 'libre-2' || product.id.includes('fsl2') || product.name.toLowerCase().includes('libre 2'))) ||
-        (catId === 'libre-3' && (product.category === 'libre-3' || product.id.includes('fsl3') || product.name.toLowerCase().includes('libre 3'))) ||
-        (catId === 'lecteurs' && (product.category === 'lecteurs' || product.id.includes('lecteur') || product.categoryLabel?.toLowerCase().includes('lecteur'))) ||
-        (catId === 'dexcom' && (product.category === 'dexcom' || product.brand.toLowerCase().includes('dexcom'))) ||
-        (catId === 'capteurs' && (product.category === 'capteurs' || product.category === 'libre-2' || product.category === 'libre-3' || product.category === 'dexcom' || product.id.includes('capteur'))) ||
-        (catId === 'packs' && (product.category === 'packs' || product.id.includes('pack') || product.id.includes('kit')))
-      );
-    }).length;
-  };
-
   return (
     <section id="nos-produits" className="py-12 md:py-16 bg-slate-50 border-b border-slate-200">
       <div className="max-w-7xl mx-auto px-4 sm:px-6">
@@ -79,16 +56,18 @@ export const ProductGrid: React.FC = () => {
             Nos Produits & Offres Spéciales Parailaf
           </h2>
           <p className="text-sm sm:text-base text-slate-600 mt-2">
-            Dispositifs FreeStyle Libre 2 & 3 PLUS, packs multi-pièces à tarif préférentiel, pods Omnipod 5 et accessoires certifiés.
+            FreeStyle Libre 2 & 3 PLUS, lecteurs OneTouch Verio®, capteurs Dexcom CGM, aiguilles BD et accessoires certifiés.
           </p>
         </div>
 
         {/* Filter Tabs & Controls Bar */}
         <div className="flex flex-col md:flex-row items-center justify-between gap-4 mb-6 bg-white p-3 sm:p-4 rounded-2xl border border-slate-200 shadow-xs">
           
-          {/* Category Tabs */}
-          <div className="flex items-center gap-1.5 overflow-x-auto w-full md:w-auto pb-2 md:pb-0 scrollbar-none">
+          {/* Category Tabs (Scrollable Horizontal Menu) */}
+          <div className="flex items-center gap-1.5 overflow-x-auto w-full md:w-auto pb-2 md:pb-0 scrollbar-none touch-pan-x">
             {CATEGORIES.map((cat) => {
+              const count = getCategoryCount(cat.id, allProducts);
+              if (count === 0 && cat.id !== 'all') return null;
               const isSelected = activeCategory === cat.id;
               const isSpecial = cat.id === 'offres-speciales';
 
@@ -96,24 +75,24 @@ export const ProductGrid: React.FC = () => {
                 <button
                   key={cat.id}
                   onClick={() => setActiveCategory(cat.id)}
-                  className={`px-3.5 py-2 rounded-xl text-xs sm:text-sm font-black whitespace-nowrap transition-all duration-200 cursor-pointer flex items-center gap-1.5 ${
+                  className={`px-3.5 py-2 rounded-xl text-xs sm:text-sm font-black whitespace-nowrap transition-all duration-200 cursor-pointer flex items-center gap-1.5 shrink-0 ${
                     isSelected
                       ? isSpecial 
-                        ? 'bg-red-600 text-white shadow-md shadow-red-600/30' 
-                        : 'bg-[#002f6c] text-white shadow-md'
+                        ? 'bg-red-600 text-white shadow-md shadow-red-600/30 ring-2 ring-red-600/30' 
+                        : 'bg-[#002f6c] text-white shadow-md ring-2 ring-[#002f6c]/30'
                       : isSpecial
                         ? 'bg-red-50 text-red-700 hover:bg-red-100 border border-red-200'
                         : 'bg-slate-100 hover:bg-slate-200/80 text-slate-700'
                   }`}
                 >
-                  {isSpecial && <Flame className="w-3.5 h-3.5" />}
+                  {isSpecial && <Flame className={`w-3.5 h-3.5 ${isSelected ? 'text-white fill-white' : 'text-red-600 fill-red-600'}`} />}
                   <span>{cat.name}</span>
                   <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold ${
                     isSelected 
                       ? 'bg-white/20 text-white' 
                       : 'bg-slate-200/80 text-slate-600'
                   }`}>
-                    {getCategoryCount(cat.id)}
+                    {count}
                   </span>
                 </button>
               );
