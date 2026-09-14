@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   X, 
   Star, 
@@ -14,7 +14,9 @@ import {
   Share2,
   Sparkles,
   Flame,
-  Edit3
+  Edit3,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
@@ -39,14 +41,24 @@ export const ProductDetailModal: React.FC = () => {
   const [activeImageIndex, setActiveImageIndex] = useState(0);
   const [isAdded, setIsAdded] = useState(false);
 
-  if (!selectedProductForModal) return null;
+  // Swipe & Drag refs
+  const touchStartXRef = useRef<number | null>(null);
+  const touchEndXRef = useRef<number | null>(null);
+  const isDraggingRef = useRef(false);
+
+  useEffect(() => {
+    setActiveImageIndex(0);
+    setQuantity(1);
+  }, [selectedProductForModal?.id]);
 
   // Always use the latest product state from allProducts
-  const product = allProducts.find(p => p.id === selectedProductForModal.id) || selectedProductForModal;
-  const mainImage = getProductImage ? getProductImage(product) : product.image;
+  const product = selectedProductForModal 
+    ? (allProducts.find(p => p.id === selectedProductForModal.id) || selectedProductForModal)
+    : null;
+  const mainImage = product ? (getProductImage ? getProductImage(product) : product.image) : '';
   
   // Build distinct gallery (main image first, followed by all distinct secondary photos)
-  const rawGallery = Array.isArray(product.gallery) ? product.gallery : [];
+  const rawGallery = product && Array.isArray(product.gallery) ? product.gallery : [];
   const seen = new Set<string>();
   if (mainImage) seen.add(mainImage);
   const distinctSecondary: string[] = [];
@@ -56,8 +68,87 @@ export const ProductDetailModal: React.FC = () => {
       distinctSecondary.push(img);
     }
   }
-  const images = [mainImage, ...distinctSecondary];
+  const images = mainImage ? [mainImage, ...distinctSecondary] : [];
   const activeImage = images[activeImageIndex] || images[0] || mainImage;
+
+  const handleNextImage = () => {
+    if (images.length <= 1) return;
+    setActiveImageIndex((prev) => (prev + 1) % images.length);
+  };
+
+  const handlePrevImage = () => {
+    if (images.length <= 1) return;
+    setActiveImageIndex((prev) => (prev - 1 + images.length) % images.length);
+  };
+
+  // Keyboard navigation for arrows - unconditionally registered hook
+  useEffect(() => {
+    if (!selectedProductForModal) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'ArrowRight') {
+        handleNextImage();
+      } else if (e.key === 'ArrowLeft') {
+        handlePrevImage();
+      } else if (e.key === 'Escape') {
+        setSelectedProductForModal(null);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [selectedProductForModal, images.length]);
+
+  if (!selectedProductForModal || !product) return null;
+
+  // Touch Swipe handlers
+  const onTouchStart = (e: React.TouchEvent) => {
+    touchStartXRef.current = e.targetTouches[0].clientX;
+    touchEndXRef.current = null;
+  };
+
+  const onTouchMove = (e: React.TouchEvent) => {
+    touchEndXRef.current = e.targetTouches[0].clientX;
+  };
+
+  const onTouchEnd = () => {
+    if (touchStartXRef.current !== null && touchEndXRef.current !== null) {
+      const diffX = touchStartXRef.current - touchEndXRef.current;
+      const minSwipeDistance = 40;
+      if (diffX > minSwipeDistance) {
+        handleNextImage(); // Swiped left -> next photo
+      } else if (diffX < -minSwipeDistance) {
+        handlePrevImage(); // Swiped right -> previous photo
+      }
+    }
+    touchStartXRef.current = null;
+    touchEndXRef.current = null;
+  };
+
+  // Mouse drag handlers for desktop
+  const onMouseDown = (e: React.MouseEvent) => {
+    touchStartXRef.current = e.clientX;
+    touchEndXRef.current = null;
+    isDraggingRef.current = true;
+  };
+
+  const onMouseMove = (e: React.MouseEvent) => {
+    if (!isDraggingRef.current) return;
+    touchEndXRef.current = e.clientX;
+  };
+
+  const onMouseUp = () => {
+    if (isDraggingRef.current && touchStartXRef.current !== null && touchEndXRef.current !== null) {
+      const diffX = touchStartXRef.current - touchEndXRef.current;
+      const minSwipeDistance = 40;
+      if (diffX > minSwipeDistance) {
+        handleNextImage();
+      } else if (diffX < -minSwipeDistance) {
+        handlePrevImage();
+      }
+    }
+    touchStartXRef.current = null;
+    touchEndXRef.current = null;
+    isDraggingRef.current = false;
+  };
 
   const handleAddToCart = () => {
     addToCart(product, quantity);
@@ -129,27 +220,91 @@ export const ProductDetailModal: React.FC = () => {
                   )}
                 </div>
 
-                {/* Main Large Image */}
-                <div className="bg-white rounded-2xl p-2 sm:p-4 border border-slate-100 aspect-square flex items-center justify-center shadow-xs overflow-hidden">
+                {/* Main Large Image Carousel with Touch & Mouse Swipe (100% Unobstructed) */}
+                <div 
+                  className="bg-white rounded-2xl p-2 sm:p-4 border border-slate-100 aspect-square flex items-center justify-center shadow-xs overflow-hidden relative select-none cursor-grab active:cursor-grabbing touch-pan-y"
+                  onTouchStart={onTouchStart}
+                  onTouchMove={onTouchMove}
+                  onTouchEnd={onTouchEnd}
+                  onMouseDown={onMouseDown}
+                  onMouseMove={onMouseMove}
+                  onMouseUp={onMouseUp}
+                  onMouseLeave={() => { isDraggingRef.current = false; }}
+                  title="Glissez avec le doigt ou la souris pour changer d'image"
+                >
                   <img
                     src={activeImage}
                     alt={product.name}
-                    className="w-full h-full max-h-96 object-contain transition-all duration-300 hover:scale-105"
+                    draggable={false}
+                    className="w-full h-full max-h-96 object-contain transition-all duration-300 pointer-events-none"
                   />
                 </div>
 
+                {/* Navigation Controls OUTSIDE the image (No photo obstruction) */}
+                {images.length > 1 && (
+                  <div className="flex items-center justify-between mt-3 px-1 py-1 bg-slate-50 border border-slate-100 rounded-2xl">
+                    {/* Left Arrow Button */}
+                    <button
+                      type="button"
+                      onClick={handlePrevImage}
+                      className="px-2.5 sm:px-3 py-1.5 rounded-xl bg-white hover:bg-slate-100 active:scale-95 text-slate-700 text-xs font-bold border border-slate-200/80 shadow-xs flex items-center gap-1.5 transition cursor-pointer"
+                      aria-label="Photo précédente"
+                      title="Photo précédente (ou flèche gauche du clavier)"
+                    >
+                      <ChevronLeft className="w-4 h-4 text-slate-700" />
+                      <span className="hidden sm:inline">Précédente</span>
+                    </button>
+
+                    {/* Dots and Counter */}
+                    <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-1">
+                        {images.map((_, idx) => (
+                          <button
+                            key={idx}
+                            type="button"
+                            onClick={() => setActiveImageIndex(idx)}
+                            className={`h-1.5 rounded-full transition-all cursor-pointer ${
+                              activeImageIndex === idx ? 'w-5 bg-red-600' : 'w-1.5 bg-slate-300 hover:bg-slate-400'
+                            }`}
+                            aria-label={`Aller à la photo ${idx + 1}`}
+                          />
+                        ))}
+                      </div>
+                      <span className="text-[11px] font-black text-slate-600 bg-white border border-slate-200/80 px-2 py-0.5 rounded-md shadow-2xs">
+                        {activeImageIndex + 1} / {images.length}
+                      </span>
+                    </div>
+
+                    {/* Right Arrow Button */}
+                    <button
+                      type="button"
+                      onClick={handleNextImage}
+                      className="px-2.5 sm:px-3 py-1.5 rounded-xl bg-white hover:bg-slate-100 active:scale-95 text-slate-700 text-xs font-bold border border-slate-200/80 shadow-xs flex items-center gap-1.5 transition cursor-pointer"
+                      aria-label="Photo suivante"
+                      title="Photo suivante (ou flèche droite du clavier)"
+                    >
+                      <span className="hidden sm:inline">Suivante</span>
+                      <ChevronRight className="w-4 h-4 text-slate-700" />
+                    </button>
+                  </div>
+                )}
+
                 {/* Thumbnail gallery */}
                 {images.length > 1 && (
-                  <div className="flex items-center gap-2 mt-4 justify-center">
+                  <div className="flex items-center gap-2 mt-4 justify-center flex-wrap">
                     {images.map((img, idx) => (
                       <button
                         key={idx}
+                        type="button"
                         onClick={() => setActiveImageIndex(idx)}
-                        className={`w-14 h-14 rounded-xl border-2 overflow-hidden p-1 bg-white transition cursor-pointer ${
-                          activeImageIndex === idx ? 'border-red-600 shadow-sm' : 'border-slate-200 hover:border-slate-300 opacity-70'
+                        className={`w-14 h-14 rounded-xl border-2 overflow-hidden p-1 bg-white transition-all cursor-pointer ${
+                          activeImageIndex === idx 
+                            ? 'border-red-600 shadow-sm ring-2 ring-red-100 scale-105 opacity-100' 
+                            : 'border-slate-200 hover:border-slate-300 opacity-60 hover:opacity-100'
                         }`}
+                        title={`Photo ${idx + 1}`}
                       >
-                        <img src={img} alt="thumbnail" className="w-full h-full object-contain" />
+                        <img src={img} alt={`miniature ${idx + 1}`} className="w-full h-full object-contain" />
                       </button>
                     ))}
                   </div>
