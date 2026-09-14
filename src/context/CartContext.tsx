@@ -8,10 +8,18 @@ import imgDexcomG6Pack from '../assets/images/dexcom_g6_clean_1789129052228.jpg'
 import imgDexcomG7 from '../assets/images/dexcom_g7_box_sensor_1789135976489.jpg';
 import imgTrousseIsotherme from '../assets/images/trousse_isotherme_bleue_1789135961656.jpg';
 import imgFsl2Lecteur from '../assets/images/freestyle_libre2_reader_1789237795597.jpg';
+import imgFsl3Lecteur from '../assets/images/freestyle_libre3_reader_1789324581254.jpg';
 import { sendOrderEmailNotification } from '../utils/notificationService';
 import { doc, onSnapshot, setDoc, deleteDoc, collection, writeBatch } from 'firebase/firestore';
 import { db } from '../utils/firebase';
-import { sanitizeProductForFirestore, prepareCatalogForFirestore } from '../utils/productUtils';
+import { sanitizeProductForFirestore, prepareCatalogForFirestore, safeSaveCatalogToLocalStorage } from '../utils/productUtils';
+
+export type ToastType = 'cart' | 'success' | 'info' | 'error';
+
+export interface ToastData {
+  message: string;
+  type: ToastType;
+}
 
 interface CartContextType {
   cart: CartItem[];
@@ -36,15 +44,18 @@ interface CartContextType {
   setIsAdminOpen: (open: boolean) => void;
   adminActiveTab: 'orders' | 'email' | 'analytics' | 'new-order' | 'media' | 'employees' | 'products';
   setAdminActiveTab: (tab: 'orders' | 'email' | 'analytics' | 'new-order' | 'media' | 'employees' | 'products') => void;
-  openAdmin: (tab?: 'orders' | 'email' | 'analytics' | 'new-order' | 'media' | 'employees' | 'products') => void;
+  adminEditingProductId: string | null;
+  setAdminEditingProductId: (id: string | null) => void;
+  openAdmin: (tab?: 'orders' | 'email' | 'analytics' | 'new-order' | 'media' | 'employees' | 'products', productId?: string | null) => void;
   quickBuyProduct: Product | null;
   setQuickBuyProduct: (product: Product | null) => void;
   selectedProductForModal: Product | null;
   setSelectedProductForModal: (product: Product | null) => void;
   
   // Toasts
+  toastData: ToastData | null;
   toastMessage: string | null;
-  showToast: (message: string) => void;
+  showToast: (message: string, type?: ToastType) => void;
   
   // Catalog / Products
   allProducts: Product[];
@@ -79,18 +90,38 @@ const CartContext = createContext<CartContextType | undefined>(undefined);
 
 const CART_STORAGE_KEY = 'parailaf_cart_v1';
 const ORDERS_STORAGE_KEY = 'parailaf_all_orders_v2';
-const PRODUCTS_STORAGE_KEY = 'parailaf_catalog_v4';
+const PRODUCTS_STORAGE_KEY = 'parailaf_catalog_v5';
+const DELETED_PRODUCTS_KEY = 'parailaf_deleted_product_ids_v1';
+
+const getInitialDeletedIds = (): string[] => {
+  try {
+    const saved = localStorage.getItem(DELETED_PRODUCTS_KEY);
+    return saved ? JSON.parse(saved) : [];
+  } catch {
+    return [];
+  }
+};
 
 export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [deletedProductIds, setDeletedProductIds] = useState<string[]>(getInitialDeletedIds);
+
   const [allProducts, setAllProducts] = useState<Product[]>(() => {
     try {
+      const initialDeleted = getInitialDeletedIds();
       const saved = localStorage.getItem(PRODUCTS_STORAGE_KEY);
       if (saved) {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed) && parsed.length > 0) {
-          return parsed.sort((a, b) => (a.sortOrder ?? 999) - (b.sortOrder ?? 999));
+          const validParsed = parsed.filter((p: Product) => !initialDeleted.includes(p.id));
+          const missingDefaults = INITIAL_PRODUCTS.filter(ip => 
+            !validParsed.some((p: Product) => p.id === ip.id) &&
+            !initialDeleted.includes(ip.id)
+          );
+          const combined = [...validParsed, ...missingDefaults];
+          return combined.sort((a, b) => (a.sortOrder ?? 999) - (b.sortOrder ?? 999));
         }
       }
+      return INITIAL_PRODUCTS.filter(ip => !initialDeleted.includes(ip.id));
     } catch (e) {
       console.error("Erreur chargement catalogue local:", e);
     }
@@ -99,11 +130,13 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [productsLoaded, setProductsLoaded] = useState(false);
 
   // Safe helper to sync parailaf_catalog_v1 without exceeding Firestore 1MB limit
-  const safeSyncCatalogDocument = async (products: Product[]) => {
+  const safeSyncCatalogDocument = async (products: Product[], explicitDeleted?: string[]) => {
     try {
       const safeCatalog = prepareCatalogForFirestore(products);
+      const toSyncDeleted = explicitDeleted !== undefined ? explicitDeleted : deletedProductIds;
       await setDoc(doc(db, 'products', 'parailaf_catalog_v1'), { 
         products: safeCatalog,
+        deletedProductIds: toSyncDeleted,
         lastUpdated: new Date().toISOString()
       }, { merge: true });
     } catch (err: any) {
@@ -116,28 +149,56 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     let unsubCatalog: (() => void) | null = null;
 
     try {
-      // Listen to aggregate catalog document (1 read instead of N reads)
-      unsubCatalog = onSnapshot(doc(db, 'products', 'parailaf_catalog_v1'), (snap) => {
-        if (snap.exists()) {
-          const data = snap.data();
-          if (data && Array.isArray(data.products) && data.products.length > 0) {
-            setAllProducts((prev) => {
-              const catalogProds = data.products.map((p: Product) => sanitizeProductForFirestore(p));
-              const merged = catalogProds.sort((a, b) => (a.sortOrder ?? 999) - (b.sortOrder ?? 999));
-              try {
-                localStorage.setItem(PRODUCTS_STORAGE_KEY, JSON.stringify(merged));
-              } catch {}
-              return merged;
-            });
+      // Listen to individual product documents in collection 'products' (each doc has its own 1MB quota)
+      unsubCatalog = onSnapshot(collection(db, 'products'), (snapshot) => {
+        const firestoreProducts: Product[] = [];
+        let remoteDeleted: string[] = [];
+
+        snapshot.forEach((docSnap) => {
+          if (docSnap.id === 'parailaf_catalog_v1') {
+            const aggData = docSnap.data();
+            if (Array.isArray(aggData?.deletedProductIds)) {
+              remoteDeleted = aggData.deletedProductIds;
+            }
+            return;
           }
-        } else {
-           if (allProducts.length > 0) {
-              safeSyncCatalogDocument(allProducts);
-           }
-        }
+          const data = docSnap.data() as Partial<Product>;
+          if (data && data.id && data.name) {
+            firestoreProducts.push(sanitizeProductForFirestore(data));
+          }
+        });
+
+        let combinedDeleted = remoteDeleted;
+        try {
+          const localSaved = localStorage.getItem(DELETED_PRODUCTS_KEY);
+          const localDeleted: string[] = localSaved ? JSON.parse(localSaved) : [];
+          combinedDeleted = Array.from(new Set([...remoteDeleted, ...localDeleted]));
+          localStorage.setItem(DELETED_PRODUCTS_KEY, JSON.stringify(combinedDeleted));
+        } catch {}
+        setDeletedProductIds(combinedDeleted);
+
+        setAllProducts((prev) => {
+          // Strictly exclude any deleted product
+          const activeDocs = firestoreProducts.filter(p => !combinedDeleted.includes(p.id));
+
+          // Include any default products that haven't been deleted and aren't in Firestore yet
+          const missingDefaults = INITIAL_PRODUCTS.filter(ip => 
+            !activeDocs.some(p => p.id === ip.id) &&
+            !combinedDeleted.includes(ip.id)
+          );
+
+          const merged = [...activeDocs, ...missingDefaults].sort((a, b) => (a.sortOrder ?? 999) - (b.sortOrder ?? 999));
+          safeSaveCatalogToLocalStorage(PRODUCTS_STORAGE_KEY, merged);
+          return merged;
+        });
+
         setProductsLoaded(true);
       }, (err) => {
-        console.warn("Firebase products onSnapshot notice:", err?.message || err);
+        if (err?.code === 'resource-exhausted') {
+          console.warn("Firestore quota journalière atteinte. Catalogue local actif.");
+        } else {
+          console.warn("Firebase products onSnapshot notice:", err?.message || err);
+        }
         setProductsLoaded(true);
       });
 
@@ -153,11 +214,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   // Save allProducts to localStorage whenever it changes
   useEffect(() => {
-    try {
-      localStorage.setItem(PRODUCTS_STORAGE_KEY, JSON.stringify(allProducts));
-    } catch (e) {
-      console.error("Erreur sauvegarde catalogue local:", e);
-    }
+    safeSaveCatalogToLocalStorage(PRODUCTS_STORAGE_KEY, allProducts);
   }, [allProducts]);
 
   const updateProduct = async (updatedProduct: Product) => {
@@ -170,12 +227,11 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return updatedList;
     });
 
+    // Also update product data in current cart if present
+    setCart(prev => prev.map(item => item.product.id === cleanProduct.id ? { ...item, product: cleanProduct } : item));
+
     // 2. Immediate LocalStorage persistence
-    try {
-      localStorage.setItem(PRODUCTS_STORAGE_KEY, JSON.stringify(updatedList));
-    } catch (e) {
-      console.error("Erreur sauvegarde localStorage:", e);
-    }
+    safeSaveCatalogToLocalStorage(PRODUCTS_STORAGE_KEY, updatedList);
 
     // 3. Immediate Cloud Firestore persistence
     try {
@@ -188,10 +244,19 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // Safely sync the aggregate catalog
     await safeSyncCatalogDocument(updatedList);
 
-    showToast(`✓ Produit "${cleanProduct.name}" enregistré avec succès !`);
+    showToast(`✓ Fiche produit « ${cleanProduct.name} » modifiée avec succès !`, 'success');
   };
 
   const addProduct = async (newProduct: Product) => {
+    // If newly added product re-uses an ID that was previously deleted, un-delete it
+    if (newProduct.id && deletedProductIds.includes(newProduct.id)) {
+      const unDeleted = deletedProductIds.filter(id => id !== newProduct.id);
+      setDeletedProductIds(unDeleted);
+      try {
+        localStorage.setItem(DELETED_PRODUCTS_KEY, JSON.stringify(unDeleted));
+      } catch {}
+    }
+
     // Ensure unique ID
     let finalProduct = { ...newProduct };
     if (!finalProduct.id || allProducts.some(p => p.id === finalProduct.id)) {
@@ -209,11 +274,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     });
 
     // 2. Immediate LocalStorage persistence
-    try {
-      localStorage.setItem(PRODUCTS_STORAGE_KEY, JSON.stringify(updatedList));
-    } catch (e) {
-      console.error("Erreur sauvegarde localStorage:", e);
-    }
+    safeSaveCatalogToLocalStorage(PRODUCTS_STORAGE_KEY, updatedList);
 
     // 3. Immediate Cloud Firestore persistence
     try {
@@ -226,10 +287,18 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // Safely sync the aggregate catalog
     await safeSyncCatalogDocument(updatedList);
 
-    showToast(`✓ Nouveau produit "${cleanProduct.name}" ajouté au catalogue !`);
+    showToast(`✓ Nouveau produit « ${cleanProduct.name} » créé et ajouté au catalogue !`, 'success');
   };
 
   const deleteProduct = async (productId: string) => {
+    // 1. Permanently record ID in deletedProductIds
+    const updatedDeleted = Array.from(new Set([...deletedProductIds, productId]));
+    setDeletedProductIds(updatedDeleted);
+    try {
+      localStorage.setItem(DELETED_PRODUCTS_KEY, JSON.stringify(updatedDeleted));
+    } catch {}
+
+    // 2. Remove product from React state
     let toDeleteName = '';
     let updatedList: Product[] = [];
     setAllProducts((prev) => {
@@ -239,21 +308,23 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return updatedList;
     });
 
-    try {
-      localStorage.setItem(PRODUCTS_STORAGE_KEY, JSON.stringify(updatedList));
-    } catch (e) {
-      console.error("Erreur sauvegarde localStorage:", e);
-    }
+    // 3. Remove deleted product from active cart if it was in the cart
+    setCart(prev => prev.filter(item => item.product.id !== productId));
 
+    // 4. Save clean list to localStorage immediately
+    safeSaveCatalogToLocalStorage(PRODUCTS_STORAGE_KEY, updatedList);
+
+    // 5. Delete individual document from Firestore
     try {
       await deleteDoc(doc(db, 'products', productId)).catch(() => {});
     } catch (err) {
       console.error("Erreur suppression doc Firestore:", err);
     }
 
-    await safeSyncCatalogDocument(updatedList);
+    // 6. Sync aggregate Firestore catalog document WITH updated deleted list
+    await safeSyncCatalogDocument(updatedList, updatedDeleted);
 
-    showToast(`✓ Produit "${toDeleteName}" supprimé.`);
+    showToast(`✓ Produit « ${toDeleteName} » supprimé du catalogue avec succès.`, 'info');
   };
 
   const reorderProducts = async (reorderedProducts: Product[]) => {
@@ -262,11 +333,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     
     setAllProducts(updatedList);
     
-    try {
-      localStorage.setItem(PRODUCTS_STORAGE_KEY, JSON.stringify(updatedList));
-    } catch (e) {
-      console.error("Erreur sauvegarde localStorage:", e);
-    }
+    safeSaveCatalogToLocalStorage(PRODUCTS_STORAGE_KEY, updatedList);
     
     // Save to Firestore catalog (the aggregate doc)
     await safeSyncCatalogDocument(updatedList);
@@ -278,7 +345,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     });
     batch.commit().catch(err => console.error("Erreur lors de la mise à jour de l'ordre:", err));
     
-    showToast(`✓ L'ordre des produits a été mis à jour.`);
+    showToast(`✓ L'ordre d'affichage des produits a été mis à jour.`, 'info');
   };
 
   const [cart, setCart] = useState<CartItem[]>(() => {
@@ -319,15 +386,14 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
           if (data && Array.isArray(data.orders)) {
             setAllOrders(data.orders);
           }
-        } else {
-           // Document doesn't exist, we can push local state to it
-           if (allOrders.length > 0) {
-              setDoc(doc(db, 'orders', 'parailaf_all_orders_v1'), { orders: allOrders }).catch(() => {});
-           }
         }
         setOrdersLoaded(true);
       }, (err) => {
-        console.warn("Firebase orders onSnapshot notice:", err?.message || err);
+        if (err?.code === 'resource-exhausted') {
+          console.warn("Firestore quota journalière atteinte. Commandes stockées localement.");
+        } else {
+          console.warn("Firebase orders onSnapshot notice:", err?.message || err);
+        }
         setOrdersLoaded(true);
       });
       return () => unsub();
@@ -342,7 +408,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       localStorage.setItem(ORDERS_STORAGE_KEY, JSON.stringify(allOrders));
     } catch (e) {
-      console.error("Failed to save orders", e);
+      console.warn("Notice: LocalStorage orders backup skipped or exceeded quota.", e);
     }
   }, [allOrders]);
 
@@ -351,13 +417,22 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isAdminOpen, setIsAdminOpen] = useState(false);
   const [adminActiveTab, setAdminActiveTab] = useState<'orders' | 'email' | 'analytics' | 'new-order' | 'media' | 'employees' | 'products'>('orders');
 
-  const openAdmin = (tab: 'orders' | 'email' | 'analytics' | 'new-order' | 'media' | 'employees' | 'products' = 'orders') => {
+  const [adminEditingProductId, setAdminEditingProductId] = useState<string | null>(null);
+
+  const openAdmin = (
+    tab: 'orders' | 'email' | 'analytics' | 'new-order' | 'media' | 'employees' | 'products' = 'orders',
+    productId?: string | null
+  ) => {
     setAdminActiveTab(tab);
+    if (productId !== undefined) {
+      setAdminEditingProductId(productId);
+    }
     setIsAdminOpen(true);
   };
   const [quickBuyProduct, setQuickBuyProduct] = useState<Product | null>(null);
   const [selectedProductForModal, setSelectedProductForModal] = useState<Product | null>(null);
-  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [toastData, setToastData] = useState<ToastData | null>(null);
+  const toastMessage = toastData?.message || null;
   const [lastOrder, setLastOrder] = useState<Order | null>(null);
   const [activeCategory, setActiveCategory] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
@@ -369,6 +444,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     'dexcom-g7-capteur': imgDexcomG7,
     'trousse-isotherme-diabete': imgTrousseIsotherme,
     'fsl2-lecteur-officiel': imgFsl2Lecteur,
+    'fsl3-lecteur-officiel': imgFsl3Lecteur,
   };
 
   const [productCustomImages, setProductCustomImages] = useState<Record<string, string>>(() => {
@@ -422,9 +498,11 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setProductCustomImages(updated);
     try {
       localStorage.setItem('parailaf_product_images', JSON.stringify(updated));
+    } catch {}
+    try {
       await setDoc(doc(db, 'images', 'parailaf_product_images_custom'), updated);
     } catch (err) {
-      console.error("Erreur mise à jour image produit:", err);
+      console.error("Erreur mise à jour image produit dans Firestore:", err);
     }
   };
 
@@ -437,11 +515,11 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, [cart]);
 
-  const showToast = (message: string) => {
-    setToastMessage(message);
+  const showToast = (message: string, type: ToastType = 'info') => {
+    setToastData({ message, type });
     setTimeout(() => {
-      setToastMessage(null);
-    }, 3500);
+      setToastData(prev => (prev?.message === message ? null : prev));
+    }, 3800);
   };
 
   const addToCart = (product: Product, quantity: number = 1, selectedOption?: string) => {
@@ -459,7 +537,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     });
 
-    showToast(`✓ "${product.name}" ajouté au panier !`);
+    showToast(`✓ "${product.name}" ajouté au panier !`, 'cart');
   };
 
   const removeFromCart = (productId: string) => {
@@ -498,7 +576,13 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (ordersLoaded) {
       setDoc(doc(db, 'orders', 'parailaf_all_orders_v1'), {
         orders: newOrders
-      }).catch(err => console.error("Firebase save orders error:", err));
+      }).catch(err => {
+        if (err?.code === 'resource-exhausted') {
+          console.warn("Firestore quota écritures atteinte. La commande est conservée localement avec succès.");
+        } else {
+          console.error("Firebase save orders error:", err);
+        }
+      });
     }
   };
 
@@ -672,11 +756,14 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setIsAdminOpen,
         adminActiveTab,
         setAdminActiveTab,
+        adminEditingProductId,
+        setAdminEditingProductId,
         openAdmin,
         quickBuyProduct,
         setQuickBuyProduct,
         selectedProductForModal,
         setSelectedProductForModal,
+        toastData,
         toastMessage,
         showToast,
         allProducts,

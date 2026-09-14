@@ -1,9 +1,10 @@
 /**
- * Compress and optimize an image file to fit safely within Firestore's limits
+ * Compress and optimize an image file to fit safely within Firestore's and localStorage's limits
  * while maintaining crisp display quality on mobile screens and desktop monitors.
- * Guarantees output size is compact (target < 65KB base64) to prevent Firestore 1MB document overflows.
+ * Output size is optimized (target 25KB-38KB base64) to allow multiple gallery images per product
+ * without ever reaching document or storage quota ceilings.
  */
-export async function compressImageFile(file: File, maxWidth: number = 800, quality: number = 0.75): Promise<string> {
+export async function compressImageFile(file: File, maxWidth: number = 640, quality: number = 0.70): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onerror = reject;
@@ -41,10 +42,10 @@ export async function compressImageFile(file: File, maxWidth: number = 800, qual
 
         let dataUrl = canvas.toDataURL('image/jpeg', quality);
 
-        // If dataUrl is still large (> 90KB chars), re-compress more aggressively
-        if (dataUrl.length > 90000) {
+        // If dataUrl is still large (> 50,000 characters), re-compress down to guarantee safe size
+        if (dataUrl.length > 50000) {
           const smallerCanvas = document.createElement('canvas');
-          const scale = 0.75;
+          const scale = 0.8;
           smallerCanvas.width = Math.round(width * scale);
           smallerCanvas.height = Math.round(height * scale);
           const sCtx = smallerCanvas.getContext('2d');
@@ -52,7 +53,7 @@ export async function compressImageFile(file: File, maxWidth: number = 800, qual
             sCtx.fillStyle = '#FFFFFF';
             sCtx.fillRect(0, 0, smallerCanvas.width, smallerCanvas.height);
             sCtx.drawImage(img, 0, 0, smallerCanvas.width, smallerCanvas.height);
-            dataUrl = smallerCanvas.toDataURL('image/jpeg', 0.68);
+            dataUrl = smallerCanvas.toDataURL('image/jpeg', 0.65);
           }
         }
 

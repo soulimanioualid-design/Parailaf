@@ -45,9 +45,17 @@ export const ProductDetailModal: React.FC = () => {
   const product = allProducts.find(p => p.id === selectedProductForModal.id) || selectedProductForModal;
   const mainImage = getProductImage ? getProductImage(product) : product.image;
   
-  // Build distinct gallery
+  // Build distinct gallery (main image first, followed by all distinct secondary photos)
   const rawGallery = Array.isArray(product.gallery) ? product.gallery : [];
-  const distinctSecondary = rawGallery.filter(img => img && img !== mainImage && img !== product.image);
+  const seen = new Set<string>();
+  if (mainImage) seen.add(mainImage);
+  const distinctSecondary: string[] = [];
+  for (const img of rawGallery) {
+    if (typeof img === 'string' && img.trim() && !seen.has(img)) {
+      seen.add(img);
+      distinctSecondary.push(img);
+    }
+  }
   const images = [mainImage, ...distinctSecondary];
   const activeImage = images[activeImageIndex] || images[0] || mainImage;
 
@@ -110,7 +118,7 @@ export const ProductDetailModal: React.FC = () => {
                     <button
                       onClick={() => {
                         setSelectedProductForModal(null);
-                        openAdmin('products');
+                        openAdmin('products', product.id);
                       }}
                       className="ml-auto bg-slate-900 hover:bg-slate-800 text-white font-black text-xs px-3 py-1.5 rounded-xl flex items-center gap-1.5 shadow-sm transition cursor-pointer"
                       title="Modifier les photos, le titre ou la description"

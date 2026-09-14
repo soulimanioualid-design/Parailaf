@@ -53,6 +53,8 @@ export const AdminDashboard: React.FC = () => {
     setIsAdminOpen, 
     adminActiveTab: activeTab,
     setAdminActiveTab: setActiveTab,
+    adminEditingProductId,
+    setAdminEditingProductId,
     allOrders, 
     updateOrderStatus, 
     deleteOrder, 
@@ -1552,7 +1554,7 @@ export const AdminDashboard: React.FC = () => {
           )}
 
           {activeTab === 'products' && (
-            <AdminProductManager initialProductId={selectedProductIdForEdit} />
+            <AdminProductManager initialProductId={adminEditingProductId || selectedProductIdForEdit} />
           )}
 
         </div>

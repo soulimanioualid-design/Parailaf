@@ -38,11 +38,40 @@ export const AdminProductManager: React.FC<AdminProductManagerProps> = ({ initia
   const [productToDelete, setProductToDelete] = useState<Product | null>(null);
   const [isSaving, setIsSaving] = useState(false);
 
+  const startEditingProduct = (prod: Product) => {
+    const mainImg = productCustomImages[prod.id] || prod.image;
+    const rawGallery = Array.isArray(prod.gallery) && prod.gallery.length > 0 
+      ? prod.gallery 
+      : (mainImg ? [mainImg] : []);
+    
+    // Ensure mainImg is at index 0 and deduplicate while preserving other images
+    const seen = new Set<string>();
+    const galleryList: string[] = [];
+    if (mainImg) {
+      seen.add(mainImg);
+      galleryList.push(mainImg);
+    }
+    for (const img of rawGallery) {
+      if (typeof img === 'string' && img.trim() && !seen.has(img)) {
+        seen.add(img);
+        galleryList.push(img);
+      }
+    }
+    const finalGallery = galleryList.length > 0 ? galleryList : (mainImg ? [mainImg] : []);
+
+    setEditingProduct({
+      ...prod,
+      image: finalGallery[0],
+      gallery: finalGallery
+    });
+    setAiPrompt(prod.name);
+  };
+
   useEffect(() => {
     if (initialProductId) {
       const prod = allProducts.find(p => p.id === initialProductId);
       if (prod) {
-        setEditingProduct(prod);
+        startEditingProduct(prod);
       }
     }
   }, [initialProductId, allProducts]);
@@ -138,57 +167,68 @@ export const AdminProductManager: React.FC<AdminProductManagerProps> = ({ initia
   const getDistinctGallery = (prod: Product) => {
     const mainImg = getCurrentMainImage(prod);
     const raw = Array.isArray(prod.gallery) ? prod.gallery : [];
-    return raw.filter(img => img && img !== mainImg && img !== prod.image);
+    const seen = new Set<string>();
+    if (mainImg) seen.add(mainImg);
+    const result: string[] = [];
+    for (const img of raw) {
+      if (typeof img === 'string' && img.trim() && !seen.has(img)) {
+        seen.add(img);
+        result.push(img);
+      }
+    }
+    return result;
+  };
+
+  const getEditingGallery = (): string[] => {
+    if (!editingProduct) return [];
+    if (Array.isArray(editingProduct.gallery) && editingProduct.gallery.length > 0) {
+      return editingProduct.gallery;
+    }
+    const fallback = editingProduct.image || getCurrentMainImage(editingProduct);
+    return fallback ? [fallback] : [];
   };
 
   // Delete an image from product
   const handleDeleteImage = (index: number) => {
     if (!editingProduct) return;
-    const currentMain = getCurrentMainImage(editingProduct);
-    const secondary = getDistinctGallery(editingProduct);
+    const currentGallery = getEditingGallery();
 
-    if (index === 0) {
-      // Deleting main photo
-      if (secondary.length > 0) {
-        const newMain = secondary[0];
-        const newSecondary = secondary.slice(1);
-        setEditingProduct({
-          ...editingProduct,
-          image: newMain,
-          gallery: [newMain, ...newSecondary]
-        });
-        updateProductImage(editingProduct.id, newMain);
-        showToast('Photo principale supprimée, photo suivante promue.');
-      } else {
-        showToast('Impossible de supprimer la seule photo restante.');
-      }
+    if (currentGallery.length <= 1) {
+      showToast('Impossible de supprimer la seule photo restante.');
+      return;
+    }
+
+    const newGallery = currentGallery.filter((_, idx) => idx !== index);
+    const newMain = newGallery[0] || '';
+
+    setEditingProduct({
+      ...editingProduct,
+      image: newMain,
+      gallery: newGallery
+    });
+
+    if (index === 0 && newMain) {
+      updateProductImage(editingProduct.id, newMain);
+      showToast('Photo principale supprimée, photo suivante promue.');
     } else {
-      // Deleting secondary photo (e.g. index 1 is the 2nd photo)
-      const secondaryIndex = index - 1;
-      const updatedSecondary = secondary.filter((_, idx) => idx !== secondaryIndex);
-      setEditingProduct({
-        ...editingProduct,
-        gallery: [currentMain, ...updatedSecondary]
-      });
-      showToast('✓ 2ème photo supprimée de la galerie !');
+      showToast('✓ Photo supprimée de la galerie !');
     }
   };
 
   // Set secondary image as main
   const handlePromoteToMain = (index: number) => {
-    if (!editingProduct || index === 0) return;
-    const currentMain = getCurrentMainImage(editingProduct);
-    const secondary = getDistinctGallery(editingProduct);
-    const selected = secondary[index - 1];
-
+    if (!editingProduct || index <= 0) return;
+    const currentGallery = getEditingGallery();
+    const selected = currentGallery[index];
     if (!selected) return;
-    const remainingSecondary = secondary.filter((_, idx) => idx !== index - 1);
-    const newSecondary = [currentMain, ...remainingSecondary];
+
+    const remaining = currentGallery.filter((_, idx) => idx !== index);
+    const newGallery = [selected, ...remaining];
 
     setEditingProduct({
       ...editingProduct,
       image: selected,
-      gallery: [selected, ...newSecondary]
+      gallery: newGallery
     });
     updateProductImage(editingProduct.id, selected);
     showToast('✓ Photo définie comme image principale.');
@@ -197,11 +237,12 @@ export const AdminProductManager: React.FC<AdminProductManagerProps> = ({ initia
   // Remove all secondary photos to keep ONLY 1 photo
   const handleKeepSinglePhoto = () => {
     if (!editingProduct) return;
-    const currentMain = getCurrentMainImage(editingProduct);
+    const currentGallery = getEditingGallery();
+    const single = currentGallery[0] || editingProduct.image || '';
     setEditingProduct({
       ...editingProduct,
-      image: currentMain,
-      gallery: []
+      image: single,
+      gallery: single ? [single] : []
     });
     showToast('✓ Galerie vidée : seule la photo principale est conservée.');
   };
@@ -213,38 +254,37 @@ export const AdminProductManager: React.FC<AdminProductManagerProps> = ({ initia
 
     try {
       showToast('Optimisation de la photo...');
-      const compressed = await compressImageFile(file, 800, 0.75);
+      const compressed = await compressImageFile(file);
+      const currentGallery = getEditingGallery();
 
-      const currentMain = getCurrentMainImage(editingProduct);
-      const secondary = getDistinctGallery(editingProduct);
-
-      if (replaceIndexRef.current === 0) {
-        // Replacing main photo
-        setEditingProduct({
-          ...editingProduct,
-          image: compressed,
-          gallery: [compressed, ...secondary]
-        });
-        await updateProductImage(editingProduct.id, compressed);
-        showToast('✓ Photo principale remplacée !');
-      } else if (replaceIndexRef.current !== null && replaceIndexRef.current > 0) {
-        // Replacing secondary photo
-        const secIndex = replaceIndexRef.current - 1;
-        const newSec = [...secondary];
-        newSec[secIndex] = compressed;
-        setEditingProduct({
-          ...editingProduct,
-          gallery: [currentMain, ...newSec]
-        });
-        showToast('✓ Photo secondaire modifiée !');
-      } else {
+      if (replaceIndexRef.current === null) {
         // Adding new photo to gallery
-        const newSec = [...secondary, compressed];
+        const newGallery = [...currentGallery, compressed];
         setEditingProduct({
           ...editingProduct,
-          gallery: [currentMain, ...newSec]
+          image: newGallery[0],
+          gallery: newGallery
         });
         showToast('✓ Nouvelle photo ajoutée à la galerie !');
+      } else {
+        // Replacing photo at target index
+        const targetIdx = replaceIndexRef.current;
+        const newGallery = [...currentGallery];
+        newGallery[targetIdx] = compressed;
+
+        const newMain = targetIdx === 0 ? compressed : (newGallery[0] || compressed);
+        setEditingProduct({
+          ...editingProduct,
+          image: newMain,
+          gallery: newGallery
+        });
+
+        if (targetIdx === 0) {
+          await updateProductImage(editingProduct.id, compressed);
+          showToast('✓ Photo principale remplacée !');
+        } else {
+          showToast(`✓ Photo ${targetIdx + 1} modifiée !`);
+        }
       }
     } catch (err) {
       console.error(err);
@@ -349,11 +389,12 @@ export const AdminProductManager: React.FC<AdminProductManagerProps> = ({ initia
   // Confirm delete product
   const confirmDeleteProduct = async () => {
     if (!productToDelete) return;
-    await deleteProduct(productToDelete.id);
-    if (editingProduct?.id === productToDelete.id) {
+    const target = productToDelete;
+    setProductToDelete(null);
+    if (editingProduct?.id === target.id) {
       setEditingProduct(null);
     }
-    setProductToDelete(null);
+    await deleteProduct(target.id);
   };
 
   // Save changes to Firestore and local catalog state
@@ -370,8 +411,8 @@ export const AdminProductManager: React.FC<AdminProductManagerProps> = ({ initia
 
     try {
       setIsSaving(true);
-      const currentMain = getCurrentMainImage(editingProduct);
-      const secondary = getDistinctGallery(editingProduct);
+      const currentGallery = getEditingGallery();
+      const currentMain = currentGallery[0] || editingProduct.image || '';
 
       // Auto fallback descriptions if empty so user is never blocked
       const fallbackShort = editingProduct.shortDescription?.trim() 
@@ -388,7 +429,7 @@ export const AdminProductManager: React.FC<AdminProductManagerProps> = ({ initia
         shortDescription: fallbackShort,
         fullDescription: fallbackFull,
         image: currentMain,
-        gallery: [currentMain, ...secondary.filter(img => img !== currentMain)]
+        gallery: currentGallery
       };
 
       const isNew = !allProducts.some(p => p.id === finalProduct.id);
@@ -413,15 +454,13 @@ export const AdminProductManager: React.FC<AdminProductManagerProps> = ({ initia
     }
   };
 
-  // EDITING VIEW
-  if (editingProduct) {
-    const isNewProduct = !allProducts.some(p => p.id === editingProduct.id);
-    const currentMain = getCurrentMainImage(editingProduct);
-    const secondaryImages = getDistinctGallery(editingProduct);
-    const allImageList = [currentMain, ...secondaryImages];
+  const isNewProduct = editingProduct ? !allProducts.some(p => p.id === editingProduct.id) : false;
+  const allImageList = editingProduct ? getEditingGallery() : [];
 
-    return (
-      <div className="max-w-4xl mx-auto bg-white rounded-3xl p-5 sm:p-8 border border-slate-200 shadow-sm animate-in fade-in zoom-in-95 duration-200 space-y-6">
+  return (
+    <>
+      {editingProduct ? (
+        <div className="max-w-4xl mx-auto bg-white rounded-3xl p-5 sm:p-8 border border-slate-200 shadow-sm animate-in fade-in zoom-in-95 duration-200 space-y-6">
         
         {/* Hidden File Input for uploading images */}
         <input 
@@ -1036,37 +1075,48 @@ export const AdminProductManager: React.FC<AdminProductManagerProps> = ({ initia
           </div>
 
           {/* Action Buttons */}
-          <div className="pt-4 border-t border-slate-100 flex justify-end gap-3">
-            <button
-              type="button"
-              disabled={isSaving}
-              onClick={() => setEditingProduct(null)}
-              className="px-5 py-2.5 text-slate-600 font-bold hover:bg-slate-100 rounded-xl transition cursor-pointer text-sm disabled:opacity-50"
-            >
-              Annuler
-            </button>
-            <button
-              type="button"
-              disabled={isSaving}
-              onClick={() => handleSave()}
-              className="px-6 py-2.5 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl flex items-center gap-2 shadow-md transition cursor-pointer text-sm disabled:opacity-50"
-            >
-              {isSaving ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
-              ) : (
-                <Save className="w-4 h-4" />
-              )}
-              <span>{isSaving ? 'Enregistrement en cours...' : isNewProduct ? 'Créer le Produit' : 'Sauvegarder les modifications'}</span>
-            </button>
+          <div className="pt-4 border-t border-slate-100 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+            {!isNewProduct ? (
+              <button
+                type="button"
+                disabled={isSaving}
+                onClick={() => setProductToDelete(editingProduct)}
+                className="px-4 py-2.5 text-red-600 font-bold hover:bg-red-50 border border-red-200 rounded-xl transition cursor-pointer text-sm flex items-center justify-center gap-1.5"
+                title="Supprimer définitivement ce produit du catalogue"
+              >
+                <Trash2 className="w-4 h-4" />
+                <span>Supprimer ce produit</span>
+              </button>
+            ) : <div />}
+
+            <div className="flex items-center justify-end gap-3">
+              <button
+                type="button"
+                disabled={isSaving}
+                onClick={() => setEditingProduct(null)}
+                className="px-5 py-2.5 text-slate-600 font-bold hover:bg-slate-100 rounded-xl transition cursor-pointer text-sm disabled:opacity-50"
+              >
+                Annuler
+              </button>
+              <button
+                type="button"
+                disabled={isSaving}
+                onClick={() => handleSave()}
+                className="px-6 py-2.5 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl flex items-center justify-center gap-2 shadow-md transition cursor-pointer text-sm disabled:opacity-50"
+              >
+                {isSaving ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Save className="w-4 h-4" />
+                )}
+                <span>{isSaving ? 'Enregistrement en cours...' : isNewProduct ? 'Créer le Produit' : 'Sauvegarder les modifications'}</span>
+              </button>
+            </div>
           </div>
         </form>
       </div>
-    );
-  }
-
-  // CATALOG LIST VIEW
-  return (
-    <div className="max-w-5xl mx-auto space-y-6">
+    ) : (
+      <div className="max-w-5xl mx-auto space-y-6">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white p-5 rounded-3xl shadow-sm border border-slate-200">
         <div>
           <div className="flex items-center gap-2">
@@ -1124,8 +1174,11 @@ export const AdminProductManager: React.FC<AdminProductManagerProps> = ({ initia
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
           {filtered.map((product, index) => {
             const mainImg = getCurrentMainImage(product);
-            const gallery = getDistinctGallery(product);
-            const photoCount = 1 + gallery.length;
+            const rawGal = Array.isArray(product.gallery) && product.gallery.length > 0 
+              ? product.gallery 
+              : (mainImg ? [mainImg] : []);
+            const distinctPhotos = Array.from(new Set([mainImg, ...rawGal].filter(Boolean)));
+            const photoCount = distinctPhotos.length;
 
             return (
               <div key={product.id} className="bg-white rounded-3xl border border-slate-200 overflow-hidden shadow-xs hover:shadow-md transition-all flex flex-col justify-between group">
@@ -1152,7 +1205,7 @@ export const AdminProductManager: React.FC<AdminProductManagerProps> = ({ initia
 
                     <div className="absolute top-2.5 right-2.5">
                       <button
-                        onClick={() => setEditingProduct(product)}
+                        onClick={() => startEditingProduct(product)}
                         className="px-3 py-1.5 bg-white hover:bg-red-50 text-red-600 rounded-xl shadow-md font-black text-xs flex items-center gap-1.5 transition cursor-pointer border border-red-200"
                       >
                         <Edit3 className="w-3.5 h-3.5 text-red-600" />
@@ -1221,7 +1274,7 @@ export const AdminProductManager: React.FC<AdminProductManagerProps> = ({ initia
                     </div>
 
                     <button
-                      onClick={() => setEditingProduct(product)}
+                      onClick={() => startEditingProduct(product)}
                       className="flex-1 py-2.5 px-3 bg-red-600 hover:bg-red-700 active:scale-98 text-white font-black text-xs rounded-xl flex items-center justify-center gap-1.5 shadow-sm transition cursor-pointer"
                     >
                       <Edit3 className="w-3.5 h-3.5" />
@@ -1253,6 +1306,8 @@ export const AdminProductManager: React.FC<AdminProductManagerProps> = ({ initia
           })}
         </div>
       )}
+      </div>
+    )}
 
       {/* MODAL DE CONFIRMATION DE SUPPRESSION */}
       {productToDelete && (
@@ -1294,6 +1349,6 @@ export const AdminProductManager: React.FC<AdminProductManagerProps> = ({ initia
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 };

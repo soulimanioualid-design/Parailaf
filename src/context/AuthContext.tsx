@@ -117,16 +117,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             // Update local storage with fresh data from Firestore
             localStorage.setItem(ACCOUNTS_STORAGE_KEY, JSON.stringify(data.users));
           }
-        } else {
-          // Document doesn't exist yet, seed it if we have local users
-          const localUsers = localStorage.getItem(ACCOUNTS_STORAGE_KEY);
-          if (localUsers) {
-             setDoc(doc(db, 'users', 'parailaf_all_users_v1'), { users: JSON.parse(localUsers) }).catch(() => {});
-          }
         }
         setUsersLoaded(true);
       }, (err) => {
-        console.warn("Firebase users onSnapshot notice:", err?.message || err);
+        if (err?.code === 'resource-exhausted') {
+          console.warn("Firestore quota journalière atteinte. Comptes utilisateurs gérés localement.");
+        } else {
+          console.warn("Firebase users onSnapshot notice:", err?.message || err);
+        }
         setUsersLoaded(true);
       });
       return () => unsub();

@@ -28,6 +28,7 @@ export const ProductGrid: React.FC = () => {
         activeCategory === 'all' || 
         product.category === activeCategory ||
         (activeCategory === 'libre-2' && (product.category === 'libre-2' || product.id.includes('fsl2') || product.name.toLowerCase().includes('libre 2'))) ||
+        (activeCategory === 'libre-3' && (product.category === 'libre-3' || product.id.includes('fsl3') || product.name.toLowerCase().includes('libre 3'))) ||
         (activeCategory === 'lecteurs' && (product.category === 'lecteurs' || product.id.includes('lecteur') || product.categoryLabel?.toLowerCase().includes('lecteur'))) ||
         (activeCategory === 'dexcom' && (product.category === 'dexcom' || product.brand.toLowerCase().includes('dexcom'))) ||
         (activeCategory === 'capteurs' && (product.category === 'capteurs' || product.category === 'libre-2' || product.category === 'libre-3' || product.category === 'dexcom' || product.id.includes('capteur'))) ||
@@ -48,6 +49,21 @@ export const ProductGrid: React.FC = () => {
       return (a.sortOrder ?? 999) - (b.sortOrder ?? 999);
     });
   }, [allProducts, activeCategory, searchQuery, sortBy]);
+
+  const getCategoryCount = (catId: string) => {
+    if (catId === 'all') return allProducts.length;
+    return allProducts.filter((product) => {
+      return (
+        product.category === catId ||
+        (catId === 'libre-2' && (product.category === 'libre-2' || product.id.includes('fsl2') || product.name.toLowerCase().includes('libre 2'))) ||
+        (catId === 'libre-3' && (product.category === 'libre-3' || product.id.includes('fsl3') || product.name.toLowerCase().includes('libre 3'))) ||
+        (catId === 'lecteurs' && (product.category === 'lecteurs' || product.id.includes('lecteur') || product.categoryLabel?.toLowerCase().includes('lecteur'))) ||
+        (catId === 'dexcom' && (product.category === 'dexcom' || product.brand.toLowerCase().includes('dexcom'))) ||
+        (catId === 'capteurs' && (product.category === 'capteurs' || product.category === 'libre-2' || product.category === 'libre-3' || product.category === 'dexcom' || product.id.includes('capteur'))) ||
+        (catId === 'packs' && (product.category === 'packs' || product.id.includes('pack') || product.id.includes('kit')))
+      );
+    }).length;
+  };
 
   return (
     <section id="nos-produits" className="py-12 md:py-16 bg-slate-50 border-b border-slate-200">
@@ -97,7 +113,7 @@ export const ProductGrid: React.FC = () => {
                       ? 'bg-white/20 text-white' 
                       : 'bg-slate-200/80 text-slate-600'
                   }`}>
-                    {cat.id === 'all' ? allProducts.length : allProducts.filter(p => p.category === cat.id).length}
+                    {getCategoryCount(cat.id)}
                   </span>
                 </button>
               );

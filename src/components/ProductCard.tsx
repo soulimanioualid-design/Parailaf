@@ -131,7 +131,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, viewMode = 'l
           <button
             onClick={(e) => {
               e.stopPropagation();
-              openAdmin('products');
+              openAdmin('products', product.id);
             }}
             className="absolute top-2 right-2 sm:top-3 sm:right-3 z-20 px-2.5 py-1 bg-red-600 hover:bg-red-700 active:scale-95 text-white rounded-lg text-[10px] font-black shadow-md flex items-center gap-1 transition cursor-pointer"
             title="Modifier ce produit dans l'espace Admin"

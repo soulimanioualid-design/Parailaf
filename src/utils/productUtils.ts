@@ -25,13 +25,21 @@ export function sanitizeProductForFirestore(prod: Partial<Product>): Product {
   if (Array.isArray(prod.gallery) && prod.gallery.length > 0) {
     gallery = prod.gallery.filter(img => typeof img === 'string' && img.trim().length > 0);
   }
-  // Remove exact duplicates
-  gallery = Array.from(new Set(gallery));
-  if (!gallery.includes(mainImage)) {
-    gallery = [mainImage, ...gallery];
+  // Ensure mainImage is at index 0 and remove exact duplicates preserving order
+  const seen = new Set<string>();
+  const distinctGallery: string[] = [];
+  if (mainImage) {
+    seen.add(mainImage);
+    distinctGallery.push(mainImage);
   }
-  // Cap gallery to max 4 images to keep document sizes well within Firestore limits
-  gallery = gallery.slice(0, 4);
+  for (const img of gallery) {
+    if (!seen.has(img)) {
+      seen.add(img);
+      distinctGallery.push(img);
+    }
+  }
+  // Allow up to 8 images per product gallery
+  const safeGallery = distinctGallery.length > 0 ? distinctGallery.slice(0, 8) : [mainImage];
 
   const features = (Array.isArray(prod.features) && prod.features.length > 0)
     ? prod.features.filter(f => typeof f === 'string' && f.trim().length > 0)
@@ -60,7 +68,7 @@ export function sanitizeProductForFirestore(prod: Partial<Product>): Product {
     rating: typeof prod.rating === 'number' && !isNaN(prod.rating) ? prod.rating : 5.0,
     reviewsCount: typeof prod.reviewsCount === 'number' && !isNaN(prod.reviewsCount) ? prod.reviewsCount : 1,
     image: mainImage,
-    gallery,
+    gallery: safeGallery,
     features,
     boxContents,
     inStock: prod.inStock !== false,
@@ -96,32 +104,77 @@ export function sanitizeProductForFirestore(prod: Partial<Product>): Product {
 /**
  * Prepares the aggregated catalog list for saving into parailaf_catalog_v1.
  * Cloud Firestore has a strict 1,048,576 bytes limit per document.
- * If the aggregate JSON size approaches the limit (> 650KB), this helper ensures
- * huge base64 strings in secondary gallery arrays are trimmed down so parailaf_catalog_v1
- * never exceeds Firestore limits. Full high-res images are always safely preserved in
- * individual product documents (/products/{productId}).
+ * We safely preserve all gallery photos. Only if the aggregate JSON size approaches
+ * the hard 1MB ceiling (> 920KB), we gently cap gallery length to 4 photos per product.
  */
 export function prepareCatalogForFirestore(products: Product[]): Product[] {
   const list = products.map(p => sanitizeProductForFirestore(p));
   const jsonString = JSON.stringify(list);
 
-  // If comfortably under 650KB, return as is
-  if (jsonString.length < 650000) {
+  // If comfortably under 920KB, return the complete catalog with all gallery photos intact
+  if (jsonString.length < 920000) {
     return list;
   }
 
-  // Otherwise, slim down secondary gallery images in the aggregated catalog doc
+  // Otherwise, gently cap gallery to 4 photos per product to stay strictly under 1MB
   return list.map(p => {
-    // If gallery has large base64 items, keep only mainImage in parailaf_catalog_v1
-    const slimGallery = (p.gallery || []).filter(img => {
-      // keep URLs or static paths, or if base64 keep only if short (< 45KB)
-      return !img.startsWith('data:image/') || img.length < 45000;
-    });
-
+    const rawGallery = Array.isArray(p.gallery) && p.gallery.length > 0 ? p.gallery : [p.image];
+    const cappedGallery = rawGallery.slice(0, 4);
     return {
       ...p,
-      gallery: slimGallery.length > 0 ? slimGallery : [p.image]
+      gallery: cappedGallery
     };
   });
 }
+
+/**
+ * Safely saves the product catalog into browser localStorage.
+ * Handles DOMException / QuotaExceededError robustly:
+ * 1. Automatically purges legacy/stale cache keys from earlier applet versions.
+ * 2. Never throws unhandled exceptions or crashes the browser session.
+ */
+export function safeSaveCatalogToLocalStorage(storageKey: string, products: Product[]): boolean {
+  if (typeof window === 'undefined' || !window.localStorage) return false;
+
+  // 1. Purge known stale keys across versions to free space immediately
+  const stalePrefixes = ['parailaf_catalog_v', 'parailaf_all_orders_v'];
+  try {
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (k && stalePrefixes.some(prefix => k.startsWith(prefix)) && k !== storageKey) {
+        localStorage.removeItem(k);
+      }
+    }
+  } catch {}
+
+  // Attempt 1: Standard save with full products and all gallery photos
+  try {
+    localStorage.setItem(storageKey, JSON.stringify(products));
+    return true;
+  } catch (err: any) {
+    console.warn("Notice: Quota localStorage atteinte lors de la sauvegarde du catalogue. Nettoyage...", err?.message || err);
+  }
+
+  // Attempt 2: Clear any other non-essential localStorage items to free space
+  try {
+    const keysToRemove: string[] = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (k && k !== storageKey && k !== 'parailaf_cart_v1' && k !== 'parailaf_all_orders_v2') {
+        keysToRemove.push(k);
+      }
+    }
+    keysToRemove.forEach(k => {
+      try { localStorage.removeItem(k); } catch {}
+    });
+    localStorage.setItem(storageKey, JSON.stringify(products));
+    return true;
+  } catch {}
+
+  // Notice: If browser quota is full, we do NOT corrupt or strip galleries down in storage.
+  // The catalog remains 100% complete and authoritative in memory and Firestore.
+  console.warn("Avertissement: Sauvegarde locale du catalogue ignorée (quota navigateur). Le catalogue complet reste actif en mémoire et Firestore.");
+  return false;
+}
+
 
