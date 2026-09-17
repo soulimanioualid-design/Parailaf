@@ -1,12 +1,143 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { User, StoredUserAccount } from '../types';
+import { User, StoredUserAccount, UserRole } from '../types';
 import { db } from '../utils/firebase';
 import { doc, onSnapshot, setDoc } from 'firebase/firestore';
+
+export type AdminTab = 'orders' | 'email' | 'analytics' | 'new-order' | 'media' | 'employees' | 'products' | 'languages';
+
+export interface RoleConfig {
+  role: UserRole;
+  name: string;
+  label: string;
+  labelAr: string;
+  shortRoleName: string;
+  description: string;
+  badgeClass: string;
+  iconName: string;
+  allowedTabs: AdminTab[];
+  canEditProducts: boolean;
+  canManageOrders: boolean;
+  canCreateManualOrders: boolean;
+  canManageMedia: boolean;
+  canViewAnalytics: boolean;
+  canManageEmployees: boolean;
+  canManageSettings: boolean;
+}
+
+export const ROLE_CONFIGS: Record<UserRole, RoleConfig> = {
+  admin: {
+    role: 'admin',
+    name: 'Administrateur',
+    label: 'Administrateur Principal',
+    labelAr: 'المشرف العام',
+    shortRoleName: 'Admin',
+    description: 'Accès total à tous les modules : commandes, produits, bannières, statistiques, gestion des employés et réglages système.',
+    badgeClass: 'bg-red-600 text-white',
+    iconName: 'ShieldAlert',
+    allowedTabs: ['orders', 'new-order', 'products', 'media', 'analytics', 'employees', 'languages', 'email'],
+    canEditProducts: true,
+    canManageOrders: true,
+    canCreateManualOrders: true,
+    canManageMedia: true,
+    canViewAnalytics: true,
+    canManageEmployees: true,
+    canManageSettings: true,
+  },
+  manager: {
+    role: 'manager',
+    name: 'Gérant',
+    label: 'Gérant du Magasin',
+    labelAr: 'مدير المتجر',
+    shortRoleName: 'Gérant',
+    description: 'Gestion globale des opérations : suivi des commandes, catalogue produits, bannières et statistiques de vente.',
+    badgeClass: 'bg-indigo-600 text-white',
+    iconName: 'Briefcase',
+    allowedTabs: ['orders', 'new-order', 'products', 'media', 'analytics'],
+    canEditProducts: true,
+    canManageOrders: true,
+    canCreateManualOrders: true,
+    canManageMedia: true,
+    canViewAnalytics: true,
+    canManageEmployees: false,
+    canManageSettings: false,
+  },
+  employee: {
+    role: 'employee',
+    name: 'Employé',
+    label: 'Employé / Catalogue & Ventes',
+    labelAr: 'موظف المتجر والمنتجات',
+    shortRoleName: 'Employé',
+    description: 'Ajout et mise à jour des fiches produits, gestion des stocks, bannières publicitaires et saisie des commandes téléphoniques.',
+    badgeClass: 'bg-blue-600 text-white',
+    iconName: 'Layers',
+    allowedTabs: ['products', 'new-order', 'orders', 'media'],
+    canEditProducts: true,
+    canManageOrders: true,
+    canCreateManualOrders: true,
+    canManageMedia: true,
+    canViewAnalytics: false,
+    canManageEmployees: false,
+    canManageSettings: false,
+  },
+  delivery: {
+    role: 'delivery',
+    name: 'Livreur',
+    label: 'Livreur Express',
+    labelAr: 'مندوب التوصيل',
+    shortRoleName: 'Livreur',
+    description: 'Accès dédié aux commandes confirmées et en expédition, détails de livraison, contact direct client et bordereaux.',
+    badgeClass: 'bg-amber-600 text-white',
+    iconName: 'Truck',
+    allowedTabs: ['orders'],
+    canEditProducts: false,
+    canManageOrders: true,
+    canCreateManualOrders: false,
+    canManageMedia: false,
+    canViewAnalytics: false,
+    canManageEmployees: false,
+    canManageSettings: false,
+  },
+  customer: {
+    role: 'customer',
+    name: 'Client',
+    label: 'Client Privilège',
+    labelAr: 'زبون المتجر',
+    shortRoleName: 'Client',
+    description: 'Client de la boutique en ligne.',
+    badgeClass: 'bg-slate-200 text-slate-700',
+    iconName: 'User',
+    allowedTabs: [],
+    canEditProducts: false,
+    canManageOrders: false,
+    canCreateManualOrders: false,
+    canManageMedia: false,
+    canViewAnalytics: false,
+    canManageEmployees: false,
+    canManageSettings: false,
+  },
+};
+
+export const PRIMARY_ADMIN_EMAIL = 'soulimani.oualid@gmail.com';
+export const PRIMARY_ADMIN_ID = 'user_admin_oualid';
+
+export const isPrimaryAdminAccount = (account?: User | StoredUserAccount | string | null): boolean => {
+  if (!account) return false;
+  if (typeof account === 'string') {
+    const val = account.toLowerCase().trim();
+    return val === PRIMARY_ADMIN_EMAIL || val === PRIMARY_ADMIN_ID || val === 'admin@parailaf.ma';
+  }
+  const email = account.email?.toLowerCase().trim();
+  const id = account.id;
+  return email === PRIMARY_ADMIN_EMAIL || id === PRIMARY_ADMIN_ID || email === 'admin@parailaf.ma';
+};
 
 interface AuthContextType {
   currentUser: User | null;
   isAuthenticated: boolean;
   isAdmin: boolean;
+  isStaff: boolean;
+  userRole: UserRole;
+  roleConfig: RoleConfig;
   isAdminSessionActive: boolean;
   isAuthModalOpen: boolean;
   setIsAuthModalOpen: (open: boolean) => void;
@@ -29,9 +160,19 @@ interface AuthContextType {
   verifyAdminAccess: (passcodeOrPassword: string, email?: string) => Promise<{ success: boolean; error?: string }>;
   lockAdminSession: () => void;
   allUsers: StoredUserAccount[];
-  createEmployee: (data: any) => Promise<{ success: boolean; error?: string }>;
-  updateUserRole: (userId: string, role: string) => void;
-  deleteUser: (userId: string) => void;
+  createEmployee: (data: {
+    fullName: string;
+    email: string;
+    phone?: string;
+    role?: UserRole;
+    password?: string;
+  }) => Promise<{ success: boolean; error?: string }>;
+  updateUserRole: (userId: string, role: string) => { success: boolean; error?: string };
+  deleteUser: (userId: string) => { success: boolean; error?: string };
+  isPrimaryAdmin: (userOrIdOrEmail: User | StoredUserAccount | string | null) => boolean;
+  canAccessTab: (tab: AdminTab) => boolean;
+  getAllowedTabs: () => AdminTab[];
+  getDefaultTabForUser: () => AdminTab;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -43,11 +184,11 @@ const ADMIN_SESSION_KEY = 'parailaf_admin_session_unlocked_v1';
 // Allowed Master Admin Passcodes
 const MASTER_ADMIN_PASSCODES = ['admin2026', 'parailaf2026', 'admin123', '1234'];
 
-// Pre-seeded accounts (Includes Administrator)
+// Pre-seeded accounts (Includes Administrator and default staff profiles)
 const SEED_USERS: StoredUserAccount[] = [
   {
     id: 'user_admin_oualid',
-    fullName: 'Oualid Soulimani (Admin)',
+    fullName: 'Oualid Soulimani (Admin Principal)',
     email: 'soulimani.oualid@gmail.com',
     phone: '0661234567',
     city: 'Oujda',
@@ -66,6 +207,39 @@ const SEED_USERS: StoredUserAccount[] = [
     createdAt: '2026-08-01T08:00:00Z',
     role: 'admin',
     passwordHash: 'parailaf2026',
+  },
+  {
+    id: 'user_staff_gerant',
+    fullName: 'Gérant Magasin',
+    email: 'gerant@parailaf.ma',
+    phone: '0661998877',
+    city: 'Casablanca',
+    address: 'Agence Parailaf Casa',
+    createdAt: '2026-08-10T10:00:00Z',
+    role: 'manager',
+    passwordHash: 'gerant2026',
+  },
+  {
+    id: 'user_staff_employe',
+    fullName: 'Karim Alami (Employé Catalogue)',
+    email: 'employe@parailaf.ma',
+    phone: '0662334455',
+    city: 'Rabat',
+    address: 'Dépôt Parailaf',
+    createdAt: '2026-08-15T11:00:00Z',
+    role: 'employee',
+    passwordHash: 'employe2026',
+  },
+  {
+    id: 'user_staff_livreur',
+    fullName: 'Youssef Bennani (Livreur Express)',
+    email: 'livreur@parailaf.ma',
+    phone: '0663112233',
+    city: 'Casablanca',
+    address: 'Service Livraison Express',
+    createdAt: '2026-08-18T09:00:00Z',
+    role: 'delivery',
+    passwordHash: 'livreur2026',
   },
   {
     id: 'user_demo_02',
@@ -94,7 +268,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [authModalTab, setAuthModalTab] = useState<'login' | 'register'>('login');
   const [isAccountModalOpen, setIsAccountModalOpen] = useState(false);
 
-  // Admin Session Lock State
+  // Admin / Staff Session Lock State
   const [isAdminSessionActive, setIsAdminSessionActive] = useState<boolean>(() => {
     try {
       return sessionStorage.getItem(ADMIN_SESSION_KEY) === 'true';
@@ -103,7 +277,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   });
 
-  const isAdmin = currentUser?.role === 'admin' || (currentUser?.email?.toLowerCase() === 'soulimani.oualid@gmail.com');
+  const isAdmin = currentUser?.role === 'admin' || (currentUser?.email?.toLowerCase() === PRIMARY_ADMIN_EMAIL);
+  const userRole: UserRole = currentUser?.role || (isAdmin ? 'admin' : 'customer');
+  const isStaff = userRole === 'admin' || userRole === 'manager' || userRole === 'employee' || userRole === 'delivery' || isAdminSessionActive;
+  const roleConfig = ROLE_CONFIGS[userRole] || ROLE_CONFIGS.customer;
 
   // Sync users with Firestore
   const [usersLoaded, setUsersLoaded] = useState(false);
@@ -140,6 +317,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const stored = localStorage.getItem(ACCOUNTS_STORAGE_KEY);
       if (!stored) {
         localStorage.setItem(ACCOUNTS_STORAGE_KEY, JSON.stringify(SEED_USERS));
+      } else {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed)) {
+          // Ensure seed accounts exist if missing
+          let modified = false;
+          let list = [...parsed];
+          SEED_USERS.forEach(seed => {
+            if (!list.some(u => u.email.toLowerCase() === seed.email.toLowerCase())) {
+              list.push(seed);
+              modified = true;
+            }
+          });
+          if (modified) {
+            localStorage.setItem(ACCOUNTS_STORAGE_KEY, JSON.stringify(list));
+          }
+        }
       }
     } catch {
       // ignore
@@ -152,9 +345,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (raw) {
         const parsed = JSON.parse(raw);
         if (Array.isArray(parsed)) {
-          const hasOualid = parsed.some(u => u.email?.toLowerCase() === 'soulimani.oualid@gmail.com');
+          const hasOualid = parsed.some(u => u.email?.toLowerCase() === PRIMARY_ADMIN_EMAIL);
           let updated = parsed.map(u => {
-            if (u.email?.toLowerCase() === 'soulimani.oualid@gmail.com' || u.email?.toLowerCase() === 'admin@parailaf.ma') {
+            if (u.email?.toLowerCase() === PRIMARY_ADMIN_EMAIL || u.email?.toLowerCase() === 'admin@parailaf.ma') {
               return { ...u, role: 'admin' as const };
             }
             return u;
@@ -188,7 +381,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const login = async (identifier: string, password: string): Promise<{ success: boolean; error?: string }> => {
-    // Artificial small delay for UX realism
     await new Promise((resolve) => setTimeout(resolve, 350));
 
     const cleanId = identifier.trim().toLowerCase();
@@ -226,7 +418,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // ignore
     }
 
-    if (found.role === 'admin' || found.email.toLowerCase() === 'soulimani.oualid@gmail.com') {
+    // Auto-unlock staff/admin dashboard session if user has a staff role
+    const staffRoles: UserRole[] = ['admin', 'manager', 'delivery', 'employee'];
+    if (staffRoles.includes(found.role as UserRole) || isPrimaryAdminAccount(found)) {
       setIsAdminSessionActive(true);
       try {
         sessionStorage.setItem(ADMIN_SESSION_KEY, 'true');
@@ -368,14 +562,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return { success: true };
   };
 
-  // Verify Admin Access
+  // Verify Admin / Staff Access
   const verifyAdminAccess = async (passcodeOrPassword: string, email?: string): Promise<{ success: boolean; error?: string }> => {
     await new Promise((res) => setTimeout(res, 300));
     const input = passcodeOrPassword.trim();
     const cleanEmail = email?.trim().toLowerCase();
 
-    // 1. Check if user is already logged in as admin
-    if (currentUser && (currentUser.role === 'admin' || currentUser.email?.toLowerCase() === 'soulimani.oualid@gmail.com')) {
+    // 1. Check if user is already logged in as staff
+    if (currentUser && (['admin', 'manager', 'employee', 'delivery'].includes(currentUser.role || '') || isPrimaryAdminAccount(currentUser))) {
       setIsAdminSessionActive(true);
       try {
         sessionStorage.setItem(ADMIN_SESSION_KEY, 'true');
@@ -383,7 +577,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return { success: true };
     }
 
-    // 2. Check Master Passcodes
+    // 2. Check Master Passcodes (Grants Master Admin)
     if (MASTER_ADMIN_PASSCODES.includes(input)) {
       setIsAdminSessionActive(true);
       try {
@@ -394,8 +588,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (!currentUser || currentUser.role !== 'admin') {
         const adminAccount: User = {
           id: 'user_admin_oualid',
-          fullName: 'Oualid Soulimani (Admin)',
-          email: 'soulimani.oualid@gmail.com',
+          fullName: 'Oualid Soulimani (Admin Principal)',
+          email: PRIMARY_ADMIN_EMAIL,
           phone: '0661234567',
           city: 'Oujda',
           address: 'Direction Parailaf Maroc',
@@ -410,29 +604,28 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return { success: true };
     }
 
-    // 3. Check credentials against registered admin accounts
+    // 3. Check credentials against registered staff accounts (admin, manager, employee, delivery)
     const users = getStoredUsers();
-    const targetEmail = cleanEmail || 'soulimani.oualid@gmail.com';
-    const adminUser = users.find((u) => 
-      (u.email.toLowerCase() === targetEmail || u.email.toLowerCase() === 'admin@parailaf.ma') &&
-      u.role === 'admin' &&
-      (u.passwordHash === input || MASTER_ADMIN_PASSCODES.includes(input))
-    );
+    const staffUser = users.find((u) => {
+      const matchEmail = cleanEmail ? (u.email.toLowerCase() === cleanEmail || u.phone.replace(/\s+/g, '') === cleanEmail.replace(/\s+/g, '')) : true;
+      const isStaffMember = ['admin', 'manager', 'employee', 'delivery'].includes(u.role || '') || isPrimaryAdminAccount(u);
+      return matchEmail && isStaffMember && (u.passwordHash === input || MASTER_ADMIN_PASSCODES.includes(input));
+    });
 
-    if (adminUser) {
+    if (staffUser) {
       setIsAdminSessionActive(true);
       try {
         sessionStorage.setItem(ADMIN_SESSION_KEY, 'true');
       } catch {}
       const sessionUser: User = {
-        id: adminUser.id,
-        fullName: adminUser.fullName,
-        email: adminUser.email,
-        phone: adminUser.phone,
-        city: adminUser.city,
-        address: adminUser.address,
-        createdAt: adminUser.createdAt,
-        role: 'admin',
+        id: staffUser.id,
+        fullName: staffUser.fullName,
+        email: staffUser.email,
+        phone: staffUser.phone,
+        city: staffUser.city,
+        address: staffUser.address,
+        createdAt: staffUser.createdAt,
+        role: staffUser.role,
       };
       setCurrentUser(sessionUser);
       try {
@@ -443,7 +636,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     return { 
       success: false, 
-      error: "Accès refusé : Identifiants ou code de sécurité administrateur incorrects. Seul l'administrateur a accès au tableau de bord." 
+      error: "Accès refusé : Identifiants incorrects ou ce compte n'a pas les autorisations d'employé, gérant, livreur ou administrateur." 
     };
   };
 
@@ -456,12 +649,44 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const [allUsers, setAllUsers] = useState<StoredUserAccount[]>([]);
 
-  // Update allUsers when getStoredUsers is updated or from Firestore directly
   useEffect(() => {
     setAllUsers(getStoredUsers());
   }, [usersLoaded]);
 
-  const createEmployee = async (data: any): Promise<{ success: boolean; error?: string }> => {
+  const canAccessTab = (tab: AdminTab): boolean => {
+    // If master admin passkey unlocked session or role is admin
+    if (isAdmin || (isAdminSessionActive && (!currentUser || currentUser.role === 'admin'))) {
+      return true;
+    }
+    const currentRole: UserRole = currentUser?.role || 'customer';
+    const config = ROLE_CONFIGS[currentRole];
+    if (!config) return false;
+    return config.allowedTabs.includes(tab);
+  };
+
+  const getAllowedTabs = (): AdminTab[] => {
+    if (isAdmin || (isAdminSessionActive && (!currentUser || currentUser.role === 'admin'))) {
+      return ['orders', 'new-order', 'products', 'media', 'analytics', 'employees', 'languages', 'email'];
+    }
+    const currentRole: UserRole = currentUser?.role || 'customer';
+    return ROLE_CONFIGS[currentRole]?.allowedTabs || [];
+  };
+
+  const getDefaultTabForUser = (): AdminTab => {
+    const currentRole: UserRole = currentUser?.role || 'customer';
+    if (currentRole === 'employee') return 'products';
+    if (currentRole === 'delivery') return 'orders';
+    if (currentRole === 'manager') return 'orders';
+    return 'orders';
+  };
+
+  const createEmployee = async (data: {
+    fullName: string;
+    email: string;
+    phone?: string;
+    role?: UserRole;
+    password?: string;
+  }): Promise<{ success: boolean; error?: string }> => {
     const cleanEmail = data.email.trim().toLowerCase();
     const users = getStoredUsers();
     
@@ -471,12 +696,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const newUser: StoredUserAccount = {
       id: `emp_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
-      fullName: data.fullName,
+      fullName: data.fullName.trim(),
       email: cleanEmail,
-      phone: data.phone,
+      phone: data.phone?.trim() || '',
+      city: 'Casablanca',
+      address: '',
       createdAt: new Date().toISOString(),
       role: data.role || 'employee',
-      passwordHash: data.password || '123456', // Simple password for now
+      passwordHash: data.password || '123456',
     };
 
     const updatedUsers = [newUser, ...users];
@@ -485,23 +712,55 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return { success: true };
   };
 
-  const updateUserRole = (userId: string, role: string) => {
+  const updateUserRole = (userId: string, role: string): { success: boolean; error?: string } => {
     const users = getStoredUsers();
-    const updatedUsers = users.map(u => u.id === userId ? { ...u, role: role as any } : u);
+    const target = users.find(u => u.id === userId);
+    if (!target) {
+      return { success: false, error: 'Utilisateur introuvable.' };
+    }
+
+    // Protect primary admin from demotion
+    if (isPrimaryAdminAccount(target) && role !== 'admin') {
+      return {
+        success: false,
+        error: 'Action interdite : Le profil principal (Oualid Soulimani) doit impérativement conserver le rôle Administrateur.'
+      };
+    }
+
+    const updatedUsers = users.map(u => u.id === userId ? { ...u, role: role as UserRole } : u);
     saveStoredUsers(updatedUsers);
     setAllUsers(updatedUsers);
     
     // Update current user if it's them
     if (currentUser?.id === userId) {
-      setCurrentUser(prev => prev ? { ...prev, role: role as any } : prev);
+      const updated = { ...currentUser, role: role as UserRole };
+      setCurrentUser(updated);
+      try {
+        localStorage.setItem(CURRENT_SESSION_KEY, JSON.stringify(updated));
+      } catch {}
     }
+    return { success: true };
   };
 
-  const deleteUser = (userId: string) => {
+  const deleteUser = (userId: string): { success: boolean; error?: string } => {
     const users = getStoredUsers();
+    const target = users.find(u => u.id === userId);
+    if (!target) {
+      return { success: false, error: 'Utilisateur introuvable.' };
+    }
+
+    // STRICT PROTECTION: The primary admin profile can NEVER be deleted
+    if (isPrimaryAdminAccount(target)) {
+      return { 
+        success: false, 
+        error: 'Action strictement interdite : Le profil principal (Oualid Soulimani) est protégé et ne peut jamais être supprimé.' 
+      };
+    }
+
     const updatedUsers = users.filter(u => u.id !== userId);
     saveStoredUsers(updatedUsers);
     setAllUsers(updatedUsers);
+    return { success: true };
   };
 
   return (
@@ -510,6 +769,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         currentUser,
         isAuthenticated: !!currentUser,
         isAdmin,
+        isStaff,
+        userRole,
+        roleConfig,
         isAdminSessionActive,
         isAuthModalOpen,
         setIsAuthModalOpen,
@@ -528,6 +790,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         createEmployee,
         updateUserRole,
         deleteUser,
+        isPrimaryAdmin: isPrimaryAdminAccount,
+        canAccessTab,
+        getAllowedTabs,
+        getDefaultTabForUser,
       }}
     >
       {children}
@@ -542,3 +808,4 @@ export const useAuth = (): AuthContextType => {
   }
   return context;
 };
+

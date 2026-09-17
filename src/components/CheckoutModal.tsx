@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
+import { useLanguage } from '../context/LanguageContext';
 import { MOROCCAN_CITIES, BRAND_CONFIG } from '../data/config';
 import { OrderCustomerInfo } from '../types';
 
@@ -36,6 +37,7 @@ export const CheckoutModal: React.FC = () => {
   } = useCart();
 
   const { currentUser, openAuthModal } = useAuth();
+  const { language, isRTL, t, translateProduct } = useLanguage();
 
   const [fullName, setFullName] = useState('');
   const [phone, setPhone] = useState('');
@@ -75,7 +77,7 @@ export const CheckoutModal: React.FC = () => {
   const handleSubmitOrder = (e: React.FormEvent) => {
     e.preventDefault();
     if (!fullName || !phone || !address) {
-      alert('Veuillez renseigner votre nom, numéro de téléphone et adresse de livraison au Maroc.');
+      alert(language === 'ar' ? 'يرجى إدخال الاسم، رقم الهاتف، وعنوان التوصيل بالمغرب.' : 'Veuillez renseigner votre nom, numéro de téléphone et adresse de livraison au Maroc.');
       return;
     }
 
@@ -115,21 +117,30 @@ export const CheckoutModal: React.FC = () => {
   const handleWhatsAppShareOrder = () => {
     if (!confirmedOrder) return;
     const itemsList = confirmedOrder.items.map((i: any) => `- ${i.quantity}x ${i.product.name} (${i.product.price * i.quantity} DH)`).join('\n');
-    const msg = `*CONFIRMATION DE COMMANDE #${confirmedOrder.id}*\n\n` +
-      `👤 *Client :* ${confirmedOrder.customer.fullName}\n` +
-      `📞 *Tél :* ${confirmedOrder.customer.phone}\n` +
-      `📍 *Ville :* ${confirmedOrder.customer.city}\n` +
-      `🏠 *Adresse :* ${confirmedOrder.customer.address}\n\n` +
-      `*Articles :*\n${itemsList}\n\n` +
-      `*Total à régler :* ${confirmedOrder.total} DH (Paiement à la livraison)\n\n` +
-      `Merci de confirmer la prise en charge de ma livraison Parailaf.`;
+    const msg = language === 'ar' 
+      ? `*تأكيد الطلبية #${confirmedOrder.id}*\n\n` +
+        `👤 *الزبون :* ${confirmedOrder.customer.fullName}\n` +
+        `📞 *الهاتف :* ${confirmedOrder.customer.phone}\n` +
+        `📍 *المدينة :* ${confirmedOrder.customer.city}\n` +
+        `🏠 *العنوان :* ${confirmedOrder.customer.address}\n\n` +
+        `*المنتجات :*\n${itemsList}\n\n` +
+        `*المجموع للأداء :* ${confirmedOrder.total} درهم (الدفع عند الاستلام)\n\n` +
+        `شكراً لتأكيد إرسال الطلبية مع بارا إيلاف.`
+      : `*CONFIRMATION DE COMMANDE #${confirmedOrder.id}*\n\n` +
+        `👤 *Client :* ${confirmedOrder.customer.fullName}\n` +
+        `📞 *Tél :* ${confirmedOrder.customer.phone}\n` +
+        `📍 *Ville :* ${confirmedOrder.customer.city}\n` +
+        `🏠 *Adresse :* ${confirmedOrder.customer.address}\n\n` +
+        `*Articles :*\n${itemsList}\n\n` +
+        `*Total à régler :* ${confirmedOrder.total} DH (Paiement à la livraison)\n\n` +
+        `Merci de confirmer la prise en charge de ma livraison Parailaf.`;
 
     const url = `https://wa.me/${BRAND_CONFIG.whatsapp}?text=${encodeURIComponent(msg)}`;
     window.open(url, '_blank');
   };
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto">
+    <div className="fixed inset-0 z-50 overflow-y-auto" dir={isRTL ? 'rtl' : 'ltr'}>
       {/* Backdrop */}
       <div 
         className="fixed inset-0 bg-slate-950/75 backdrop-blur-sm transition-opacity"
@@ -142,15 +153,21 @@ export const CheckoutModal: React.FC = () => {
           {/* Header */}
           <div className="p-4 sm:p-5 border-b border-slate-200 bg-[#001f3f] text-white flex items-center justify-between">
             <div className="flex items-center gap-2.5">
-              <div className="w-9 h-9 rounded-xl bg-red-600 text-white flex items-center justify-center font-bold shadow-xs">
+              <div className="w-9 h-9 rounded-xl bg-red-600 text-white flex items-center justify-center font-bold shadow-xs shrink-0">
                 <Truck className="w-5 h-5" />
               </div>
               <div>
                 <h3 className="font-black text-white text-base sm:text-lg font-heading">
-                  {orderCompleted ? 'Commande Enregistrée avec Succès !' : (quickBuyProduct ? 'Commande Express en 1-Clic' : 'Finalisation de votre Commande')}
+                  {orderCompleted 
+                    ? (language === 'ar' ? 'تم تسجيل الطلب بنجاح !' : 'Commande Enregistrée avec Succès !') 
+                    : (quickBuyProduct 
+                        ? (language === 'ar' ? 'طلب سريع بنقرة واحدة' : 'Commande Express en 1-Clic') 
+                        : (language === 'ar' ? 'إتمام وتأكيد طلبيتكم' : 'Finalisation de votre Commande'))}
                 </h3>
                 <p className="text-xs text-amber-300">
-                  {orderCompleted ? 'Notification email transmise à l\'équipe de préparation' : 'Livraison express partout au Maroc sous 24h - 48h'}
+                  {orderCompleted 
+                    ? (language === 'ar' ? 'تم إرسال إشعار فوري لفريق تحضير الطلبيات' : 'Notification email transmise à l\'équipe de préparation') 
+                    : (language === 'ar' ? 'توصيل سريع لكافة مدن المغرب خلال 24 - 48 ساعة' : 'Livraison express partout au Maroc sous 24h - 48h')}
                 </p>
               </div>
             </div>
@@ -172,46 +189,52 @@ export const CheckoutModal: React.FC = () => {
 
               <div>
                 <span className="text-xs font-black uppercase tracking-widest text-emerald-800 bg-emerald-50 px-3.5 py-1 rounded-full border border-emerald-200">
-                  Numéro de Commande : #{confirmedOrder.id}
+                  {language === 'ar' ? 'رقم الطلبية :' : 'Numéro de Commande :'} #{confirmedOrder.id}
                 </span>
                 <h3 className="text-2xl font-black text-slate-900 mt-3 font-heading">
-                  Merci pour votre commande, {confirmedOrder.customer.fullName} !
+                  {language === 'ar' 
+                    ? `شكراً لطلبكم، ${confirmedOrder.customer.fullName} !` 
+                    : `Merci pour votre commande, ${confirmedOrder.customer.fullName} !`}
                 </h3>
                 <p className="text-sm text-slate-600 max-w-md mx-auto mt-1.5 leading-relaxed">
-                  Votre commande est enregistrée dans notre système. Un email de notification a été envoyé à l'équipe commerciale et notre livreur vous contactera au <strong className="text-slate-900">{confirmedOrder.customer.phone}</strong>.
+                  {language === 'ar'
+                    ? <>تم تسجيل طلبكم بنجاح في نظامنا. سيتصل بكم الموزع على الرقم <strong className="text-slate-900 font-mono" dir="ltr">{confirmedOrder.customer.phone}</strong> لتسليمكم الطرد.</>
+                    : <>Votre commande est enregistrée dans notre système. Un email de notification a été envoyé à l'équipe commerciale et notre livreur vous contactera au <strong className="text-slate-900">{confirmedOrder.customer.phone}</strong>.</>}
                 </p>
               </div>
 
               {/* Notification Status Badge */}
               <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-blue-50 border border-blue-200 text-blue-800 text-xs font-bold">
-                <BellRing className="w-4 h-4 text-blue-600 animate-bounce" />
-                <span>Alerte email envoyée automatiquement à l'administrateur</span>
+                <BellRing className="w-4 h-4 text-blue-600 animate-bounce shrink-0" />
+                <span>
+                  {language === 'ar' ? 'تم إرسال إشعار فوري للمشرف لتجهيز الطرد' : 'Alerte email envoyée automatiquement à l\'administrateur'}
+                </span>
               </div>
 
               {/* Order Recap Box */}
-              <div className="bg-slate-50 rounded-2xl p-4 text-left border border-slate-200 text-xs space-y-2 max-w-md mx-auto">
+              <div className="bg-slate-50 rounded-2xl p-4 text-start border border-slate-200 text-xs space-y-2 max-w-md mx-auto">
                 <div className="flex justify-between pb-1.5 border-b border-slate-200">
-                  <span className="text-slate-500">Ville de livraison :</span>
+                  <span className="text-slate-500">{language === 'ar' ? 'مدينة التوصيل :' : 'Ville de livraison :'}</span>
                   <span className="font-bold text-slate-900">{confirmedOrder.customer.city}</span>
                 </div>
                 <div className="flex justify-between pb-1.5 border-b border-slate-200">
-                  <span className="text-slate-500">Sous-total articles :</span>
-                  <span className="font-bold text-slate-900">{confirmedOrder.subtotal} DH</span>
+                  <span className="text-slate-500">{language === 'ar' ? 'المجموع الجزئي للسلع :' : 'Sous-total articles :'}</span>
+                  <span className="font-bold text-slate-900 font-mono">{confirmedOrder.subtotal} {language === 'ar' ? 'درهم' : 'DH'}</span>
                 </div>
                 <div className="flex justify-between pb-1.5 border-b border-slate-200">
-                  <span className="text-slate-500">Frais de livraison :</span>
-                  <span className="font-bold text-slate-900">{confirmedOrder.shippingFee} DH</span>
+                  <span className="text-slate-500">{language === 'ar' ? 'مصاريف التوصيل :' : 'Frais de livraison :'}</span>
+                  <span className="font-bold text-slate-900 font-mono">{confirmedOrder.shippingFee} {language === 'ar' ? 'درهم' : 'DH'}</span>
                 </div>
                 <div className="flex justify-between pb-1.5 border-b border-slate-200">
-                  <span className="text-slate-500">Mode de paiement :</span>
+                  <span className="text-slate-500">{language === 'ar' ? 'طريقة الأداء :' : 'Mode de paiement :'}</span>
                   <span className="font-bold text-emerald-700 flex items-center gap-1">
                     <Banknote className="w-3.5 h-3.5" />
-                    Paiement en espèces à la livraison
+                    {language === 'ar' ? 'الدفع نقداً عند الاستلام' : 'Paiement en espèces à la livraison'}
                   </span>
                 </div>
                 <div className="flex justify-between pt-1">
-                  <span className="text-slate-500">Total à régler au livreur :</span>
-                  <span className="font-black text-lg text-red-600 font-heading">{confirmedOrder.total} DH</span>
+                  <span className="text-slate-500">{language === 'ar' ? 'المجموع للأداء عند الاستلام :' : 'Total à régler au livreur :'}</span>
+                  <span className="font-black text-lg text-red-600 font-heading font-mono">{confirmedOrder.total} {language === 'ar' ? 'درهم' : 'DH'}</span>
                 </div>
               </div>
 
@@ -222,14 +245,14 @@ export const CheckoutModal: React.FC = () => {
                   className="px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-md flex items-center justify-center gap-2 transition cursor-pointer"
                 >
                   <MessageCircle className="w-4 h-4 fill-white" />
-                  <span>Transmettre sur WhatsApp (Optionnel)</span>
+                  <span>{language === 'ar' ? 'تأكيد عبر واتساب (اختياري)' : 'Transmettre sur WhatsApp (Optionnel)'}</span>
                 </button>
 
                 <button
                   onClick={handleClose}
                   className="px-6 py-3 bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs rounded-xl transition cursor-pointer"
                 >
-                  Continuer mes achats
+                  {language === 'ar' ? 'متابعة التسوق' : 'Continuer mes achats'}
                 </button>
               </div>
             </div>
@@ -240,15 +263,15 @@ export const CheckoutModal: React.FC = () => {
               {/* Order Summary Bar */}
               <div className="p-3.5 bg-red-50/80 rounded-xl border border-red-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 text-xs">
                 <div>
-                  <span className="text-slate-600">Articles ({itemsToCheckout.length}) : </span>
-                  <strong className="text-slate-900 font-bold">{checkoutSubtotal} DH</strong>
+                  <span className="text-slate-600">{language === 'ar' ? 'المنتجات' : 'Articles'} ({itemsToCheckout.length}) : </span>
+                  <strong className="text-slate-900 font-bold font-mono">{checkoutSubtotal} {language === 'ar' ? 'درهم' : 'DH'}</strong>
                   <span className="mx-2 text-slate-300">|</span>
-                  <span className="text-slate-600">Livraison : </span>
-                  <strong className="text-red-700 font-bold">40 DH</strong>
+                  <span className="text-slate-600">{language === 'ar' ? 'التوصيل :' : 'Livraison :'} </span>
+                  <strong className="text-red-700 font-bold font-mono">40 {language === 'ar' ? 'درهم' : 'DH'}</strong>
                 </div>
-                <div className="text-right w-full sm:w-auto">
-                  <span className="text-slate-600 font-medium">Total à régler : </span>
-                  <strong className="text-red-600 font-black text-base font-heading">{checkoutTotal} DH</strong>
+                <div className="text-start sm:text-end w-full sm:w-auto">
+                  <span className="text-slate-600 font-medium">{language === 'ar' ? 'المجموع للأداء :' : 'Total à régler :'} </span>
+                  <strong className="text-red-600 font-black text-base font-heading font-mono">{checkoutTotal} {language === 'ar' ? 'درهم' : 'DH'}</strong>
                 </div>
               </div>
 
@@ -257,41 +280,41 @@ export const CheckoutModal: React.FC = () => {
                 <div className="p-2.5 bg-blue-50/80 border border-blue-200 rounded-xl text-xs text-blue-900 flex items-center justify-between">
                   <span className="flex items-center gap-1.5 font-bold">
                     <Sparkles className="w-3.5 h-3.5 text-blue-600" />
-                    Connecté : {currentUser.fullName}
+                    {language === 'ar' ? `متصل : ${currentUser.fullName}` : `Connecté : ${currentUser.fullName}`}
                   </span>
                   <span className="text-[10px] font-extrabold bg-blue-200/70 text-blue-800 px-2 py-0.5 rounded-md">
-                    Coordonnées pré-remplies
+                    {language === 'ar' ? 'معلومات معبأة مسبقاً' : 'Coordonnées pré-remplies'}
                   </span>
                 </div>
               ) : (
                 <div className="p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 flex items-center justify-between">
-                  <span className="text-slate-600">Déjà client Parailaf ?</span>
+                  <span className="text-slate-600">{language === 'ar' ? 'زبون سابق في بارا إيلاف ؟' : 'Déjà client Parailaf ?'}</span>
                   <button
                     type="button"
                     onClick={() => openAuthModal('login')}
                     className="text-xs font-bold text-[#002f6c] hover:underline cursor-pointer"
                   >
-                    Se connecter pour pré-remplir
+                    {language === 'ar' ? 'تسجيل الدخول لملء البيانات' : 'Se connecter pour pré-remplir'}
                   </button>
                 </div>
               )}
 
               <div className="space-y-4">
                 <p className="text-xs font-black text-[#002f6c] uppercase tracking-wider">
-                  Informations de Livraison au Maroc
+                  {language === 'ar' ? 'معلومات التوصيل بالمغرب' : 'Informations de Livraison au Maroc'}
                 </p>
 
                 {/* Name */}
                 <div>
                   <label className="block text-xs font-bold text-slate-700 mb-1">
-                    Nom et Prénom <span className="text-red-500">*</span>
+                    {language === 'ar' ? 'الاسم الكامل' : 'Nom et Prénom'} <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="text"
                     required
                     value={fullName}
                     onChange={(e) => setFullName(e.target.value)}
-                    placeholder="Ex: Mohamed Alami"
+                    placeholder={language === 'ar' ? 'مثال: محمد العلمي' : 'Ex: Mohamed Alami'}
                     className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-red-500 focus:bg-white transition"
                   />
                 </div>
@@ -299,10 +322,10 @@ export const CheckoutModal: React.FC = () => {
                 {/* Phone number */}
                 <div>
                   <label className="block text-xs font-bold text-slate-700 mb-1">
-                    Numéro de Téléphone <span className="text-red-500">*</span>
+                    {language === 'ar' ? 'رقم الهاتف' : 'Numéro de Téléphone'} <span className="text-red-500">*</span>
                   </label>
-                  <div className="flex">
-                    <span className="inline-flex items-center px-3 rounded-l-xl border border-r-0 border-slate-300 bg-slate-100 text-slate-700 text-xs font-bold">
+                  <div className="flex" dir="ltr">
+                    <span className="inline-flex items-center px-3 rounded-l-xl border border-r-0 border-slate-300 bg-slate-100 text-slate-700 text-xs font-bold font-mono">
                       🇲🇦 +212
                     </span>
                     <input
@@ -311,30 +334,33 @@ export const CheckoutModal: React.FC = () => {
                       value={phone}
                       onChange={(e) => setPhone(e.target.value)}
                       placeholder="06 XX XX XX XX"
-                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-r-xl text-sm focus:outline-none focus:ring-2 focus:ring-red-500 focus:bg-white transition"
+                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-r-xl text-sm focus:outline-none focus:ring-2 focus:ring-red-500 focus:bg-white transition font-mono"
                     />
                   </div>
-                  <p className="text-[11px] text-slate-400 mt-1">Le livreur vous appellera sur ce numéro avant d'arriver.</p>
+                  <p className="text-[11px] text-slate-400 mt-1">
+                    {language === 'ar' ? 'سيتصل بكم الموزع على هذا الرقم قبل الوصول.' : 'Le livreur vous appellera sur ce numéro avant d\'arriver.'}
+                  </p>
                 </div>
 
                 {/* Email (optional) */}
                 <div>
                   <label className="block text-xs font-semibold text-slate-600 mb-1">
-                    Adresse Email (Optionnel - pour recevoir votre reçu)
+                    {language === 'ar' ? 'البريد الإلكتروني (اختياري - لتلقي وصل الطلب)' : 'Adresse Email (Optionnel - pour recevoir votre reçu)'}
                   </label>
                   <input
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    placeholder="Ex: client@gmail.com"
+                    placeholder="client@gmail.com"
                     className="w-full px-3.5 py-2 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-red-500 focus:bg-white transition"
+                    dir="ltr"
                   />
                 </div>
 
                 {/* City dropdown */}
                 <div>
                   <label className="block text-xs font-bold text-slate-700 mb-1">
-                    Ville de Livraison <span className="text-red-500">*</span>
+                    {language === 'ar' ? 'مدينة التوصيل' : 'Ville de Livraison'} <span className="text-red-500">*</span>
                   </label>
                   <select
                     value={city}
@@ -343,7 +369,7 @@ export const CheckoutModal: React.FC = () => {
                   >
                     {MOROCCAN_CITIES.map((c) => (
                       <option key={c.name} value={c.name}>
-                        {c.name} ({c.deliveryTime})
+                        {c.name} ({language === 'ar' ? (c.deliveryTime.includes('24h') ? '24 إلى 48 ساعة' : 'خلال اليوم') : c.deliveryTime})
                       </option>
                     ))}
                   </select>
@@ -352,14 +378,14 @@ export const CheckoutModal: React.FC = () => {
                 {/* Address */}
                 <div>
                   <label className="block text-xs font-bold text-slate-700 mb-1">
-                    Adresse Complète de Livraison <span className="text-red-500">*</span>
+                    {language === 'ar' ? 'العنوان الكامل للتسليم' : 'Adresse Complète de Livraison'} <span className="text-red-500">*</span>
                   </label>
                   <textarea
                     required
                     rows={2}
                     value={address}
                     onChange={(e) => setAddress(e.target.value)}
-                    placeholder="Quartier, Rue, N° Immeuble / Villa, Étage ou Point de repère..."
+                    placeholder={language === 'ar' ? 'الحي، الشارع، رقم العمارة أو المنزل، الطابق أو نقطة دالة...' : 'Quartier, Rue, N° Immeuble / Villa, Étage ou Point de repère...'}
                     className="w-full px-3.5 py-2 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-red-500 focus:bg-white transition"
                   />
                 </div>
@@ -367,7 +393,7 @@ export const CheckoutModal: React.FC = () => {
                 {/* Payment Selection - Paiement à la livraison exclusif */}
                 <div>
                   <label className="block text-xs font-bold text-slate-700 mb-1.5">
-                    Mode de Règlement
+                    {language === 'ar' ? 'طريقة الأداء' : 'Mode de Règlement'}
                   </label>
                   
                   <div className="p-3 rounded-xl border border-red-500 bg-red-50/50 shadow-xs flex items-center gap-3">
@@ -376,11 +402,13 @@ export const CheckoutModal: React.FC = () => {
                     </div>
                     <div>
                       <div className="flex items-center gap-1.5 font-bold text-xs text-slate-900">
-                        <span>Paiement en espèces à la livraison</span>
-                        <span className="bg-red-600 text-white text-[10px] px-1.5 py-0.2 rounded font-bold">Sans risque</span>
+                        <span>{language === 'ar' ? 'الدفع نقداً عند الاستلام' : 'Paiement en espèces à la livraison'}</span>
+                        <span className="bg-red-600 text-white text-[10px] px-1.5 py-0.2 rounded font-bold">
+                          {language === 'ar' ? 'بدون مخاطر' : 'Sans risque'}
+                        </span>
                       </div>
                       <p className="text-[11px] text-slate-600 mt-0.5">
-                        Vous réglez directement au livreur après réception de votre colis.
+                        {language === 'ar' ? 'تدفعون للموزع بعد تفقد ومعاينة طردكم عند الاستلام.' : 'Vous réglez directement au livreur après réception de votre colis.'}
                       </p>
                     </div>
                   </div>
@@ -389,13 +417,13 @@ export const CheckoutModal: React.FC = () => {
                 {/* Optional note */}
                 <div>
                   <label className="block text-xs font-semibold text-slate-500 mb-1">
-                    Instructions pour le livreur (Optionnel)
+                    {language === 'ar' ? 'ملاحظات وتوجيهات للموزع (اختياري)' : 'Instructions pour le livreur (Optionnel)'}
                   </label>
                   <input
                     type="text"
                     value={notes}
                     onChange={(e) => setNotes(e.target.value)}
-                    placeholder="Ex: Livrer après 14h / Sonner à l'interphone..."
+                    placeholder={language === 'ar' ? 'مثال: التوصيل بعد الزوال / الاتصال بالهاتف أولاً...' : 'Ex: Livrer après 14h / Sonner à l\'interphone...'}
                     className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs"
                   />
                 </div>
@@ -409,10 +437,12 @@ export const CheckoutModal: React.FC = () => {
                   className="w-full py-3.5 px-4 bg-red-600 hover:bg-red-700 active:bg-red-800 disabled:opacity-60 text-white font-black text-sm rounded-xl shadow-md transition flex items-center justify-center gap-2 cursor-pointer border border-red-400/30"
                 >
                   {isSubmitting ? (
-                    <span>Traitement et enregistrement de votre commande...</span>
+                    <span>{language === 'ar' ? 'جاري معالجة وتسجيل طلبكم...' : 'Traitement et enregistrement de votre commande...'}</span>
                   ) : (
                     <>
-                      <span>Confirmer ma commande ({checkoutTotal} DH)</span>
+                      <span>
+                        {language === 'ar' ? `تأكيد طلبيتي (${checkoutTotal} درهم)` : `Confirmer ma commande (${checkoutTotal} DH)`}
+                      </span>
                       <Check className="w-4 h-4" />
                     </>
                   )}
@@ -420,7 +450,9 @@ export const CheckoutModal: React.FC = () => {
 
                 <p className="text-[11px] text-center text-slate-400 flex items-center justify-center gap-1">
                   <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
-                  <span>Enregistrement sécurisé avec notification instantanée</span>
+                  <span>
+                    {language === 'ar' ? 'تسجيل آمن مع إشعار فوري وتأكيد هاتفي' : 'Enregistrement sécurisé avec notification instantanée'}
+                  </span>
                 </p>
               </div>
 

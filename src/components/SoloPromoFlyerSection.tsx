@@ -15,6 +15,7 @@ import {
   Activity
 } from 'lucide-react';
 import { useCart } from '../context/CartContext';
+import { useLanguage } from '../context/LanguageContext';
 import { STANDALONE_PROMO_550, STANDALONE_PROMO_850, STANDALONE_PROMO_3000 } from '../data/products';
 import { BRAND_CONFIG } from '../data/config';
 import { Product } from '../types';
@@ -56,6 +57,9 @@ const PromoFlyerCard: React.FC<PromoFlyerItemProps> = ({
   certLabel = "Dispositif Médical Certifié Abbott",
 }) => {
   const { addToCart, setIsCartOpen, setIsCheckoutOpen } = useCart();
+  const { language, isRTL, t, translateProduct } = useLanguage();
+  const localizedProduct = translateProduct(product);
+
   const [customImage, setCustomImage] = useState<string | null>(() => {
     try {
       const saved = localStorage.getItem(storageKey);
@@ -98,11 +102,15 @@ const PromoFlyerCard: React.FC<PromoFlyerItemProps> = ({
     setIsCheckoutOpen(true);
   };
 
-  const whatsappUrl = `https://wa.me/${BRAND_CONFIG.whatsapp}?text=${encodeURIComponent(whatsappMessageText)}`;
+  const finalWhatsappMessage = language === 'ar'
+    ? `السلام عليكم بارا إيلاف، أريد طلب العرض الخاص ${localizedProduct.name} بسعر ${product.price} درهم.`
+    : whatsappMessageText;
+
+  const whatsappUrl = `https://wa.me/${BRAND_CONFIG.whatsapp}?text=${encodeURIComponent(finalWhatsappMessage)}`;
   const currentImageSrc = customImage || defaultImage;
 
   return (
-    <div className="bg-white rounded-3xl border-2 border-slate-200/90 shadow-2xl overflow-hidden flex flex-col h-full">
+    <div className="bg-white rounded-3xl border-2 border-slate-200/90 shadow-2xl overflow-hidden flex flex-col h-full" dir={isRTL ? 'rtl' : 'ltr'}>
       
       {/* Header Bar of the Card */}
       <div className={`${headerGradientClass} text-white px-4 sm:px-6 py-3 flex items-center justify-center shadow-sm text-center`}>
@@ -115,7 +123,7 @@ const PromoFlyerCard: React.FC<PromoFlyerItemProps> = ({
       {subtitle && (
         <div className="pt-4 pb-2 px-4 text-center flex flex-col justify-center">
           <p className="text-slate-600 text-xs sm:text-sm font-medium mx-auto leading-relaxed">
-            {subtitle}
+            {language === 'ar' ? (localizedProduct.shortDescription || subtitle) : subtitle}
           </p>
         </div>
       )}
@@ -137,7 +145,7 @@ const PromoFlyerCard: React.FC<PromoFlyerItemProps> = ({
           <div className="absolute inset-0 bg-slate-950/0 group-hover:bg-slate-950/15 transition-colors flex items-center justify-center pointer-events-none">
             <span className="opacity-0 group-hover:opacity-100 transition-opacity bg-slate-900/90 text-white text-xs font-bold px-4 py-2 rounded-full shadow-lg flex items-center gap-2">
               <Maximize2 className="w-3.5 h-3.5" />
-              Cliquez
+              {language === 'ar' ? 'تكبير' : 'Cliquez'}
             </span>
           </div>
         </div>
@@ -156,20 +164,34 @@ const PromoFlyerCard: React.FC<PromoFlyerItemProps> = ({
           ) : (
             <>
               <div className="p-2 bg-white/80 rounded-xl border border-amber-200">
-                <p className="font-extrabold text-slate-900">Sans Piqûres</p>
-                <p className="text-[11px] text-slate-500">Mesure continue 24h/24</p>
+                <p className="font-extrabold text-slate-900">
+                  {language === 'ar' ? 'بدون وخز للأصابع' : 'Sans Piqûres'}
+                </p>
+                <p className="text-[11px] text-slate-500">
+                  {language === 'ar' ? 'قياس مستمر 24/24' : 'Mesure continue 24h/24'}
+                </p>
               </div>
               <div className="p-2 bg-white/80 rounded-xl border border-amber-200">
-                <p className="font-extrabold text-slate-900">Alertes Directes</p>
-                <p className="text-[11px] text-slate-500">Hypo & Hyperglycémie</p>
+                <p className="font-extrabold text-slate-900">
+                  {language === 'ar' ? 'تنبيهات مباشرة' : 'Alertes Directes'}
+                </p>
+                <p className="text-[11px] text-slate-500">
+                  {language === 'ar' ? 'انخفاض وارتفاع السكر' : 'Hypo & Hyperglycémie'}
+                </p>
               </div>
               <div className="p-2 bg-white/80 rounded-xl border border-amber-200">
                 <p className="font-extrabold text-slate-900">{durationLabel}</p>
-                <p className="text-[11px] text-slate-500">Liberté au quotidien</p>
+                <p className="text-[11px] text-slate-500">
+                  {language === 'ar' ? 'راحة وحرية يومية' : 'Liberté au quotidien'}
+                </p>
               </div>
               <div className="p-2 bg-white/80 rounded-xl border border-amber-200">
-                <p className="font-extrabold text-slate-900">Application Mobile</p>
-                <p className="text-[11px] text-slate-500">Suivi facile LibreLink</p>
+                <p className="font-extrabold text-slate-900">
+                  {language === 'ar' ? 'تطبيق الهاتف' : 'Application Mobile'}
+                </p>
+                <p className="text-[11px] text-slate-500">
+                  {language === 'ar' ? 'متابعة سهلة LibreLink' : 'Suivi facile LibreLink'}
+                </p>
               </div>
             </>
           )}
@@ -188,7 +210,7 @@ const PromoFlyerCard: React.FC<PromoFlyerItemProps> = ({
             className="flex-1 py-4 px-6 bg-red-600 hover:bg-red-700 active:scale-[0.98] text-white font-extrabold text-base rounded-2xl shadow-xl shadow-red-600/25 flex items-center justify-center gap-2.5 transition cursor-pointer"
           >
             <ShoppingBag className="w-5 h-5" />
-            <span>Passer Commande</span>
+            <span>{language === 'ar' ? 'تأكيد الطلب الآن' : 'Passer Commande'}</span>
           </button>
 
           {/* Button 2: WhatsApp */}
@@ -199,7 +221,7 @@ const PromoFlyerCard: React.FC<PromoFlyerItemProps> = ({
             className="flex-1 py-4 px-6 bg-emerald-600 hover:bg-emerald-700 active:scale-[0.98] text-white font-bold text-base rounded-2xl shadow-lg shadow-emerald-600/25 flex items-center justify-center gap-2.5 transition cursor-pointer"
           >
             <MessageCircle className="w-5 h-5 fill-white text-emerald-600" />
-            <span>Commander par WhatsApp</span>
+            <span>{language === 'ar' ? 'الطلب عبر واتساب' : 'Commander par WhatsApp'}</span>
           </a>
         </div>
 
@@ -207,7 +229,7 @@ const PromoFlyerCard: React.FC<PromoFlyerItemProps> = ({
         <div className="pt-3 border-t border-slate-100 flex flex-wrap items-center justify-center gap-4 sm:gap-6 text-xs text-slate-600 font-medium">
           <span className="flex items-center gap-1.5 font-bold text-slate-800">
             <Truck className="w-4 h-4 text-blue-600" />
-            Livraison rapide partout au Maroc
+            {language === 'ar' ? 'توصيل سريع لجميع أنحاء المغرب' : 'Livraison rapide partout au Maroc'}
           </span>
         </div>
 
@@ -225,8 +247,8 @@ const PromoFlyerCard: React.FC<PromoFlyerItemProps> = ({
                 e.stopPropagation();
                 setIsZoomed(false);
               }}
-              className="absolute -top-12 right-0 sm:right-2 text-white/90 hover:text-white bg-white/20 p-2 rounded-full transition cursor-pointer"
-              title="Fermer le zoom"
+              className={`absolute -top-12 ${isRTL ? 'left-0 sm:left-2' : 'right-0 sm:right-2'} text-white/90 hover:text-white bg-white/20 p-2 rounded-full transition cursor-pointer`}
+              title={language === 'ar' ? 'إغلاق' : 'Fermer le zoom'}
             >
               <X className="w-6 h-6" />
             </button>
@@ -248,7 +270,7 @@ const PromoFlyerCard: React.FC<PromoFlyerItemProps> = ({
                 className="px-5 py-2.5 bg-red-600 hover:bg-red-700 text-white font-bold text-xs rounded-xl shadow-lg flex items-center gap-2 cursor-pointer"
               >
                 <ShoppingBag className="w-4 h-4" />
-                <span>Commander</span>
+                <span>{language === 'ar' ? 'طلب الآن' : 'Commander'}</span>
               </button>
 
               <a
@@ -272,12 +294,13 @@ const PromoFlyerCard: React.FC<PromoFlyerItemProps> = ({
 
 export const SoloPromoFlyerSection: React.FC = () => {
   const { allProducts } = useCart();
+  const { language, isRTL } = useLanguage();
   const prodFSL2 = allProducts.find(p => p.id === STANDALONE_PROMO_550.id) || STANDALONE_PROMO_550;
   const prodFSL3 = allProducts.find(p => p.id === STANDALONE_PROMO_850.id) || STANDALONE_PROMO_850;
   const prodOmnipod = allProducts.find(p => p.id === STANDALONE_PROMO_3000.id) || STANDALONE_PROMO_3000;
 
   return (
-    <section id="offre-exclusive-affiche" className="py-12 sm:py-16 bg-gradient-to-b from-slate-100 via-white to-slate-50 border-t-2 border-slate-200 relative overflow-hidden">
+    <section id="offre-exclusive-affiche" className="py-12 sm:py-16 bg-gradient-to-b from-slate-100 via-white to-slate-50 border-t-2 border-slate-200 relative overflow-hidden" dir={isRTL ? 'rtl' : 'ltr'}>
       
       {/* Background Ambience */}
       <div className="absolute top-1/4 -right-20 w-80 h-80 bg-red-100/50 rounded-full blur-3xl pointer-events-none" />
@@ -289,14 +312,22 @@ export const SoloPromoFlyerSection: React.FC = () => {
         <div className="text-center mb-10 space-y-2.5">
           <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-red-50 text-red-700 border border-red-200 text-xs font-black uppercase tracking-wider shadow-xs">
             <Flame className="w-3.5 h-3.5 fill-red-600 text-red-600 animate-pulse" />
-            <span>Offres Spéciales Exclusives • Affiches Promo</span>
+            <span>
+              {language === 'ar' ? 'عروض خاصة حصرية • ملصقات العروض' : 'Offres Spéciales Exclusives • Affiches Promo'}
+            </span>
           </div>
 
           <h2 className="text-2xl sm:text-3xl md:text-4xl font-black text-slate-950 tracking-tight font-heading">
-            Promotions <span className="text-red-600">Officielles & Exclusives</span>
+            {language === 'ar' ? (
+              <>تخفيضات <span className="text-red-600">رسمية وحصرية</span></>
+            ) : (
+              <>Promotions <span className="text-red-600">Officielles & Exclusives</span></>
+            )}
           </h2>
           <p className="text-slate-600 text-sm sm:text-base font-medium max-w-xl mx-auto">
-            Commandez directement au prix promotionnel affiché avec livraison express partout au Maroc.
+            {language === 'ar'
+              ? 'اطلبوا مباشرة بالثمن الترويجي المخفض مع خدمة توصيل سريع لجميع مدن المغرب.'
+              : 'Commandez directement au prix promotionnel affiché avec livraison express partout au Maroc.'}
           </p>
         </div>
 
@@ -306,47 +337,51 @@ export const SoloPromoFlyerSection: React.FC = () => {
             product={prodFSL2}
             defaultImage={imgPromoFSL2}
             storageKey="parailaf_promo_flyer_custom_img"
-            badgeLabel={`PROMOTION ${prodFSL2.price} DH`}
+            badgeLabel={language === 'ar' ? `تخفيض ${prodFSL2.price} درهم` : `PROMOTION ${prodFSL2.price} DH`}
             title="FreeStyle Libre 2"
             versionHighlight=""
-            subtitle={prodFSL2.shortDescription || "Système officiel de mesure du glucose en continu 24h/24 sans piqûre au bout des doigts."}
-            durationLabel="Jusqu’à 14-15 Jours"
+            subtitle={language === 'ar' ? "نظام رسمي لمراقبة السكر باستمرار 24/24 بدون وخز للأصابع." : (prodFSL2.shortDescription || "Système officiel de mesure du glucose en continu 24h/24 sans piqûre au bout des doigts.")}
+            durationLabel={language === 'ar' ? "حتى 14-15 يوماً" : "Jusqu’à 14-15 Jours"}
             whatsappMessageText={`Bonjour, je souhaite commander l'Offre Spéciale ${prodFSL2.name} à ${prodFSL2.price} DH.`}
             headerGradientClass="bg-gradient-to-r from-red-700 via-red-600 to-red-700"
             badgeColorClass="bg-amber-400"
-            certLabel="Dispositif Médical Certifié Abbott"
+            certLabel={language === 'ar' ? "جهاز طبي معتمد من أبوت" : "Dispositif Médical Certifié Abbott"}
           />
           {/* 2ème Produit Affiche : FreeStyle Libre 3 PLUS */}
           <PromoFlyerCard
             product={prodFSL3}
             defaultImage={imgPromoFSL3}
             storageKey="parailaf_promo_flyer_fsl3_custom_img"
-            badgeLabel={`PROMOTION ${prodFSL3.price} DH`}
+            badgeLabel={language === 'ar' ? `تخفيض ${prodFSL3.price} درهم` : `PROMOTION ${prodFSL3.price} DH`}
             title="FreeStyle Libre 3"
             versionHighlight=""
-            subtitle={prodFSL3.shortDescription || "Capteur nouvelle génération ultra-discret, mesure continue sans piqûres, alertes en temps réel."}
-            durationLabel="Jusqu’à 15 Jours"
+            subtitle={language === 'ar' ? "مجس جيل جديد صغير وسري جداً، قياس مستمر وتنبيهات فورية في الوقت الحقيقي." : (prodFSL3.shortDescription || "Capteur nouvelle génération ultra-discret, mesure continue sans piqûres, alertes en temps réel.")}
+            durationLabel={language === 'ar' ? "حتى 15 يوماً" : "Jusqu’à 15 Jours"}
             whatsappMessageText={`Bonjour, je souhaite commander l'Offre Spéciale ${prodFSL3.name} à ${prodFSL3.price} DH.`}
             headerGradientClass="bg-gradient-to-r from-slate-900 via-slate-800 to-red-700"
             badgeColorClass="bg-amber-400"
-            certLabel="Dispositif Médical Certifié Abbott"
+            certLabel={language === 'ar' ? "جهاز طبي معتمد من أبوت" : "Dispositif Médical Certifié Abbott"}
           />
           {/* 3ème Produit Affiche : Omnipod 5 (Boîte de 5 Pods) */}
           <PromoFlyerCard
             product={prodOmnipod}
             defaultImage={imgPromoOmnipod}
             storageKey="parailaf_promo_flyer_omnipod_custom_img"
-            badgeLabel={`PROMOTION ${prodOmnipod.price} DH`}
+            badgeLabel={language === 'ar' ? `تخفيض ${prodOmnipod.price} درهم` : `PROMOTION ${prodOmnipod.price} DH`}
             title="Omnipod DASH"
             versionHighlight=""
-
-            subtitle={prodOmnipod.shortDescription || "Système automatisé d'administration d'insuline tubeless (sans tubulure) de nouvelle génération."}
-            durationLabel="Pack 5 Pods (15 Jours)"
+            subtitle={language === 'ar' ? "نظام تلقائي لإعطاء الأنسولين بدون أنابيب من الجيل الحديث." : (prodOmnipod.shortDescription || "Système automatisé d'administration d'insuline tubeless (sans tubulure) de nouvelle génération.")}
+            durationLabel={language === 'ar' ? "باقة 5 بودات (15 يوماً)" : "Pack 5 Pods (15 Jours)"}
             whatsappMessageText={`Bonjour, je souhaite commander l'Offre Spéciale ${prodOmnipod.name} à ${prodOmnipod.price} DH.`}
             headerGradientClass="bg-gradient-to-r from-orange-600 via-amber-600 to-orange-700"
             badgeColorClass="bg-amber-300"
-            certLabel="Dispositif Médical Certifié Insulet"
-            highlights={[
+            certLabel={language === 'ar' ? "جهاز طبي معتمد من إنسوليت" : "Dispositif Médical Certifié Insulet"}
+            highlights={language === 'ar' ? [
+              { title: "بدون أنابيب", desc: "تصميم لاسلكي سري" },
+              { title: "تنظيم تلقائي", desc: "تعديل كل 5 دقائق" },
+              { title: "علبة 5 بودات", desc: "حتى 15 يوماً من التحكم" },
+              { title: "مقاومة للماء IP28", desc: "حتى عمق 7.6 أمتار" }
+            ] : [
               { title: "Sans Tubes", desc: "Design tubeless discret" },
               { title: "Régulation Auto", desc: "Ajuste toutes les 5 min" },
               { title: "Boîte 5 Pods", desc: "Jusqu'à 15 jours de gestion" },

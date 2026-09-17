@@ -1,18 +1,25 @@
 import React from 'react';
 import { BRAND_CONFIG } from '../data/config';
+import { useLanguage } from '../context/LanguageContext';
 
 export const FloatingWhatsApp: React.FC = () => {
-  const whatsappUrl = `https://wa.me/${BRAND_CONFIG.whatsapp}?text=${encodeURIComponent(BRAND_CONFIG.whatsappMessage)}`;
+  const { language, isRTL } = useLanguage();
+  const whatsappUrl = `https://wa.me/${BRAND_CONFIG.whatsapp}?text=${encodeURIComponent(
+    language === 'ar' 
+      ? 'السلام عليكم، أود الحصول على معلومات إضافية والطلب من صيدلية بارا إيلاف.' 
+      : BRAND_CONFIG.whatsappMessage
+  )}`;
 
   return (
-    <div className="fixed bottom-20 lg:bottom-6 right-4 lg:right-6 z-30 flex flex-col items-end pointer-events-auto">
+    <div className={`fixed bottom-20 lg:bottom-6 ${isRTL ? 'left-4 lg:left-6' : 'right-4 lg:right-6'} z-30 flex flex-col ${isRTL ? 'items-start' : 'items-end'} pointer-events-auto`}>
       {/* Floating Official WhatsApp Button */}
       <a
         href={whatsappUrl}
         target="_blank"
         rel="noopener noreferrer"
         className="w-14 h-14 bg-[#25D366] hover:bg-[#20ba5a] active:scale-95 text-white rounded-full flex items-center justify-center shadow-lg shadow-[#25D366]/40 transition-all duration-300 hover:scale-105 group relative cursor-pointer"
-        aria-label="Contacter sur WhatsApp"
+        aria-label={language === 'ar' ? 'تواصل معنا عبر واتساب' : 'Contacter sur WhatsApp'}
+        title={language === 'ar' ? 'تواصل معنا عبر واتساب' : 'Contacter sur WhatsApp'}
       >
         {/* Official WhatsApp Vector Logo */}
         <svg 
@@ -24,7 +31,7 @@ export const FloatingWhatsApp: React.FC = () => {
         </svg>
         
         {/* Active live indicator dot */}
-        <span className="absolute top-0 right-0 w-3.5 h-3.5 bg-white border-2 border-[#25D366] rounded-full flex items-center justify-center">
+        <span className={`absolute top-0 ${isRTL ? 'left-0' : 'right-0'} w-3.5 h-3.5 bg-white border-2 border-[#25D366] rounded-full flex items-center justify-center`}>
           <span className="w-1.5 h-1.5 bg-emerald-600 rounded-full animate-pulse" />
         </span>
       </a>

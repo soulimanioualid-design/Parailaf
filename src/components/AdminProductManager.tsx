@@ -144,7 +144,7 @@ export const AdminProductManager: React.FC<AdminProductManagerProps> = ({ initia
             boxContents: Array.isArray(d.boxContents) && d.boxContents.length > 0 ? d.boxContents : prev.boxContents,
             price: d.suggestedPrice && mode === 'all' ? d.suggestedPrice : prev.price,
             originalPrice: d.suggestedOriginalPrice && mode === 'all' ? d.suggestedOriginalPrice : prev.originalPrice,
-            badge: d.badge && mode === 'all' ? d.badge : prev.badge,
+            badge: d?.badge && mode === 'all' ? d.badge : prev?.badge,
           };
         });
         showToast('✓ Contenu généré avec succès par l’IA !');
@@ -1201,7 +1201,7 @@ export const AdminProductManager: React.FC<AdminProductManagerProps> = ({ initia
                       {photoCount} photo{photoCount > 1 ? 's' : ''}
                     </span>
 
-                    {product.badge && (
+                    {product?.badge && (
                       <span className="absolute top-2.5 left-2.5 bg-red-600 text-white font-black text-[10px] px-2 py-0.5 rounded-md shadow-xs">
                         {product.badge}
                       </span>

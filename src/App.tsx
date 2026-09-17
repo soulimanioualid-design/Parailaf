@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { CartProvider } from './context/CartContext';
 import { AuthProvider } from './context/AuthContext';
+import { LanguageProvider, useLanguage } from './context/LanguageContext';
 import { Header } from './components/Header';
 import { MobileBottomNav } from './components/MobileBottomNav';
 import { HeroSection } from './components/HeroSection';
@@ -33,9 +34,10 @@ export default function App() {
   };
 
   return (
-    <AuthProvider>
-      <CartProvider>
-        <div className="min-h-screen flex flex-col bg-slate-50 text-slate-800 font-['Plus_Jakarta_Sans',sans-serif] overflow-x-hidden w-full max-w-full relative">
+    <LanguageProvider>
+      <AuthProvider>
+        <CartProvider>
+          <div className="min-h-screen flex flex-col bg-slate-50 text-slate-800 font-['Plus_Jakarta_Sans',sans-serif] overflow-x-hidden w-full max-w-full relative">
           
           {/* Header (Desktop + Mobile) */}
           <Header 
@@ -131,7 +133,8 @@ export default function App() {
           )}
 
         </div>
-      </CartProvider>
-    </AuthProvider>
+        </CartProvider>
+      </AuthProvider>
+    </LanguageProvider>
   );
 }

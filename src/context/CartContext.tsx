@@ -42,11 +42,11 @@ interface CartContextType {
   setIsCheckoutOpen: (open: boolean) => void;
   isAdminOpen: boolean;
   setIsAdminOpen: (open: boolean) => void;
-  adminActiveTab: 'orders' | 'email' | 'analytics' | 'new-order' | 'media' | 'employees' | 'products';
-  setAdminActiveTab: (tab: 'orders' | 'email' | 'analytics' | 'new-order' | 'media' | 'employees' | 'products') => void;
+  adminActiveTab: 'orders' | 'email' | 'analytics' | 'new-order' | 'media' | 'employees' | 'products' | 'languages';
+  setAdminActiveTab: (tab: 'orders' | 'email' | 'analytics' | 'new-order' | 'media' | 'employees' | 'products' | 'languages') => void;
   adminEditingProductId: string | null;
   setAdminEditingProductId: (id: string | null) => void;
-  openAdmin: (tab?: 'orders' | 'email' | 'analytics' | 'new-order' | 'media' | 'employees' | 'products', productId?: string | null) => void;
+  openAdmin: (tab?: 'orders' | 'email' | 'analytics' | 'new-order' | 'media' | 'employees' | 'products' | 'languages', productId?: string | null) => void;
   quickBuyProduct: Product | null;
   setQuickBuyProduct: (product: Product | null) => void;
   selectedProductForModal: Product | null;
@@ -415,12 +415,12 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
   const [isAdminOpen, setIsAdminOpen] = useState(false);
-  const [adminActiveTab, setAdminActiveTab] = useState<'orders' | 'email' | 'analytics' | 'new-order' | 'media' | 'employees' | 'products'>('orders');
+  const [adminActiveTab, setAdminActiveTab] = useState<'orders' | 'email' | 'analytics' | 'new-order' | 'media' | 'employees' | 'products' | 'languages'>('orders');
 
   const [adminEditingProductId, setAdminEditingProductId] = useState<string | null>(null);
 
   const openAdmin = (
-    tab: 'orders' | 'email' | 'analytics' | 'new-order' | 'media' | 'employees' | 'products' = 'orders',
+    tab: 'orders' | 'email' | 'analytics' | 'new-order' | 'media' | 'employees' | 'products' | 'languages' = 'orders',
     productId?: string | null
   ) => {
     setAdminActiveTab(tab);
@@ -482,10 +482,11 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   const getProductImage = (product: Product): string => {
-    if (productCustomImages && productCustomImages[product.id]) {
+    if (!product) return '';
+    if (productCustomImages && product.id && productCustomImages[product.id]) {
       return productCustomImages[product.id];
     }
-    return product.image;
+    return product.image || '';
   };
 
   const updateProductImage = async (productId: string, base64Image: string | null) => {

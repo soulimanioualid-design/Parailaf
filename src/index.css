@@ -14,9 +14,19 @@
   body {
     font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
   }
+
+  body.rtl-arabic, [dir="rtl"], [dir="rtl"] body {
+    font-family: 'Cairo', system-ui, -apple-system, sans-serif;
+  }
   
   h1, h2, h3, h4, .font-heading {
     font-family: 'Outfit', 'Plus Jakarta Sans', system-ui, sans-serif;
+  }
+
+  body.rtl-arabic h1, body.rtl-arabic h2, body.rtl-arabic h3, body.rtl-arabic h4, body.rtl-arabic .font-heading,
+  [dir="rtl"] h1, [dir="rtl"] h2, [dir="rtl"] h3, [dir="rtl"] h4, [dir="rtl"] .font-heading {
+    font-family: 'Cairo', system-ui, -apple-system, sans-serif;
+    font-weight: 800;
   }
 }
 

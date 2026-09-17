@@ -19,20 +19,27 @@ import {
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
 import { MOROCCAN_CITIES, BRAND_CONFIG } from '../data/config';
+import { useLanguage } from '../context/LanguageContext';
 
 export const AccountModal: React.FC = () => {
   const { 
     currentUser, 
     isAdmin,
-    isAdminSessionActive,
+    isStaff,
+    userRole,
+    roleConfig,
+    isAdminSessionActive, 
     isAccountModalOpen, 
     setIsAccountModalOpen, 
     logout, 
-    updateProfile 
+    updateProfile,
+    getDefaultTabForUser,
+    canAccessTab
   } = useAuth();
   
-  const { allOrders, setIsCartOpen, setIsAdminOpen, openAdmin } = useCart();
-  const hasAdminAccess = isAdmin || isAdminSessionActive;
+  const { allOrders, setIsCartOpen, openAdmin } = useCart();
+  const { language, isRTL, translateProduct } = useLanguage();
+  const hasStaffOrAdminAccess = isStaff || isAdminSessionActive;
 
   const [activeTab, setActiveTab] = useState<'orders' | 'profile'>('orders');
   
@@ -87,28 +94,28 @@ export const AccountModal: React.FC = () => {
         return (
           <span className="inline-flex items-center gap-1 bg-blue-100 text-blue-800 text-xs font-bold px-2.5 py-0.5 rounded-full">
             <CheckCircle2 className="w-3 h-3 text-blue-600" />
-            Confirmée
+            {language === 'ar' ? 'مؤكدة' : 'Confirmée'}
           </span>
         );
       case 'shipping':
         return (
           <span className="inline-flex items-center gap-1 bg-amber-100 text-amber-800 text-xs font-bold px-2.5 py-0.5 rounded-full">
             <Truck className="w-3 h-3 text-amber-600" />
-            En cours de livraison
+            {language === 'ar' ? 'قيد التوصيل' : 'En cours de livraison'}
           </span>
         );
       case 'delivered':
         return (
           <span className="inline-flex items-center gap-1 bg-emerald-100 text-emerald-800 text-xs font-bold px-2.5 py-0.5 rounded-full">
             <CheckCircle2 className="w-3 h-3 text-emerald-600" />
-            Livrée
+            {language === 'ar' ? 'تم التوصيل' : 'Livrée'}
           </span>
         );
       case 'cancelled':
         return (
           <span className="inline-flex items-center gap-1 bg-red-100 text-red-800 text-xs font-bold px-2.5 py-0.5 rounded-full">
             <AlertCircle className="w-3 h-3 text-red-600" />
-            Annulée
+            {language === 'ar' ? 'ملغاة' : 'Annulée'}
           </span>
         );
       case 'pending':
@@ -116,7 +123,7 @@ export const AccountModal: React.FC = () => {
         return (
           <span className="inline-flex items-center gap-1 bg-slate-100 text-slate-800 text-xs font-bold px-2.5 py-0.5 rounded-full">
             <Clock className="w-3 h-3 text-slate-500" />
-            En attente de confirmation
+            {language === 'ar' ? 'في انتظار التأكيد' : 'En attente de confirmation'}
           </span>
         );
     }
@@ -131,7 +138,7 @@ export const AccountModal: React.FC = () => {
     .toUpperCase() || 'CL';
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto">
+    <div className="fixed inset-0 z-50 overflow-y-auto" dir={isRTL ? 'rtl' : 'ltr'}>
       {/* Backdrop */}
       <div 
         className="fixed inset-0 bg-slate-950/75 backdrop-blur-sm transition-opacity"
@@ -145,7 +152,7 @@ export const AccountModal: React.FC = () => {
           <div className="bg-gradient-to-r from-[#002f6c] to-slate-900 text-white p-5 sm:p-6 relative">
             <button
               onClick={() => setIsAccountModalOpen(false)}
-              className="absolute top-4 right-4 text-white/80 hover:text-white bg-white/10 hover:bg-white/20 p-2 rounded-full transition cursor-pointer"
+              className={`absolute top-4 ${isRTL ? 'left-4' : 'right-4'} text-white/80 hover:text-white bg-white/10 hover:bg-white/20 p-2 rounded-full transition cursor-pointer`}
               aria-label="Fermer"
             >
               <X className="w-5 h-5" />
@@ -161,13 +168,42 @@ export const AccountModal: React.FC = () => {
                   <h2 className="text-xl sm:text-2xl font-black text-white">
                     {currentUser.fullName}
                   </h2>
-                  <span className={`${
-                    currentUser.role === 'admin' 
-                      ? 'bg-red-500/30 border-red-400/50 text-red-200' 
-                      : 'bg-amber-400/20 border-amber-300/40 text-amber-300'
-                  } border text-[10px] font-extrabold px-2.5 py-0.5 rounded-full uppercase tracking-wider`}>
-                    {currentUser.role === 'admin' ? 'Administrateur' : 'Client Privilège'}
-                  </span>
+                  {(() => {
+                    const role = currentUser.role || 'customer';
+                    if (role === 'admin') {
+                      return (
+                        <span className="bg-red-500/30 border-red-400/50 text-red-200 border text-[10px] font-extrabold px-2.5 py-0.5 rounded-full uppercase tracking-wider">
+                          👑 {language === 'ar' ? 'مدير المتجر' : 'Administrateur'}
+                        </span>
+                      );
+                    }
+                    if (role === 'manager') {
+                      return (
+                        <span className="bg-indigo-500/30 border-indigo-400/50 text-indigo-200 border text-[10px] font-extrabold px-2.5 py-0.5 rounded-full uppercase tracking-wider">
+                          🏢 {language === 'ar' ? 'مسير المتجر' : 'Gérant Magasin'}
+                        </span>
+                      );
+                    }
+                    if (role === 'delivery') {
+                      return (
+                        <span className="bg-amber-500/30 border-amber-400/50 text-amber-200 border text-[10px] font-extrabold px-2.5 py-0.5 rounded-full uppercase tracking-wider">
+                          🚚 {language === 'ar' ? 'مسؤول التوصيل' : 'Livreur Express'}
+                        </span>
+                      );
+                    }
+                    if (role === 'employee') {
+                      return (
+                        <span className="bg-emerald-500/30 border-emerald-400/50 text-emerald-200 border text-[10px] font-extrabold px-2.5 py-0.5 rounded-full uppercase tracking-wider">
+                          📦 {language === 'ar' ? 'موظف المنتجات' : 'Employé Catalogue'}
+                        </span>
+                      );
+                    }
+                    return (
+                      <span className="bg-amber-400/20 border-amber-300/40 text-amber-300 border text-[10px] font-extrabold px-2.5 py-0.5 rounded-full uppercase tracking-wider">
+                        {language === 'ar' ? 'زبون مميز' : 'Client Privilège'}
+                      </span>
+                    );
+                  })()}
                 </div>
                 <div className="flex flex-wrap items-center gap-3 text-xs text-blue-100 mt-1">
                   <span className="flex items-center gap-1">
@@ -179,16 +215,22 @@ export const AccountModal: React.FC = () => {
                     {currentUser.phone}
                   </span>
                 </div>
-                {hasAdminAccess && (
+                {hasStaffOrAdminAccess && (
                   <button
                     onClick={() => {
                       setIsAccountModalOpen(false);
-                      openAdmin('media');
+                      openAdmin(getDefaultTabForUser());
                     }}
                     className="mt-2.5 px-3 py-1.5 bg-amber-400 hover:bg-amber-300 text-slate-950 text-xs font-black rounded-lg flex items-center gap-1.5 transition shadow-sm cursor-pointer"
                   >
                     <ShieldCheck className="w-3.5 h-3.5" />
-                    <span>Panneau d'Administration & Images</span>
+                    <span>
+                      {currentUser.role === 'delivery' 
+                        ? (language === 'ar' ? 'فضاء التوصيل والطلبيات' : 'Espace Livraisons & Colis')
+                        : currentUser.role === 'employee'
+                        ? (language === 'ar' ? 'فضاء المنتجات والمخزون' : 'Espace Produits & Catalogue')
+                        : (language === 'ar' ? 'لوحة الإدارة والتحكم' : "Tableau de Bord & Gestion")}
+                    </span>
                   </button>
                 )}
               </div>
@@ -205,7 +247,9 @@ export const AccountModal: React.FC = () => {
                 }`}
               >
                 <Package className="w-4 h-4" />
-                <span>Mes Commandes ({userOrders.length})</span>
+                <span>
+                  {language === 'ar' ? `طلبياتي (${userOrders.length})` : `Mes Commandes (${userOrders.length})`}
+                </span>
               </button>
 
               <button
@@ -217,16 +261,16 @@ export const AccountModal: React.FC = () => {
                 }`}
               >
                 <UserIcon className="w-4 h-4" />
-                <span>Mes Informations</span>
+                <span>{language === 'ar' ? 'معلوماتي الشخصية' : 'Mes Informations'}</span>
               </button>
 
               <button
                 onClick={logout}
-                className="ml-auto px-3 py-2 rounded-xl text-xs font-bold text-red-200 hover:text-white hover:bg-red-600/30 transition flex items-center gap-1.5 cursor-pointer"
-                title="Déconnexion"
+                className={`${isRTL ? 'mr-auto' : 'ml-auto'} px-3 py-2 rounded-xl text-xs font-bold text-red-200 hover:text-white hover:bg-red-600/30 transition flex items-center gap-1.5 cursor-pointer`}
+                title={language === 'ar' ? 'تسجيل الخروج' : 'Déconnexion'}
               >
                 <LogOut className="w-4 h-4" />
-                <span className="hidden sm:inline">Déconnexion</span>
+                <span className="hidden sm:inline">{language === 'ar' ? 'خروج' : 'Déconnexion'}</span>
               </button>
             </div>
           </div>
@@ -240,9 +284,13 @@ export const AccountModal: React.FC = () => {
                 {userOrders.length === 0 ? (
                   <div className="text-center py-10 px-4 bg-slate-50 rounded-2xl border border-dashed border-slate-200">
                     <Package className="w-12 h-12 text-slate-300 mx-auto mb-2" />
-                    <h3 className="font-bold text-slate-800 text-base">Aucune commande enregistrée</h3>
+                    <h3 className="font-bold text-slate-800 text-base">
+                      {language === 'ar' ? 'لا توجد أي طلبية مسجلة' : 'Aucune commande enregistrée'}
+                    </h3>
                     <p className="text-xs text-slate-500 max-w-sm mx-auto mt-1 mb-4">
-                      Vos commandes passées avec votre compte apparaîtront ici avec leur suivi en direct.
+                      {language === 'ar'
+                        ? 'الطلبيات التي تقوم بطلبها عبر حسابك ستظهر هنا مع تتبع حالتها مباشرة.'
+                        : 'Vos commandes passées avec votre compte apparaîtront ici avec leur suivi en direct.'}
                     </p>
                     <button
                       onClick={() => {
@@ -252,7 +300,7 @@ export const AccountModal: React.FC = () => {
                       className="inline-flex items-center gap-2 px-4 py-2 bg-[#002f6c] hover:bg-[#002244] text-white text-xs font-bold rounded-xl transition cursor-pointer"
                     >
                       <ShoppingBag className="w-4 h-4" />
-                      <span>Parcourir les produits</span>
+                      <span>{language === 'ar' ? 'تصفح المنتجات والطلب' : 'Parcourir les produits'}</span>
                     </button>
                   </div>
                 ) : (
@@ -264,7 +312,7 @@ export const AccountModal: React.FC = () => {
                       <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200/80 pb-3 mb-3">
                         <div>
                           <span className="text-xs font-extrabold text-slate-900">
-                            Commande #{order.id}
+                            {language === 'ar' ? `طلب رقم #${order.id}` : `Commande #${order.id}`}
                           </span>
                           <p className="text-[11px] text-slate-500">{order.createdAt}</p>
                         </div>
@@ -275,16 +323,19 @@ export const AccountModal: React.FC = () => {
 
                       {/* Items */}
                       <div className="space-y-1.5 mb-3">
-                        {order.items.map((item, idx) => (
-                          <div key={idx} className="flex items-center justify-between text-xs text-slate-700">
-                            <span className="font-medium">
-                              {item.quantity}x {item.product.name}
-                            </span>
-                            <span className="font-bold text-slate-900">
-                              {item.product.price * item.quantity} DH
-                            </span>
-                          </div>
-                        ))}
+                        {order.items.map((item, idx) => {
+                          const translated = translateProduct(item.product);
+                          return (
+                            <div key={idx} className="flex items-center justify-between text-xs text-slate-700">
+                              <span className="font-medium">
+                                {item.quantity}x {translated.name}
+                              </span>
+                              <span className="font-bold text-slate-900">
+                                {item.product.price * item.quantity} {language === 'ar' ? 'درهم' : 'DH'}
+                              </span>
+                            </div>
+                          );
+                        })}
                       </div>
 
                       {/* Total and destination */}
@@ -293,25 +344,31 @@ export const AccountModal: React.FC = () => {
                           <MapPin className="w-3.5 h-3.5 text-slate-400" />
                           <span>{order.customer.city} — {order.customer.address}</span>
                         </div>
-                        <div className="text-right">
-                          <span className="text-slate-500 mr-2 text-[11px]">Total TTC:</span>
-                          <span className="font-black text-slate-950 text-sm">{order.total} DH</span>
+                        <div>
+                          <span className="text-slate-500 mx-2 text-[11px]">
+                            {language === 'ar' ? 'المجموع شامل التوصيل:' : 'Total TTC:'}
+                          </span>
+                          <span className="font-black text-slate-950 text-sm">{order.total} {language === 'ar' ? 'درهم' : 'DH'}</span>
                         </div>
                       </div>
 
                       {/* Actions */}
                       <div className="mt-3 pt-2.5 border-t border-slate-200/80 flex items-center justify-between">
                         <span className="text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md">
-                          Paiement à la livraison
+                          {language === 'ar' ? 'الدفع عند الاستلام' : 'Paiement à la livraison'}
                         </span>
                         <a
-                          href={`https://wa.me/${BRAND_CONFIG.whatsapp}?text=${encodeURIComponent(`Bonjour, je souhaite suivre l'état de ma commande #${order.id} au nom de ${order.customer.fullName}.`)}`}
+                          href={`https://wa.me/${BRAND_CONFIG.whatsapp}?text=${encodeURIComponent(
+                            language === 'ar'
+                              ? `مرحباً، أود الاستفسار عن حالة طلبي رقم #${order.id} باسم ${order.customer.fullName}.`
+                              : `Bonjour, je souhaite suivre l'état de ma commande #${order.id} au nom de ${order.customer.fullName}.`
+                          )}`}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="text-xs font-bold text-emerald-700 hover:text-emerald-800 flex items-center gap-1 hover:underline"
                         >
                           <MessageCircle className="w-3.5 h-3.5" />
-                          <span>Assistance WhatsApp</span>
+                          <span>{language === 'ar' ? 'خدمة الزبناء عبر واتساب' : 'Assistance WhatsApp'}</span>
                         </a>
                       </div>
                     </div>
@@ -326,13 +383,15 @@ export const AccountModal: React.FC = () => {
                 {saveSuccess && (
                   <div className="p-3 bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs rounded-xl flex items-center gap-2">
                     <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                    <span>Vos informations ont été mises à jour avec succès !</span>
+                    <span>
+                      {language === 'ar' ? 'تم تحديث معلوماتكم بنجاح!' : 'Vos informations ont été mises à jour avec succès !'}
+                    </span>
                   </div>
                 )}
 
                 <div>
                   <label className="block text-xs font-bold text-slate-700 mb-1">
-                    Nom & Prénom
+                    {language === 'ar' ? 'الاسم والنسب' : 'Nom & Prénom'}
                   </label>
                   <input
                     type="text"
@@ -346,7 +405,7 @@ export const AccountModal: React.FC = () => {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
                     <label className="block text-xs font-bold text-slate-700 mb-1">
-                      Email (identifiant)
+                      {language === 'ar' ? 'البريد الإلكتروني (المعرّف)' : 'Email (identifiant)'}
                     </label>
                     <input
                       type="email"
@@ -354,12 +413,14 @@ export const AccountModal: React.FC = () => {
                       disabled
                       className="w-full px-3 py-2.5 bg-slate-100 border border-slate-200 rounded-xl text-sm text-slate-500 cursor-not-allowed"
                     />
-                    <p className="text-[10px] text-slate-400 mt-1">L'email ne peut pas être modifié.</p>
+                    <p className="text-[10px] text-slate-400 mt-1">
+                      {language === 'ar' ? 'لا يمكن تعديل البريد الإلكتروني.' : "L'email ne peut pas être modifié."}
+                    </p>
                   </div>
 
                   <div>
                     <label className="block text-xs font-bold text-slate-700 mb-1">
-                      Numéro de Téléphone (WhatsApp)
+                      {language === 'ar' ? 'رقم الهاتف (واتساب)' : 'Numéro de Téléphone (WhatsApp)'}
                     </label>
                     <input
                       type="tel"
@@ -374,7 +435,7 @@ export const AccountModal: React.FC = () => {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
                     <label className="block text-xs font-bold text-slate-700 mb-1">
-                      Ville de livraison habituelle
+                      {language === 'ar' ? 'مدينة التوصيل المعتادة' : 'Ville de livraison habituelle'}
                     </label>
                     <select
                       value={city}
@@ -383,7 +444,7 @@ export const AccountModal: React.FC = () => {
                     >
                       {MOROCCAN_CITIES.map((c) => (
                         <option key={c.name} value={c.name}>
-                          {c.name}
+                          {language === 'ar' && c.nameAr ? c.nameAr : c.name}
                         </option>
                       ))}
                     </select>
@@ -391,13 +452,13 @@ export const AccountModal: React.FC = () => {
 
                   <div>
                     <label className="block text-xs font-bold text-slate-700 mb-1">
-                      Adresse complète de livraison
+                      {language === 'ar' ? 'العنوان الكامل للتوصيل' : 'Adresse complète de livraison'}
                     </label>
                     <input
                       type="text"
                       value={address}
                       onChange={(e) => setAddress(e.target.value)}
-                      placeholder="Quartier, Rue, N° d'immeuble..."
+                      placeholder={language === 'ar' ? 'الحي، الشارع، رقم العمارة أو الشقة...' : "Quartier, Rue, N° d'immeuble..."}
                       className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#002f6c] focus:bg-white"
                     />
                   </div>
@@ -410,7 +471,11 @@ export const AccountModal: React.FC = () => {
                     className="w-full sm:w-auto px-6 py-2.5 bg-[#002f6c] hover:bg-[#002244] text-white font-bold text-xs rounded-xl shadow-md transition flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
                   >
                     <Save className="w-4 h-4" />
-                    <span>{isSaving ? 'Enregistrement...' : 'Enregistrer les modifications'}</span>
+                    <span>
+                      {isSaving 
+                        ? (language === 'ar' ? 'جاري الحفظ...' : 'Enregistrement...') 
+                        : (language === 'ar' ? 'حفظ التغييرات' : 'Enregistrer les modifications')}
+                    </span>
                   </button>
                 </div>
               </form>

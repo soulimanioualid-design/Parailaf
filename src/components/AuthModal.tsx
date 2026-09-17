@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { MOROCCAN_CITIES } from '../data/config';
+import { useLanguage } from '../context/LanguageContext';
 
 export const AuthModal: React.FC = () => {
   const { 
@@ -28,6 +29,8 @@ export const AuthModal: React.FC = () => {
     login, 
     register 
   } = useAuth();
+
+  const { language, isRTL } = useLanguage();
 
   // Login form state
   const [loginIdentifier, setLoginIdentifier] = useState('');
@@ -61,11 +64,11 @@ export const AuthModal: React.FC = () => {
     setLoginError(null);
 
     if (!loginIdentifier.trim()) {
-      setLoginError('Veuillez saisir votre email ou numéro de téléphone.');
+      setLoginError(language === 'ar' ? 'يرجى إدخال البريد الإلكتروني أو رقم الهاتف.' : 'Veuillez saisir votre email ou numéro de téléphone.');
       return;
     }
     if (!loginPassword) {
-      setLoginError('Veuillez renseigner votre mot de passe.');
+      setLoginError(language === 'ar' ? 'يرجى إدخال كلمة المرور الخاصة بكم.' : 'Veuillez renseigner votre mot de passe.');
       return;
     }
 
@@ -74,7 +77,7 @@ export const AuthModal: React.FC = () => {
     setIsLoggingIn(false);
 
     if (!res.success) {
-      setLoginError(res.error || 'Erreur lors de la connexion.');
+      setLoginError(res.error || (language === 'ar' ? 'خطأ أثناء تسجيل الدخول.' : 'Erreur lors de la connexion.'));
     }
   };
 
@@ -83,7 +86,7 @@ export const AuthModal: React.FC = () => {
     setRegError(null);
 
     if (regPassword !== regConfirmPassword) {
-      setRegError('Les deux mots de passe ne correspondent pas.');
+      setRegError(language === 'ar' ? 'كلمتا المرور غير متطابقتين.' : 'Les deux mots de passe ne correspondent pas.');
       return;
     }
 
@@ -99,7 +102,7 @@ export const AuthModal: React.FC = () => {
     setIsRegistering(false);
 
     if (!res.success) {
-      setRegError(res.error || "Erreur lors de l'inscription.");
+      setRegError(res.error || (language === 'ar' ? 'خطأ أثناء إنشاء الحساب.' : "Erreur lors de l'inscription."));
     }
   };
 
@@ -110,7 +113,7 @@ export const AuthModal: React.FC = () => {
   };
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto">
+    <div className="fixed inset-0 z-50 overflow-y-auto" dir={isRTL ? 'rtl' : 'ltr'}>
       {/* Backdrop */}
       <div 
         className="fixed inset-0 bg-slate-950/75 backdrop-blur-sm transition-opacity"
@@ -124,7 +127,7 @@ export const AuthModal: React.FC = () => {
           <div className="bg-[#002f6c] text-white p-5 sm:p-6 relative">
             <button
               onClick={handleClose}
-              className="absolute top-4 right-4 text-white/80 hover:text-white bg-white/10 hover:bg-white/20 p-2 rounded-full transition cursor-pointer"
+              className={`absolute top-4 ${isRTL ? 'left-4' : 'right-4'} text-white/80 hover:text-white bg-white/10 hover:bg-white/20 p-2 rounded-full transition cursor-pointer`}
               aria-label="Fermer"
             >
               <X className="w-5 h-5" />
@@ -132,16 +135,18 @@ export const AuthModal: React.FC = () => {
 
             <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/15 text-amber-300 text-xs font-bold mb-2">
               <Sparkles className="w-3.5 h-3.5" />
-              <span>Espace Client Sécurisé</span>
+              <span>{language === 'ar' ? 'فضاء الزبون الآمن' : 'Espace Client Sécurisé'}</span>
             </div>
 
             <h2 className="text-xl sm:text-2xl font-black tracking-tight font-heading">
-              {authModalTab === 'login' ? 'Connexion' : 'Créer un Compte'}
+              {authModalTab === 'login' 
+                ? (language === 'ar' ? 'تسجيل الدخول' : 'Connexion') 
+                : (language === 'ar' ? 'إنشاء حساب جديد' : 'Créer un Compte')}
             </h2>
             <p className="text-blue-100 text-xs sm:text-sm mt-1">
               {authModalTab === 'login' 
-                ? 'Accédez à votre compte, vos commandes et vos coordonnées.' 
-                : 'Inscrivez-vous pour commander rapidement et suivre vos livraisons.'}
+                ? (language === 'ar' ? 'الولوج إلى حسابك، طلبياتك ومعلومات التوصيل الخاصة بك.' : 'Accédez à votre compte, vos commandes et vos coordonnées.') 
+                : (language === 'ar' ? 'سجلوا حسابكم للطلب بضغطة زر وتتبع شحناتكم بسهولة.' : 'Inscrivez-vous pour commander rapidement et suivre vos livraisons.')}
             </p>
 
             {/* Tab switchers */}
@@ -160,7 +165,7 @@ export const AuthModal: React.FC = () => {
                 }`}
               >
                 <LogIn className="w-4 h-4" />
-                <span>Se Connecter</span>
+                <span>{language === 'ar' ? 'تسجيل الدخول' : 'Se Connecter'}</span>
               </button>
 
               <button
@@ -177,7 +182,7 @@ export const AuthModal: React.FC = () => {
                 }`}
               >
                 <UserPlus className="w-4 h-4" />
-                <span>S'inscrire</span>
+                <span>{language === 'ar' ? 'إنشاء حساب' : "S'inscrire"}</span>
               </button>
             </div>
           </div>
@@ -197,25 +202,25 @@ export const AuthModal: React.FC = () => {
 
                 <div>
                   <label className="block text-xs font-bold text-slate-700 mb-1">
-                    Email ou Numéro de Téléphone
+                    {language === 'ar' ? 'البريد الإلكتروني أو رقم الهاتف' : 'Email ou Numéro de Téléphone'}
                   </label>
                   <div className="relative">
                     <input
                       type="text"
                       value={loginIdentifier}
                       onChange={(e) => setLoginIdentifier(e.target.value)}
-                      placeholder="client@parailaf.ma ou 06XXXXXXXX"
-                      className="w-full pl-10 pr-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#002f6c] focus:bg-white transition"
+                      placeholder={language === 'ar' ? 'client@parailaf.ma أو 06XXXXXXXX' : 'client@parailaf.ma ou 06XXXXXXXX'}
+                      className={`w-full ${isRTL ? 'pr-10 pl-3' : 'pl-10 pr-3'} py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#002f6c] focus:bg-white transition`}
                       required
                     />
-                    <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
+                    <Mail className={`w-4 h-4 text-slate-400 absolute ${isRTL ? 'right-3.5' : 'left-3.5'} top-3`} />
                   </div>
                 </div>
 
                 <div>
                   <div className="flex items-center justify-between mb-1">
                     <label className="text-xs font-bold text-slate-700">
-                      Mot de passe
+                      {language === 'ar' ? 'كلمة المرور' : 'Mot de passe'}
                     </label>
                   </div>
                   <div className="relative">
@@ -224,14 +229,14 @@ export const AuthModal: React.FC = () => {
                       value={loginPassword}
                       onChange={(e) => setLoginPassword(e.target.value)}
                       placeholder="••••••••"
-                      className="w-full pl-10 pr-10 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#002f6c] focus:bg-white transition"
+                      className={`w-full ${isRTL ? 'pr-10 pl-10' : 'pl-10 pr-10'} py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#002f6c] focus:bg-white transition`}
                       required
                     />
-                    <Lock className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
+                    <Lock className={`w-4 h-4 text-slate-400 absolute ${isRTL ? 'right-3.5' : 'left-3.5'} top-3`} />
                     <button
                       type="button"
                       onClick={() => setShowLoginPassword(!showLoginPassword)}
-                      className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600 p-1"
+                      className={`absolute ${isRTL ? 'left-3' : 'right-3'} top-2.5 text-slate-400 hover:text-slate-600 p-1`}
                     >
                       {showLoginPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                     </button>
@@ -248,14 +253,14 @@ export const AuthModal: React.FC = () => {
                   ) : (
                     <>
                       <LogIn className="w-4 h-4" />
-                      <span>Se Connecter</span>
+                      <span>{language === 'ar' ? 'دخول لحسابي' : 'Se Connecter'}</span>
                     </>
                   )}
                 </button>
 
                 {/* Switch to Register */}
                 <div className="text-center pt-2 text-xs text-slate-600">
-                  <span>Pas encore de compte ? </span>
+                  <span>{language === 'ar' ? 'ليس لديك حساب بعد؟ ' : 'Pas encore de compte ? '}</span>
                   <button
                     type="button"
                     onClick={() => {
@@ -264,7 +269,7 @@ export const AuthModal: React.FC = () => {
                     }}
                     className="font-bold text-[#002f6c] hover:underline cursor-pointer"
                   >
-                    Créer un compte en 30 secondes
+                    {language === 'ar' ? 'إنشاء حساب في 30 ثانية' : 'Créer un compte en 30 secondes'}
                   </button>
                 </div>
 
@@ -272,21 +277,21 @@ export const AuthModal: React.FC = () => {
                 <div className="mt-4 pt-4 border-t border-slate-100 bg-slate-50/80 -mx-5 -mb-5 p-4 rounded-b-3xl">
                   <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2 flex items-center gap-1">
                     <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
-                    Compte démo pré-configuré :
+                    {language === 'ar' ? 'حساب تجريبي جاهز للاختبار :' : 'Compte démo pré-configuré :'}
                   </p>
                   <button
                     type="button"
                     onClick={() => fillQuickDemo('client@parailaf.ma', 'parailaf123')}
-                    className="w-full text-left p-2.5 bg-white rounded-xl border border-slate-200 hover:border-blue-300 transition flex items-center justify-between text-xs cursor-pointer group"
+                    className="w-full text-start p-2.5 bg-white rounded-xl border border-slate-200 hover:border-blue-300 transition flex items-center justify-between text-xs cursor-pointer group"
                   >
                     <div>
                       <p className="font-bold text-slate-900 group-hover:text-[#002f6c]">
                         Oualid Soulimani
                       </p>
-                      <p className="text-[11px] text-slate-500">client@parailaf.ma (Mdp: parailaf123)</p>
+                      <p className="text-[11px] text-slate-500">client@parailaf.ma ({language === 'ar' ? 'الرمز:' : 'Mdp:'} parailaf123)</p>
                     </div>
                     <span className="text-[11px] font-bold text-[#002f6c] bg-blue-50 px-2 py-1 rounded-md">
-                      Remplir
+                      {language === 'ar' ? 'ملء سريع' : 'Remplir'}
                     </span>
                   </button>
                 </div>
@@ -305,25 +310,25 @@ export const AuthModal: React.FC = () => {
 
                 <div>
                   <label className="block text-xs font-bold text-slate-700 mb-1">
-                    Nom & Prénom complets *
+                    {language === 'ar' ? 'الاسم والنسب الكامل *' : 'Nom & Prénom complets *'}
                   </label>
                   <div className="relative">
                     <input
                       type="text"
                       value={regFullName}
                       onChange={(e) => setRegFullName(e.target.value)}
-                      placeholder="ex: Mohamed Alami"
-                      className="w-full pl-10 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#002f6c] focus:bg-white transition"
+                      placeholder={language === 'ar' ? 'مثال: محمد العلمي' : 'ex: Mohamed Alami'}
+                      className={`w-full ${isRTL ? 'pr-10 pl-3' : 'pl-10 pr-3'} py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#002f6c] focus:bg-white transition`}
                       required
                     />
-                    <UserIcon className="w-4 h-4 text-slate-400 absolute left-3.5 top-2.5" />
+                    <UserIcon className={`w-4 h-4 text-slate-400 absolute ${isRTL ? 'right-3.5' : 'left-3.5'} top-2.5`} />
                   </div>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
                     <label className="block text-xs font-bold text-slate-700 mb-1">
-                      Email *
+                      {language === 'ar' ? 'البريد الإلكتروني *' : 'Email *'}
                     </label>
                     <div className="relative">
                       <input
@@ -331,16 +336,16 @@ export const AuthModal: React.FC = () => {
                         value={regEmail}
                         onChange={(e) => setRegEmail(e.target.value)}
                         placeholder="nom@exemple.com"
-                        className="w-full pl-9 pr-2.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-[#002f6c] focus:bg-white transition"
+                        className={`w-full ${isRTL ? 'pr-9 pl-2.5' : 'pl-9 pr-2.5'} py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-[#002f6c] focus:bg-white transition`}
                         required
                       />
-                      <Mail className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-2.5" />
+                      <Mail className={`w-3.5 h-3.5 text-slate-400 absolute ${isRTL ? 'right-3' : 'left-3'} top-2.5`} />
                     </div>
                   </div>
 
                   <div>
                     <label className="block text-xs font-bold text-slate-700 mb-1">
-                      Téléphone (WhatsApp) *
+                      {language === 'ar' ? 'الهاتف (واتساب) *' : 'Téléphone (WhatsApp) *'}
                     </label>
                     <div className="relative">
                       <input
@@ -348,10 +353,10 @@ export const AuthModal: React.FC = () => {
                         value={regPhone}
                         onChange={(e) => setRegPhone(e.target.value)}
                         placeholder="06XXXXXXXX"
-                        className="w-full pl-9 pr-2.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-[#002f6c] focus:bg-white transition"
+                        className={`w-full ${isRTL ? 'pr-9 pl-2.5' : 'pl-9 pr-2.5'} py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-[#002f6c] focus:bg-white transition`}
                         required
                       />
-                      <Phone className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-2.5" />
+                      <Phone className={`w-3.5 h-3.5 text-slate-400 absolute ${isRTL ? 'right-3' : 'left-3'} top-2.5`} />
                     </div>
                   </div>
                 </div>
@@ -359,33 +364,33 @@ export const AuthModal: React.FC = () => {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
                     <label className="block text-xs font-bold text-slate-700 mb-1">
-                      Ville au Maroc *
+                      {language === 'ar' ? 'المدينة في المغرب *' : 'Ville au Maroc *'}
                     </label>
                     <div className="relative">
                       <select
                         value={regCity}
                         onChange={(e) => setRegCity(e.target.value)}
-                        className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-[#002f6c] focus:bg-white transition"
+                        className={`w-full ${isRTL ? 'pr-9 pl-3' : 'pl-9 pr-3'} py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-[#002f6c] focus:bg-white transition`}
                       >
                         {MOROCCAN_CITIES.map((c) => (
                           <option key={c.name} value={c.name}>
-                            {c.name}
+                            {language === 'ar' && c.nameAr ? c.nameAr : c.name}
                           </option>
                         ))}
                       </select>
-                      <MapPin className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-2.5 pointer-events-none" />
+                      <MapPin className={`w-3.5 h-3.5 text-slate-400 absolute ${isRTL ? 'right-3' : 'left-3'} top-2.5 pointer-events-none`} />
                     </div>
                   </div>
 
                   <div>
                     <label className="block text-xs font-bold text-slate-700 mb-1">
-                      Adresse habituelle (optionnelle)
+                      {language === 'ar' ? 'العنوان المعتاد (اختياري)' : 'Adresse habituelle (optionnelle)'}
                     </label>
                     <input
                       type="text"
                       value={regAddress}
                       onChange={(e) => setRegAddress(e.target.value)}
-                      placeholder="Quartier, Rue, N°"
+                      placeholder={language === 'ar' ? 'الحي، الشارع، رقم المنزل' : 'Quartier, Rue, N°'}
                       className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-[#002f6c] focus:bg-white transition"
                     />
                   </div>
@@ -394,41 +399,41 @@ export const AuthModal: React.FC = () => {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
                     <label className="block text-xs font-bold text-slate-700 mb-1">
-                      Mot de passe *
+                      {language === 'ar' ? 'كلمة المرور *' : 'Mot de passe *'}
                     </label>
                     <div className="relative">
                       <input
                         type={showRegPassword ? 'text' : 'password'}
                         value={regPassword}
                         onChange={(e) => setRegPassword(e.target.value)}
-                        placeholder="Au moins 6 car."
-                        className="w-full pl-9 pr-7 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-[#002f6c] focus:bg-white transition"
+                        placeholder={language === 'ar' ? 'على الأقل 6 خانات' : 'Au moins 6 car.'}
+                        className={`w-full ${isRTL ? 'pr-9 pl-7' : 'pl-9 pr-7'} py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-[#002f6c] focus:bg-white transition`}
                         required
                         minLength={6}
                       />
-                      <Lock className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-2.5" />
+                      <Lock className={`w-3.5 h-3.5 text-slate-400 absolute ${isRTL ? 'right-3' : 'left-3'} top-2.5`} />
                     </div>
                   </div>
 
                   <div>
                     <label className="block text-xs font-bold text-slate-700 mb-1">
-                      Confirmer mot de passe *
+                      {language === 'ar' ? 'تأكيد كلمة المرور *' : 'Confirmer mot de passe *'}
                     </label>
                     <div className="relative">
                       <input
                         type={showRegPassword ? 'text' : 'password'}
                         value={regConfirmPassword}
                         onChange={(e) => setRegConfirmPassword(e.target.value)}
-                        placeholder="Répétez"
-                        className="w-full pl-9 pr-7 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-[#002f6c] focus:bg-white transition"
+                        placeholder={language === 'ar' ? 'أعد إدخال الكلمة' : 'Répétez'}
+                        className={`w-full ${isRTL ? 'pr-9 pl-7' : 'pl-9 pr-7'} py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-[#002f6c] focus:bg-white transition`}
                         required
                         minLength={6}
                       />
-                      <Lock className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-2.5" />
+                      <Lock className={`w-3.5 h-3.5 text-slate-400 absolute ${isRTL ? 'right-3' : 'left-3'} top-2.5`} />
                       <button
                         type="button"
                         onClick={() => setShowRegPassword(!showRegPassword)}
-                        className="absolute right-2 top-2 text-slate-400 hover:text-slate-600"
+                        className={`absolute ${isRTL ? 'left-2' : 'right-2'} top-2 text-slate-400 hover:text-slate-600`}
                       >
                         {showRegPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
                       </button>
@@ -438,7 +443,11 @@ export const AuthModal: React.FC = () => {
 
                 <div className="p-2.5 bg-blue-50/70 border border-blue-200 rounded-xl text-[11px] text-blue-900 flex items-start gap-2">
                   <CheckCircle2 className="w-3.5 h-3.5 text-blue-600 shrink-0 mt-0.5" />
-                  <span>Vos coordonnées seront mémorisées pour commander en 1 clic sans avoir à retaper votre adresse.</span>
+                  <span>
+                    {language === 'ar'
+                      ? 'سيتم حفظ عنوانك وبياناتك للطلب بضغطة زر واحدة في المرات القادمة بدون إعادة إدخالها.'
+                      : 'Vos coordonnées seront mémorisées pour commander en 1 clic sans avoir à retaper votre adresse.'}
+                  </span>
                 </div>
 
                 <button
@@ -451,13 +460,13 @@ export const AuthModal: React.FC = () => {
                   ) : (
                     <>
                       <UserPlus className="w-4 h-4" />
-                      <span>Créer mon Compte</span>
+                      <span>{language === 'ar' ? 'إنشاء حسابي الآن' : 'Créer mon Compte'}</span>
                     </>
                   )}
                 </button>
 
                 <div className="text-center pt-1 text-xs text-slate-600">
-                  <span>Déjà inscrit ? </span>
+                  <span>{language === 'ar' ? 'لديك حساب بالفعل؟ ' : 'Déjà inscrit ? '}</span>
                   <button
                     type="button"
                     onClick={() => {
@@ -466,7 +475,7 @@ export const AuthModal: React.FC = () => {
                     }}
                     className="font-bold text-[#002f6c] hover:underline cursor-pointer"
                   >
-                    Se connecter directement
+                    {language === 'ar' ? 'تسجيل الدخول مباشرة' : 'Se connecter directement'}
                   </button>
                 </div>
               </form>

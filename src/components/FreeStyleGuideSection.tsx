@@ -10,65 +10,94 @@ import {
   Award,
   Flame
 } from 'lucide-react';
+import { useLanguage } from '../context/LanguageContext';
 
 export const FreeStyleGuideSection: React.FC = () => {
+  const { language, isRTL } = useLanguage();
+
   const steps = [
     {
       stepNumber: '01',
-      title: 'Appliquer le capteur facilement',
-      subtitle: 'Pose indolore en 1 minute',
-      description: 'Le capteur s’applique à l’arrière de la partie supérieure du bras à l’aide d’un applicateur jetable stérile. Il adhère fermement à la peau pour une durée continue jusqu’à 15 jours.',
-      highlights: [
-        'Résistant à l’eau pour la douche & le sport',
-        'Fin, discret sous les vêtements',
-        'Sans piqûre au doigt au quotidien'
-      ],
+      title: language === 'ar' ? 'تركيب المجس بسهولة' : 'Appliquer le capteur facilement',
+      subtitle: language === 'ar' ? 'تثبيت غير مؤلم خلال دقيقة واحدة' : 'Pose indolore en 1 minute',
+      description: language === 'ar'
+        ? 'يتم وضع المجس خلف الجزء العلوي من الذراع بواسطة مطبق معقم مخصص. يلتصق بإحكام على الجلد ليعمل بانتظام حتى 15 يوماً.'
+        : 'Le capteur s’applique à l’arrière de la partie supérieure du bras à l’aide d’un applicateur jetable stérile. Il adhère fermement à la peau pour une durée continue jusqu’à 15 jours.',
+      highlights: language === 'ar'
+        ? [
+            'مقاوم للماء عند الاستحمام وممارسة الرياضة',
+            'نحيف وسري تماماً تحت الملابس',
+            'بدون وخز للأصابع طوال اليوم'
+          ]
+        : [
+            'Résistant à l’eau pour la douche & le sport',
+            'Fin, discret sous les vêtements',
+            'Sans piqûre au doigt au quotidien'
+          ],
       icon: Droplet,
       accent: 'border-red-500 text-red-600 bg-red-50',
     },
     {
       stepNumber: '02',
-      title: 'Scanner ou consulter en temps réel',
-      subtitle: 'Lectures instantanées sur smartphone',
-      description: 'Sur FreeStyle Libre 2 & 3 PLUS, les données et alertes sont transmises automatiquement vers votre téléphone ou lecteur sans piqûre.',
-      highlights: [
-        'Application gratuite FreeStyle LibreLink',
-        'Flèche de tendance indiquant la direction du glucose',
-        'Alertes sonores programmables jour & nuit'
-      ],
+      title: language === 'ar' ? 'المسح أو المتابعة المباشرة' : 'Scanner ou consulter en temps réel',
+      subtitle: language === 'ar' ? 'قراءات فورية على هاتفك الذكي' : 'Lectures instantanées sur smartphone',
+      description: language === 'ar'
+        ? 'في أجهزة فري ستايل ليبري 2 و 3 بلس، تنتقل البيانات والتنبيهات تلقائياً إلى هاتفك الذكي أو القارئ دون وخز.'
+        : 'Sur FreeStyle Libre 2 & 3 PLUS, les données et alertes sont transmises automatiquement vers votre téléphone ou lecteur sans piqûre.',
+      highlights: language === 'ar'
+        ? [
+            'تطبيق مجاني معتمد FreeStyle LibreLink',
+            'سهم مؤشر يوضح اتجاه صعود أو هبوط السكر',
+            'تنبيهات صوتية فورية ليلاً ونهاراً'
+          ]
+        : [
+            'Application gratuite FreeStyle LibreLink',
+            'Flèche de tendance indiquant la direction du glucose',
+            'Alertes sonores programmables jour & nuit'
+          ],
       icon: Smartphone,
       accent: 'border-amber-500 text-amber-600 bg-amber-50',
     },
     {
       stepNumber: '03',
-      title: 'Suivre l’évolution et les tendances',
-      subtitle: 'Comprenez l’impact de vos repas & activités',
-      description: 'Visualisez vos courbes de glucose en continu. Partagez facilement vos rapports avec votre médecin diabétologue ou vos proches grâce à LibreLinkUp.',
-      highlights: [
-        'Rapports d’objectifs glycémiques clairs',
-        'Partage en direct avec la famille & soignants',
-        'Prise de décision éclairée et sereine'
-      ],
+      title: language === 'ar' ? 'متابعة المنحنيات والمعدلات' : 'Suivre l’évolution et les tendances',
+      subtitle: language === 'ar' ? 'فهم تأثير وجباتكم ونشاطاتكم' : 'Comprenez l’impact de vos repas & activités',
+      description: language === 'ar'
+        ? 'اطلعوا على منحنيات السكر باستمرار. شاركوا التقارير بكل سهولة مع طبيبكم المعالج أو العائلة عبر تطبيق LibreLinkUp.'
+        : 'Visualisez vos courbes de glucose en continu. Partagez facilement vos rapports avec votre médecin diabétologue ou vos proches grâce à LibreLinkUp.',
+      highlights: language === 'ar'
+        ? [
+            'تقارير واضحة لأهداف نسبة السكر في الدم',
+            'مشاركة فورية ومباشرة مع العائلة والأطباء',
+            'اتخاذ قرارات علاجية مطمئنة ومدروسة'
+          ]
+        : [
+            'Rapports d’objectifs glycémiques clairs',
+            'Partage en direct avec la famille & soignants',
+            'Prise de décision éclairée et sereine'
+          ],
       icon: TrendingUp,
       accent: 'border-[#002f6c] text-[#002f6c] bg-blue-50',
     },
   ];
 
   return (
-    <section id="guide-freestyle" className="py-16 bg-white border-b border-slate-200 overflow-hidden">
+    <section id="guide-freestyle" className="py-16 bg-white border-b border-slate-200 overflow-hidden" dir={isRTL ? 'rtl' : 'ltr'}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6">
         
         {/* Header */}
         <div className="text-center max-w-3xl mx-auto mb-12">
           <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-red-50 border border-red-200 text-red-700 text-xs font-black uppercase tracking-wider mb-2.5">
             <Activity className="w-3.5 h-3.5 text-red-600" />
-            Fonctionnement & Utilisation
+            {language === 'ar' ? 'طريقة العمل والاستخدام' : 'Fonctionnement & Utilisation'}
           </div>
           <h2 className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight font-heading">
-            Comment fonctionne le système FreeStyle Libre ?
+            {language === 'ar' ? 'كيف يعمل نظام فري ستايل ليبري؟' : 'Comment fonctionne le système FreeStyle Libre ?'}
           </h2>
           <p className="text-sm sm:text-base text-slate-600 mt-3 leading-relaxed">
-            Une technologie de mesure continue du glucose conçue pour simplifier votre quotidien sans contrainte.
+            {language === 'ar'
+              ? 'تكنولوجيا قياس السكر المستمر المصممة لتبسيط حياتكم اليومية ومتابعة حالتكم دون عناء.'
+              : 'Une technologie de mesure continue du glucose conçue pour simplifier votre quotidien sans contrainte.'}
           </p>
         </div>
 
@@ -131,14 +160,17 @@ export const FreeStyleGuideSection: React.FC = () => {
           <div className="flex items-center gap-2">
             <ShieldCheck className="w-5 h-5 text-red-600 shrink-0" />
             <span>
-              <strong>Note d’information santé :</strong> Le système FreeStyle Libre est un dispositif médical certifié CE. Consultez toujours votre médecin traitant ou diabétologue pour l’interprétation clinique de vos résultats et l’ajustement de votre traitement.
+              <strong>{language === 'ar' ? 'ملاحظة صحية توجيهية :' : 'Note d’information santé :'}</strong>{' '}
+              {language === 'ar'
+                ? 'نظام فري ستايل ليبري هو جهاز طبي حاصل على شهادة المطابقة الأوروبية CE. استشر دائماً طبيبك المعالج أو أخصائي السكري لتفسير النتائج السريرية وضبط جرعات العلاج.'
+                : 'Le système FreeStyle Libre est un dispositif médical certifié CE. Consultez toujours votre médecin traitant ou diabétologue pour l’interprétation clinique de vos résultats et l’ajustement de votre traitement.'}
             </span>
           </div>
           <a 
             href="#faq" 
             className="whitespace-nowrap font-bold text-red-600 hover:text-red-800 hover:underline"
           >
-            Consulter les FAQ & Guide d'usage →
+            {language === 'ar' ? 'الاطلاع على الأسئلة الشائعة ودليل الاستخدام ←' : "Consulter les FAQ & Guide d'usage →"}
           </a>
         </div>
 

@@ -12,51 +12,58 @@ import {
   LayoutList
 } from 'lucide-react';
 import { CATEGORIES, matchesProductCategory, getCategoryCount } from '../data/products';
+import { Product } from '../types';
 import { ProductCard } from './ProductCard';
 import { useCart } from '../context/CartContext';
+import { useLanguage } from '../context/LanguageContext';
 import { BRAND_CONFIG } from '../data/config';
 
 export const ProductGrid: React.FC = () => {
   const { allProducts, activeCategory, setActiveCategory, searchQuery, setSearchQuery } = useCart();
+  const { translateCategory, t, isRTL, language } = useLanguage();
   const [sortBy, setSortBy] = useState<'popular' | 'price-asc' | 'price-desc' | 'rating'>('popular');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
 
   const filteredProducts = useMemo(() => {
-    return allProducts.filter((product) => {
+    if (!Array.isArray(allProducts)) return [];
+    return allProducts.filter((product): product is Product => {
+      if (!product || !product.id) return false;
       // Category filter with smart keyword matching
       const matchesCategory = matchesProductCategory(product, activeCategory);
 
       // Search filter
       const matchesSearch = 
         !searchQuery || 
-        product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        product.shortDescription.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        product.features.some(f => f.toLowerCase().includes(searchQuery.toLowerCase()));
+        (product.name || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (product.shortDescription || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (Array.isArray(product.features) && product.features.some(f => typeof f === 'string' && f.toLowerCase().includes(searchQuery.toLowerCase())));
 
-      return matchesCategory && matchesSearch;
+      return Boolean(matchesCategory && matchesSearch);
     }).sort((a, b) => {
-      if (sortBy === 'price-asc') return a.price - b.price;
-      if (sortBy === 'price-desc') return b.price - a.price;
-      if (sortBy === 'rating') return b.rating - a.rating;
+      if (sortBy === 'price-asc') return (a.price || 0) - (b.price || 0);
+      if (sortBy === 'price-desc') return (b.price || 0) - (a.price || 0);
+      if (sortBy === 'rating') return (b.rating || 0) - (a.rating || 0);
       return (a.sortOrder ?? 999) - (b.sortOrder ?? 999);
     });
   }, [allProducts, activeCategory, searchQuery, sortBy]);
 
   return (
-    <section id="nos-produits" className="py-12 md:py-16 bg-slate-50 border-b border-slate-200">
+    <section id="nos-produits" className="py-12 md:py-16 bg-slate-50 border-b border-slate-200" dir={isRTL ? 'rtl' : 'ltr'}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6">
         
         {/* Section Title & Subtitle */}
         <div className="text-center max-w-3xl mx-auto mb-10">
           <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-red-100 text-red-700 text-xs font-black uppercase tracking-wider mb-2 border border-red-200">
             <Flame className="w-3.5 h-3.5 fill-red-600 text-red-600" />
-            Produits & Offres Exclusives au Maroc
+            {language === 'ar' ? 'منتجات وعروض حصرية بالمغرب' : 'Produits & Offres Exclusives au Maroc'}
           </div>
           <h2 className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight font-heading">
-            Nos Produits & Offres Spéciales Parailaf
+            {language === 'ar' ? 'منتجاتنا وعروضنا الخاصة بارا إيلاف' : 'Nos Produits & Offres Spéciales Parailaf'}
           </h2>
           <p className="text-sm sm:text-base text-slate-600 mt-2">
-            FreeStyle Libre 2 & 3 PLUS, lecteurs OneTouch Verio®, capteurs Dexcom CGM, aiguilles BD et accessoires certifiés.
+            {language === 'ar' 
+              ? 'فري ستايل ليبري 2 و 3 بلس، أجهزة قياس السكر ون تاتش، مجسات ديكسكوم، إبر بي دي ومستلزمات أصلية معتمدة.'
+              : 'FreeStyle Libre 2 & 3 PLUS, lecteurs OneTouch Verio®, capteurs Dexcom CGM, aiguilles BD et accessoires certifiés.'}
           </p>
         </div>
 
@@ -70,6 +77,7 @@ export const ProductGrid: React.FC = () => {
               if (count === 0 && cat.id !== 'all') return null;
               const isSelected = activeCategory === cat.id;
               const isSpecial = cat.id === 'offres-speciales';
+              const localizedName = translateCategory(cat.id, cat.name);
 
               return (
                 <button
@@ -86,7 +94,7 @@ export const ProductGrid: React.FC = () => {
                   }`}
                 >
                   {isSpecial && <Flame className={`w-3.5 h-3.5 ${isSelected ? 'text-white fill-white' : 'text-red-600 fill-red-600'}`} />}
-                  <span>{cat.name}</span>
+                  <span>{localizedName}</span>
                   <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold ${
                     isSelected 
                       ? 'bg-white/20 text-white' 
@@ -111,10 +119,10 @@ export const ProductGrid: React.FC = () => {
                     ? 'bg-white text-red-600 shadow-xs'
                     : 'text-slate-600 hover:text-slate-900'
                 }`}
-                title="Affichage Grille (2 colonnes mobile)"
+                title={language === 'ar' ? 'عرض شبكة (عمودين على الهاتف)' : 'Affichage Grille (2 colonnes mobile)'}
               >
                 <LayoutGrid className="w-3.5 h-3.5" />
-                <span className="text-[11px] hidden sm:inline">2 Colonnes</span>
+                <span className="text-[11px] hidden sm:inline">{language === 'ar' ? 'شبكة' : '2 Colonnes'}</span>
               </button>
 
               <button
@@ -124,10 +132,10 @@ export const ProductGrid: React.FC = () => {
                     ? 'bg-white text-red-600 shadow-xs'
                     : 'text-slate-600 hover:text-slate-900'
                 }`}
-                title="Affichage 1 par 1 (Grand format)"
+                title={language === 'ar' ? 'عرض قائمة (حجم كبير)' : 'Affichage 1 par 1 (Grand format)'}
               >
                 <LayoutList className="w-3.5 h-3.5" />
-                <span className="text-[11px] hidden sm:inline">1 par 1</span>
+                <span className="text-[11px] hidden sm:inline">{language === 'ar' ? 'قائمة' : '1 par 1'}</span>
               </button>
             </div>
 
@@ -135,17 +143,17 @@ export const ProductGrid: React.FC = () => {
             <div className="flex items-center gap-1.5">
               <span className="text-xs text-slate-500 font-bold whitespace-nowrap hidden sm:flex items-center gap-1">
                 <ArrowUpDown className="w-3.5 h-3.5 text-slate-400" />
-                Trier :
+                {language === 'ar' ? 'ترتيب :' : 'Trier :'}
               </span>
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value as any)}
                 className="bg-slate-100 border border-slate-200 text-xs sm:text-sm font-bold text-slate-700 rounded-xl px-2.5 py-1.5 sm:px-3 sm:py-2 focus:outline-none focus:ring-2 focus:ring-red-500"
               >
-                <option value="popular">Les plus populaires</option>
-                <option value="price-asc">Prix croissant (DH)</option>
-                <option value="price-desc">Prix décroissant (DH)</option>
-                <option value="rating">Mieux notés ⭐</option>
+                <option value="popular">{t('filter.popular')}</option>
+                <option value="price-asc">{t('filter.price_asc')}</option>
+                <option value="price-desc">{t('filter.price_desc')}</option>
+                <option value="rating">{t('filter.rating')}</option>
               </select>
             </div>
 
@@ -156,10 +164,19 @@ export const ProductGrid: React.FC = () => {
         {/* Active Filters / Result count info & View indicator */}
         <div className="flex items-center justify-between text-xs text-slate-500 mb-5">
           <p>
-            Affichage de <strong className="text-slate-900 font-bold">{filteredProducts.length}</strong> référence(s)
-            {searchQuery && <span> pour la recherche « <strong>{searchQuery}</strong> »</span>}
-            <span className="ml-2 text-slate-400 hidden sm:inline md:hidden">
-              • Mode {viewMode === 'grid' ? 'Grille' : 'Grand format'}
+            {language === 'ar' ? (
+              <>
+                عرض <strong className="text-slate-900 font-bold">{filteredProducts.length}</strong> منتج
+                {searchQuery && <span> للبحث عن « <strong>{searchQuery}</strong> »</span>}
+              </>
+            ) : (
+              <>
+                Affichage de <strong className="text-slate-900 font-bold">{filteredProducts.length}</strong> référence(s)
+                {searchQuery && <span> pour la recherche « <strong>{searchQuery}</strong> »</span>}
+              </>
+            )}
+            <span className="mx-2 text-slate-400 hidden sm:inline md:hidden">
+              • {viewMode === 'grid' ? (language === 'ar' ? 'شبكة' : 'Mode Grille') : (language === 'ar' ? 'قائمة' : 'Grand format')}
             </span>
           </p>
           
@@ -171,7 +188,7 @@ export const ProductGrid: React.FC = () => {
               }}
               className="text-red-600 hover:text-red-800 font-bold hover:underline cursor-pointer"
             >
-              Réinitialiser les filtres
+              {language === 'ar' ? 'إعادة ضبط الفلاتر' : 'Réinitialiser les filtres'}
             </button>
           )}
         </div>
@@ -183,7 +200,7 @@ export const ProductGrid: React.FC = () => {
               ? "grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2.5 sm:gap-5"
               : "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"
           }>
-            {filteredProducts.map((product) => (
+            {filteredProducts.filter(Boolean).map((product) => (
               <ProductCard key={product.id} product={product} viewMode={viewMode} />
             ))}
           </div>
@@ -192,9 +209,13 @@ export const ProductGrid: React.FC = () => {
             <div className="w-14 h-14 bg-slate-100 text-slate-400 rounded-full flex items-center justify-center mx-auto mb-4">
               <Search className="w-6 h-6" />
             </div>
-            <h3 className="text-lg font-bold text-slate-900">Aucun produit trouvé</h3>
+            <h3 className="text-lg font-bold text-slate-900">
+              {language === 'ar' ? 'لم يتم العثور على أي منتج' : 'Aucun produit trouvé'}
+            </h3>
             <p className="text-xs sm:text-sm text-slate-500 mt-1">
-              Essayez un autre mot-clé ou réinitialisez les filtres pour voir l'ensemble de notre catalogue.
+              {language === 'ar' 
+                ? 'جرب كلمة بحث أخرى أو أعد ضبط الفلاتر للاطلاع على جميع المنتجات.'
+                : "Essayez un autre mot-clé ou réinitialisez les filtres pour voir l'ensemble de notre catalogue."}
             </p>
             <button
               onClick={() => {
@@ -203,7 +224,7 @@ export const ProductGrid: React.FC = () => {
               }}
               className="mt-4 px-4 py-2 bg-red-600 text-white rounded-xl text-xs font-bold hover:bg-red-700 transition cursor-pointer"
             >
-              Voir tous les produits
+              {language === 'ar' ? 'عرض جميع المنتجات' : 'Voir tous les produits'}
             </button>
           </div>
         )}
@@ -215,17 +236,27 @@ export const ProductGrid: React.FC = () => {
               <PackageCheck className="w-6 h-6" />
             </div>
             <div>
-              <p className="font-extrabold text-sm sm:text-base">Besoin d'un approvisionnement mensuel ou d'un conseil personnalisé ?</p>
-              <p className="text-xs text-slate-300">Notre équipe Parailaf vous répond instantanément par téléphone ou WhatsApp.</p>
+              <p className="font-extrabold text-sm sm:text-base">
+                {language === 'ar' ? 'بحاجة إلى تموين شهري أو استشارة مخصصة؟' : "Besoin d'un approvisionnement mensuel ou d'un conseil personnalisé ?"}
+              </p>
+              <p className="text-xs text-slate-300">
+                {language === 'ar' 
+                  ? 'فريق بارا إيلاف يجيبكم فوراً عبر الهاتف أو واتساب.'
+                  : 'Notre équipe Parailaf vous répond instantanément par téléphone ou WhatsApp.'}
+              </p>
             </div>
           </div>
           <a
-            href={`https://wa.me/${BRAND_CONFIG.whatsapp}?text=${encodeURIComponent('Bonjour Parailaf, je souhaite commander ou poser une question sur vos packs FreeStyle.')}`}
+            href={`https://wa.me/${BRAND_CONFIG.whatsapp}?text=${encodeURIComponent(
+              language === 'ar' 
+                ? 'السلام عليكم بارا إيلاف، أريد طلب أو الاستفسار عن باقات فري ستايل ليبري.' 
+                : 'Bonjour Parailaf, je souhaite commander ou poser une question sur vos packs FreeStyle.'
+            )}`}
             target="_blank"
             rel="noopener noreferrer"
             className="whitespace-nowrap px-5 py-2.5 bg-red-600 hover:bg-red-700 text-white font-extrabold text-xs rounded-xl transition shadow border border-red-400/30 flex items-center gap-1.5"
           >
-            <span>Assistance WhatsApp Express</span>
+            <span>{language === 'ar' ? 'مساعدة واتساب سريعة' : 'Assistance WhatsApp Express'}</span>
           </a>
         </div>
 

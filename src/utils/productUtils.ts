@@ -6,24 +6,25 @@ import { Product } from '../types';
  * This function cleanses all undefined values, guarantees fallbacks for texts, and ensures safe persistence.
  */
 export function sanitizeProductForFirestore(prod: Partial<Product>): Product {
-  const name = String(prod.name || '').trim() || 'Nouveau Produit';
-  const price = typeof prod.price === 'number' && !isNaN(prod.price) && prod.price >= 0 ? prod.price : Number(prod.price) || 0;
+  const safeProd = prod || {};
+  const name = String(safeProd.name || '').trim() || 'Nouveau Produit';
+  const price = typeof safeProd.price === 'number' && !isNaN(safeProd.price) && safeProd.price >= 0 ? safeProd.price : Number(safeProd.price) || 0;
   
-  const shortDescription = (prod.shortDescription && String(prod.shortDescription).trim())
-    ? String(prod.shortDescription).trim()
+  const shortDescription = (safeProd.shortDescription && String(safeProd.shortDescription).trim())
+    ? String(safeProd.shortDescription).trim()
     : `${name} - Dispositif médical certifié disponible en stock au Maroc.`;
 
-  const fullDescription = (prod.fullDescription && String(prod.fullDescription).trim())
-    ? String(prod.fullDescription).trim()
+  const fullDescription = (safeProd.fullDescription && String(safeProd.fullDescription).trim())
+    ? String(safeProd.fullDescription).trim()
     : `${name} - Matériel médical original certifié sous scellé d'origine. Livraison express 24h à 48h partout au Maroc et paiement sécurisé à la livraison.`;
 
-  const mainImage = prod.image && String(prod.image).trim()
-    ? String(prod.image).trim()
+  const mainImage = safeProd.image && String(safeProd.image).trim()
+    ? String(safeProd.image).trim()
     : 'https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?auto=format&fit=crop&w=600&q=80';
 
   let gallery: string[] = [];
-  if (Array.isArray(prod.gallery) && prod.gallery.length > 0) {
-    gallery = prod.gallery.filter(img => typeof img === 'string' && img.trim().length > 0);
+  if (Array.isArray(safeProd.gallery) && safeProd.gallery.length > 0) {
+    gallery = safeProd.gallery.filter(img => typeof img === 'string' && img.trim().length > 0);
   }
   // Ensure mainImage is at index 0 and remove exact duplicates preserving order
   const seen = new Set<string>();
@@ -41,60 +42,60 @@ export function sanitizeProductForFirestore(prod: Partial<Product>): Product {
   // Allow up to 8 images per product gallery
   const safeGallery = distinctGallery.length > 0 ? distinctGallery.slice(0, 8) : [mainImage];
 
-  const features = (Array.isArray(prod.features) && prod.features.length > 0)
-    ? prod.features.filter(f => typeof f === 'string' && f.trim().length > 0)
+  const features = (Array.isArray(safeProd.features) && safeProd.features.length > 0)
+    ? safeProd.features.filter(f => typeof f === 'string' && f.trim().length > 0)
     : [
         "Dispositif 100% original certifié sous scellé d'origine",
         "Livraison express 24h à 48h partout au Maroc",
         "Paiement sécurisé en espèces à la livraison (Cash on delivery)"
       ];
 
-  const boxContents = (Array.isArray(prod.boxContents) && prod.boxContents.length > 0)
-    ? prod.boxContents.filter(b => typeof b === 'string' && b.trim().length > 0)
+  const boxContents = (Array.isArray(safeProd.boxContents) && safeProd.boxContents.length > 0)
+    ? safeProd.boxContents.filter(b => typeof b === 'string' && b.trim().length > 0)
     : [
         "1 Dispositif médical scellé d'origine",
         "Notice et guide d'utilisation en Français"
       ];
 
   const cleanProduct: Record<string, any> = {
-    id: String(prod.id || `prod_${Date.now()}`),
+    id: String(safeProd.id || `prod_${Date.now()}`),
     name,
-    brand: String(prod.brand || 'Abbott').trim() || 'Abbott',
-    category: (prod.category || 'libre-2') as Product['category'],
-    categoryLabel: String(prod.categoryLabel || 'FreeStyle Libre 2').trim() || 'FreeStyle Libre 2',
+    brand: String(safeProd.brand || 'Abbott').trim() || 'Abbott',
+    category: (safeProd.category || 'libre-2') as Product['category'],
+    categoryLabel: String(safeProd.categoryLabel || 'FreeStyle Libre 2').trim() || 'FreeStyle Libre 2',
     shortDescription,
     fullDescription,
     price,
-    rating: typeof prod.rating === 'number' && !isNaN(prod.rating) ? prod.rating : 5.0,
-    reviewsCount: typeof prod.reviewsCount === 'number' && !isNaN(prod.reviewsCount) ? prod.reviewsCount : 1,
+    rating: typeof safeProd.rating === 'number' && !isNaN(safeProd.rating) ? safeProd.rating : 5.0,
+    reviewsCount: typeof safeProd.reviewsCount === 'number' && !isNaN(safeProd.reviewsCount) ? safeProd.reviewsCount : 1,
     image: mainImage,
     gallery: safeGallery,
     features,
     boxContents,
-    inStock: prod.inStock !== false,
-    isPopular: !!prod.isPopular,
-    sortOrder: typeof prod.sortOrder === 'number' && !isNaN(prod.sortOrder) ? prod.sortOrder : 999,
+    inStock: safeProd.inStock !== false,
+    isPopular: !!safeProd.isPopular,
+    sortOrder: typeof safeProd.sortOrder === 'number' && !isNaN(safeProd.sortOrder) ? safeProd.sortOrder : 999,
     specs: {
-      duration: prod.specs?.duration || "Jusqu’à 14-15 jours",
-      waterproof: prod.specs?.waterproof || "IP27 (résistant à l'eau)",
-      bloodSample: prod.specs?.bloodSample || "Sans piqûres au bout des doigts",
-      alarms: prod.specs?.alarms || "Alertes personnalisables en direct",
-      dimensions: prod.specs?.dimensions || "Format compact et discret",
-      memory: prod.specs?.memory || "Historique des données",
-      appCompatibility: prod.specs?.appCompatibility || "iOS et Android",
-      calibration: prod.specs?.calibration || "Calibration d'usine automatique"
+      duration: safeProd.specs?.duration || "Jusqu’à 14-15 jours",
+      waterproof: safeProd.specs?.waterproof || "IP27 (résistant à l'eau)",
+      bloodSample: safeProd.specs?.bloodSample || "Sans piqûres au bout des doigts",
+      alarms: safeProd.specs?.alarms || "Alertes personnalisables en direct",
+      dimensions: safeProd.specs?.dimensions || "Format compact et discret",
+      memory: safeProd.specs?.memory || "Historique des données",
+      appCompatibility: safeProd.specs?.appCompatibility || "iOS et Android",
+      calibration: safeProd.specs?.calibration || "Calibration d'usine automatique"
     }
   };
 
   // Only assign optional fields if they have genuine truthy values (NEVER undefined)
-  if (typeof prod.originalPrice === 'number' && !isNaN(prod.originalPrice) && prod.originalPrice > 0) {
-    cleanProduct.originalPrice = prod.originalPrice;
+  if (typeof safeProd.originalPrice === 'number' && !isNaN(safeProd.originalPrice) && safeProd.originalPrice > 0) {
+    cleanProduct.originalPrice = safeProd.originalPrice;
   }
-  if (prod.badge && String(prod.badge).trim()) {
-    cleanProduct.badge = String(prod.badge).trim();
+  if (safeProd.badge && String(safeProd.badge).trim()) {
+    cleanProduct.badge = String(safeProd.badge).trim();
   }
-  if (typeof prod.stockCount === 'number' && !isNaN(prod.stockCount)) {
-    cleanProduct.stockCount = prod.stockCount;
+  if (typeof safeProd.stockCount === 'number' && !isNaN(safeProd.stockCount)) {
+    cleanProduct.stockCount = safeProd.stockCount;
   }
 
   // Pure JSON round-trip strips any lingering undefined or symbol values
@@ -108,7 +109,8 @@ export function sanitizeProductForFirestore(prod: Partial<Product>): Product {
  * the hard 1MB ceiling (> 920KB), we gently cap gallery length to 4 photos per product.
  */
 export function prepareCatalogForFirestore(products: Product[]): Product[] {
-  const list = products.map(p => sanitizeProductForFirestore(p));
+  if (!Array.isArray(products)) return [];
+  const list = products.filter(Boolean).map(p => sanitizeProductForFirestore(p));
   const jsonString = JSON.stringify(list);
 
   // If comfortably under 920KB, return the complete catalog with all gallery photos intact

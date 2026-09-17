@@ -12,10 +12,12 @@ import {
   ArrowRight
 } from 'lucide-react';
 import { useCart } from '../context/CartContext';
+import { useLanguage } from '../context/LanguageContext';
 import { BRAND_CONFIG } from '../data/config';
 
 export const PromoOffersBottomSection: React.FC = () => {
   const { addToCart, setIsCartOpen, allProducts } = useCart();
+  const { language, isRTL, t } = useLanguage();
 
   const pack4 = allProducts.find(p => p.id === 'pack-4-fsl2-plus') || allProducts[0];
   const pack10 = allProducts.find(p => p.id === 'pack-10-fsl2-plus') || allProducts[1];
@@ -23,7 +25,7 @@ export const PromoOffersBottomSection: React.FC = () => {
   const omnipod = allProducts.find(p => p.id === 'omnipod-5-pods-10pack') || allProducts[3];
 
   return (
-    <section id="offres-promo" className="py-14 sm:py-16 bg-gradient-to-b from-slate-100/90 via-white to-slate-50 border-t border-b border-slate-200 relative overflow-hidden">
+    <section id="offres-promo" className="py-14 sm:py-16 bg-gradient-to-b from-slate-100/90 via-white to-slate-50 border-t border-b border-slate-200 relative overflow-hidden" dir={isRTL ? 'rtl' : 'ltr'}>
       
       {/* Background Glows */}
       <div className="absolute top-0 right-1/4 w-96 h-96 bg-red-100/40 rounded-full blur-3xl pointer-events-none" />
@@ -35,16 +37,35 @@ export const PromoOffersBottomSection: React.FC = () => {
         <div className="text-center max-w-3xl mx-auto mb-10 space-y-3">
           <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-red-50 text-red-700 border border-red-200 text-xs font-black uppercase tracking-wider">
             <Flame className="w-3.5 h-3.5 fill-red-600 text-red-600 animate-pulse" />
-            <span>Offres Exclusives & Tarifs Promotionnels</span>
+            <span>
+              {language === 'ar' ? 'عروض حصرية وأسعار ترويجية' : 'Offres Exclusives & Tarifs Promotionnels'}
+            </span>
           </div>
 
           <h2 className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tight leading-tight text-slate-950 font-heading">
-            Capteurs & Lecteurs <br />
-            <span className="text-[#002f6c]">FreeStyle Libre</span> <span className="text-red-600">2 & 3 PLUS</span>
+            {language === 'ar' ? (
+              <>
+                مجسات وأجهزة <br />
+                <span className="text-[#002f6c]">فري ستايل ليبري</span> <span className="text-red-600">2 و 3 بلس</span>
+              </>
+            ) : (
+              <>
+                Capteurs & Lecteurs <br />
+                <span className="text-[#002f6c]">FreeStyle Libre</span> <span className="text-red-600">2 & 3 PLUS</span>
+              </>
+            )}
           </h2>
 
           <p className="text-slate-600 text-base sm:text-lg max-w-2xl mx-auto leading-relaxed">
-            Suivez votre glycémie en temps réel <strong>sans piqûre au doigt</strong>. Profitez de nos packs promotionnels avec <strong>livraison rapide à domicile et paiement en espèces à la livraison</strong>.
+            {language === 'ar' ? (
+              <>
+                تابعوا نسبة السكر بالدم فوراً <strong>بدون وخز متكرر للأصابع</strong>. استفيدوا من باقاتنا الترويجية مع <strong>خدمة التوصيل السريع إلى باب المنزل والدفع نقداً عند الاستلام</strong>.
+              </>
+            ) : (
+              <>
+                Suivez votre glycémie en temps réel <strong>sans piqûre au doigt</strong>. Profitez de nos packs promotionnels avec <strong>livraison rapide à domicile et paiement en espèces à la livraison</strong>.
+              </>
+            )}
           </p>
         </div>
 
@@ -58,17 +79,17 @@ export const PromoOffersBottomSection: React.FC = () => {
               </div>
               <div>
                 <h3 className="text-base font-black text-slate-900 uppercase tracking-wide">
-                  Sélection Rapide des Meilleurs Packs
+                  {language === 'ar' ? 'اختيار سريع لأفضل الباقات' : 'Sélection Rapide des Meilleurs Packs'}
                 </h3>
                 <p className="text-xs text-slate-500 font-medium">
-                  Cliquez sur un pack pour commander immédiatement
+                  {language === 'ar' ? 'انقر على أي باقة لتأكيد الطلب فوراً' : 'Cliquez sur un pack pour commander immédiatement'}
                 </p>
               </div>
             </div>
 
             <span className="inline-flex items-center gap-1.5 text-xs bg-emerald-50 text-emerald-700 font-bold px-3 py-1 rounded-full border border-emerald-200 w-fit">
               <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-              Stock Disponible au Maroc
+              {language === 'ar' ? 'مخزون متوفر بالمغرب' : 'Stock Disponible au Maroc'}
             </span>
           </div>
 
@@ -85,18 +106,22 @@ export const PromoOffersBottomSection: React.FC = () => {
             >
               <div>
                 <div className="flex justify-between items-start">
-                  <p className="text-xs text-amber-950 font-black uppercase tracking-wider">Pack 4 Pièces</p>
-                  <span className="text-[10px] bg-amber-400 text-slate-950 font-black px-2 py-0.5 rounded-full">POPULAIRE</span>
+                  <p className="text-xs text-amber-950 font-black uppercase tracking-wider">
+                    {language === 'ar' ? 'باقة 4 قطع' : 'Pack 4 Pièces'}
+                  </p>
+                  <span className="text-[10px] bg-amber-400 text-slate-950 font-black px-2 py-0.5 rounded-full">
+                    {language === 'ar' ? 'شائعة' : 'POPULAIRE'}
+                  </span>
                 </div>
                 <p className="text-[11px] text-slate-500 font-medium mt-1">FreeStyle Libre 2 PLUS</p>
                 <div className="flex items-baseline justify-between mt-3">
-                  <span className="text-2xl font-black text-red-600">540 DH</span>
-                  <span className="text-xs text-slate-600 font-bold">135 DH/u</span>
+                  <span className="text-2xl font-black text-red-600">540 {t('common.dh')}</span>
+                  <span className="text-xs text-slate-600 font-bold">135 {t('common.dh')}/u</span>
                 </div>
               </div>
               <p className="text-xs text-red-600 font-black mt-3 pt-2 border-t border-amber-200 group-hover:underline flex items-center justify-between">
-                <span>Commander</span>
-                <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
+                <span>{language === 'ar' ? 'طلب الآن' : 'Commander'}</span>
+                <ArrowRight className={`w-3.5 h-3.5 ${isRTL ? 'rotate-180 group-hover:-translate-x-1' : 'group-hover:translate-x-1'} transition-transform`} />
               </p>
             </div>
 
@@ -110,18 +135,24 @@ export const PromoOffersBottomSection: React.FC = () => {
             >
               <div>
                 <div className="flex justify-between items-start">
-                  <p className="text-xs text-red-950 font-black uppercase tracking-wider">Pack 10 Pièces</p>
-                  <span className="text-[10px] bg-red-600 text-white font-black px-2 py-0.5 rounded-full animate-pulse">ÉCO MAX</span>
+                  <p className="text-xs text-red-950 font-black uppercase tracking-wider">
+                    {language === 'ar' ? 'باقة 10 قطع' : 'Pack 10 Pièces'}
+                  </p>
+                  <span className="text-[10px] bg-red-600 text-white font-black px-2 py-0.5 rounded-full animate-pulse">
+                    {language === 'ar' ? 'توفير أقصى' : 'ÉCO MAX'}
+                  </span>
                 </div>
-                <p className="text-[11px] text-slate-500 font-medium mt-1">5 mois de surveillance</p>
+                <p className="text-[11px] text-slate-500 font-medium mt-1">
+                  {language === 'ar' ? '5 أشهر من المتابعة' : '5 mois de surveillance'}
+                </p>
                 <div className="flex items-baseline justify-between mt-3">
-                  <span className="text-2xl font-black text-red-600">530 DH</span>
-                  <span className="text-xs text-slate-600 font-bold">53 DH/u</span>
+                  <span className="text-2xl font-black text-red-600">530 {t('common.dh')}</span>
+                  <span className="text-xs text-slate-600 font-bold">53 {t('common.dh')}/u</span>
                 </div>
               </div>
               <p className="text-xs text-red-600 font-black mt-3 pt-2 border-t border-red-200 group-hover:underline flex items-center justify-between">
-                <span>Commander</span>
-                <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
+                <span>{language === 'ar' ? 'طلب الآن' : 'Commander'}</span>
+                <ArrowRight className={`w-3.5 h-3.5 ${isRTL ? 'rotate-180 group-hover:-translate-x-1' : 'group-hover:translate-x-1'} transition-transform`} />
               </p>
             </div>
 
@@ -136,17 +167,23 @@ export const PromoOffersBottomSection: React.FC = () => {
               <div>
                 <div className="flex justify-between items-start">
                   <p className="text-xs text-[#002f6c] font-black uppercase tracking-wider">Libre 3 PLUS</p>
-                  <span className="text-[10px] bg-[#002f6c] text-white font-bold px-2 py-0.5 rounded-full">NOUVEAU</span>
+                  <span className="text-[10px] bg-[#002f6c] text-white font-bold px-2 py-0.5 rounded-full">
+                    {language === 'ar' ? 'جديد' : 'NOUVEAU'}
+                  </span>
                 </div>
-                <p className="text-[11px] text-slate-500 font-medium mt-1">Mesure 1 seconde</p>
+                <p className="text-[11px] text-slate-500 font-medium mt-1">
+                  {language === 'ar' ? 'قياس فوري بكل ثانية' : 'Mesure 1 seconde'}
+                </p>
                 <div className="flex items-baseline justify-between mt-3">
-                  <span className="text-2xl font-black text-slate-900">800 DH</span>
-                  <span className="text-xs text-slate-500 font-bold">Unité 15J</span>
+                  <span className="text-2xl font-black text-slate-900">800 {t('common.dh')}</span>
+                  <span className="text-xs text-slate-500 font-bold">
+                    {language === 'ar' ? 'قطعة 15 يوماً' : 'Unité 15J'}
+                  </span>
                 </div>
               </div>
               <p className="text-xs text-[#002f6c] font-black mt-3 pt-2 border-t border-slate-200 group-hover:underline flex items-center justify-between">
-                <span>Commander</span>
-                <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
+                <span>{language === 'ar' ? 'طلب الآن' : 'Commander'}</span>
+                <ArrowRight className={`w-3.5 h-3.5 ${isRTL ? 'rotate-180 group-hover:-translate-x-1' : 'group-hover:translate-x-1'} transition-transform`} />
               </p>
             </div>
 
@@ -161,17 +198,23 @@ export const PromoOffersBottomSection: React.FC = () => {
               <div>
                 <div className="flex justify-between items-start">
                   <p className="text-xs text-slate-900 font-black uppercase tracking-wider">Omnipod 5</p>
-                  <span className="text-[10px] bg-amber-400 text-slate-950 font-bold px-2 py-0.5 rounded-full">10 PODS</span>
+                  <span className="text-[10px] bg-amber-400 text-slate-950 font-bold px-2 py-0.5 rounded-full">
+                    {language === 'ar' ? '10 بودات' : '10 PODS'}
+                  </span>
                 </div>
-                <p className="text-[11px] text-slate-500 font-medium mt-1">Sans tubulure (Tubeless)</p>
+                <p className="text-[11px] text-slate-500 font-medium mt-1">
+                  {language === 'ar' ? 'بدون أنابيب (Tubeless)' : 'Sans tubulure (Tubeless)'}
+                </p>
                 <div className="flex items-baseline justify-between mt-3">
-                  <span className="text-2xl font-black text-slate-900">3000 DH</span>
-                  <span className="text-xs text-slate-500 font-bold">Boîte 10</span>
+                  <span className="text-2xl font-black text-slate-900">3000 {t('common.dh')}</span>
+                  <span className="text-xs text-slate-500 font-bold">
+                    {language === 'ar' ? 'علبة 10' : 'Boîte 10'}
+                  </span>
                 </div>
               </div>
               <p className="text-xs text-[#002f6c] font-black mt-3 pt-2 border-t border-slate-200 group-hover:underline flex items-center justify-between">
-                <span>Commander</span>
-                <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
+                <span>{language === 'ar' ? 'طلب الآن' : 'Commander'}</span>
+                <ArrowRight className={`w-3.5 h-3.5 ${isRTL ? 'rotate-180 group-hover:-translate-x-1' : 'group-hover:translate-x-1'} transition-transform`} />
               </p>
             </div>
 
@@ -188,17 +231,29 @@ export const PromoOffersBottomSection: React.FC = () => {
                 className="inline-flex items-center justify-center gap-2 bg-red-600 hover:bg-red-700 text-white font-extrabold px-8 py-4 rounded-2xl shadow-xl shadow-red-600/20 hover:scale-[1.02] active:scale-[0.98] transition cursor-pointer text-base"
               >
                 <ShoppingBag className="w-5 h-5" />
-                <span>Commander le Pack 4 Pièces (540 DH)</span>
+                <span>
+                  {language === 'ar' 
+                    ? `طلب باقة 4 قطع (540 ${t('common.dh')})` 
+                    : 'Commander le Pack 4 Pièces (540 DH)'}
+                </span>
               </button>
 
               <a
-                href={`https://wa.me/${BRAND_CONFIG.whatsapp}?text=${encodeURIComponent("Bonjour Parailaf, je souhaite commander les capteurs FreeStyle Libre de l'affiche promotionnelle.")}`}
+                href={`https://wa.me/${BRAND_CONFIG.whatsapp}?text=${encodeURIComponent(
+                  language === 'ar'
+                    ? 'السلام عليكم بارا إيلاف، أريد طلب مجسات فري ستايل ليبري من باقات العروض الترويجية.'
+                    : "Bonjour Parailaf, je souhaite commander les capteurs FreeStyle Libre de l'affiche promotionnelle."
+                )}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-6 py-4 rounded-2xl shadow-lg shadow-emerald-600/20 hover:scale-[1.02] active:scale-[0.98] transition cursor-pointer text-base"
               >
                 <MessageCircle className="w-5 h-5 fill-white text-emerald-600" />
-                <span>Commander par WhatsApp ({BRAND_CONFIG.displayPhone})</span>
+                <span>
+                  {language === 'ar' 
+                    ? `الطلب عبر واتساب (${BRAND_CONFIG.displayPhone})` 
+                    : `Commander par WhatsApp (${BRAND_CONFIG.displayPhone})`}
+                </span>
               </a>
             </div>
 
@@ -206,17 +261,17 @@ export const PromoOffersBottomSection: React.FC = () => {
             <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-8 text-xs font-bold text-slate-600 pt-2">
               <span className="flex items-center gap-1.5">
                 <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                Paiement à la livraison
+                {language === 'ar' ? 'الدفع عند الاستلام' : 'Paiement à la livraison'}
               </span>
               <span className="text-slate-300">•</span>
               <span className="flex items-center gap-1.5">
                 <ShieldCheck className="w-4 h-4 text-red-600" />
-                Produits certifiés d'origine
+                {language === 'ar' ? 'منتجات أصلية معتمدة' : "Produits certifiés d'origine"}
               </span>
               <span className="text-slate-300">•</span>
               <span className="flex items-center gap-1.5">
                 <Truck className="w-4 h-4 text-blue-600" />
-                Livraison express partout au Maroc
+                {language === 'ar' ? 'توصيل سريع لجميع مدن المغرب' : 'Livraison express partout au Maroc'}
               </span>
             </div>
           </div>

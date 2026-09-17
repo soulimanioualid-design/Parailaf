@@ -1,16 +1,18 @@
 import React from 'react';
 import { CheckCircle2, ShoppingBag, Trash2, Info, AlertCircle, X } from 'lucide-react';
 import { useCart } from '../context/CartContext';
+import { useLanguage } from '../context/LanguageContext';
 
 export const Toast: React.FC = () => {
   const { toastData, toastMessage, setIsCartOpen, showToast } = useCart();
+  const { language, isRTL } = useLanguage();
 
   const message = toastData?.message || toastMessage;
   if (!message) return null;
 
-  const type = toastData?.type || (message.toLowerCase().includes('panier') ? 'cart' : 'info');
-  const isCart = type === 'cart' || message.toLowerCase().includes('au panier');
-  const isDelete = message.toLowerCase().includes('supprimé') || message.toLowerCase().includes('retiré');
+  const type = toastData?.type || (message.toLowerCase().includes('panier') || message.includes('سلة') ? 'cart' : 'info');
+  const isCart = type === 'cart' || message.toLowerCase().includes('au panier') || message.includes('سلة');
+  const isDelete = message.toLowerCase().includes('supprimé') || message.toLowerCase().includes('retiré') || message.includes('حذف');
 
   // Dismiss toast
   const handleDismiss = () => {
@@ -19,7 +21,10 @@ export const Toast: React.FC = () => {
   };
 
   return (
-    <div className="fixed bottom-20 lg:bottom-6 left-1/2 -translate-x-1/2 z-50 animate-in fade-in slide-in-from-bottom-4 duration-200 pointer-events-auto">
+    <div 
+      className="fixed bottom-20 lg:bottom-6 left-1/2 -translate-x-1/2 z-50 animate-in fade-in slide-in-from-bottom-4 duration-200 pointer-events-auto"
+      dir={isRTL ? 'rtl' : 'ltr'}
+    >
       <div className="bg-[#001f3f]/95 text-white px-4 py-3 rounded-2xl shadow-2xl border border-slate-700/60 flex items-center gap-3 max-w-md w-max min-w-[280px] backdrop-blur-md">
         <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 border ${
           isCart
@@ -54,7 +59,7 @@ export const Toast: React.FC = () => {
             onClick={() => setIsCartOpen(true)}
             className="text-xs font-black text-amber-300 hover:text-amber-200 underline whitespace-nowrap cursor-pointer transition px-1 py-0.5"
           >
-            Voir panier
+            {language === 'ar' ? 'معاينة السلة' : 'Voir panier'}
           </button>
         )}
 
@@ -63,7 +68,7 @@ export const Toast: React.FC = () => {
           type="button"
           onClick={handleDismiss}
           className="text-slate-400 hover:text-white p-1 rounded-lg transition shrink-0 cursor-pointer"
-          title="Fermer"
+          title={language === 'ar' ? 'إغلاق' : 'Fermer'}
         >
           <X className="w-3.5 h-3.5" />
         </button>

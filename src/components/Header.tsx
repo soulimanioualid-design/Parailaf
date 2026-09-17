@@ -26,6 +26,7 @@ import {
 import { BRAND_CONFIG } from '../data/config';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
+import { useLanguage } from '../context/LanguageContext';
 import { CATEGORIES, getCategoryCount } from '../data/products';
 import { Logo } from './Logo';
 
@@ -49,14 +50,25 @@ export const Header: React.FC<HeaderProps> = ({ onOpenAbout, onOpenContact }) =>
     scrollToSection 
   } = useCart();
 
-  const { currentUser, isAdmin, isAdminSessionActive, openAuthModal, setIsAccountModalOpen } = useAuth();
+  const { 
+    currentUser, 
+    isAdmin, 
+    isStaff,
+    userRole,
+    canAccessTab,
+    getDefaultTabForUser,
+    isAdminSessionActive, 
+    openAuthModal, 
+    setIsAccountModalOpen 
+  } = useAuth();
+  const { language, setLanguage, toggleLanguage, isRTL, t, translateCategory, arabicEnabled } = useLanguage();
 
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isSearchOpenMobile, setIsSearchOpenMobile] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const [topBannerDismissed, setTopBannerDismissed] = useState(false);
 
-  const hasAdminAccess = isAdmin || isAdminSessionActive;
+  const hasStaffOrAdminAccess = isStaff || isAdminSessionActive;
   const pendingOrdersCount = allOrders.filter(o => o.status === 'pending').length;
 
   useEffect(() => {
@@ -87,17 +99,13 @@ export const Header: React.FC<HeaderProps> = ({ onOpenAbout, onOpenContact }) =>
             <div className="flex items-center space-x-2 overflow-x-auto whitespace-nowrap py-0.5 max-w-full scrollbar-none">
               <span className="flex items-center text-amber-200 font-extrabold gap-1">
                 <Truck className="w-3.5 h-3.5 inline animate-pulse" />
-                Livraison express partout au Maroc (40 DH)
-              </span>
-              <span className="text-red-200 hidden sm:inline">•</span>
-              <span className="hidden sm:inline text-white font-medium">
-                Paiement en espèces à la livraison (COD)
+                {t('announcement.text')}
               </span>
             </div>
             
             <button 
               onClick={() => setTopBannerDismissed(true)} 
-              className="text-red-100 hover:text-white text-xs hidden md:inline-flex items-center absolute right-0"
+              className={`text-red-100 hover:text-white text-xs hidden md:inline-flex items-center absolute ${isRTL ? 'left-0' : 'right-0'}`}
               aria-label="Fermer la bannière"
             >
               <X className="w-3.5 h-3.5" />
@@ -108,14 +116,14 @@ export const Header: React.FC<HeaderProps> = ({ onOpenAbout, onOpenContact }) =>
 
       {/* 2. Desktop Sub-bar (Contact, Phone, Email, Support) */}
       <div className="hidden lg:block bg-slate-50/90 backdrop-blur border-b border-slate-200/80 text-xs text-slate-600 py-1.5 px-6">
-        <div className="max-w-7xl mx-auto flex items-center justify-center relative">
+        <div className="max-w-7xl mx-auto flex items-center justify-between relative">
           <div className="flex items-center space-x-6">
             <a 
               href={`tel:${BRAND_CONFIG.phone}`}
               className="flex items-center gap-1.5 hover:text-red-600 transition font-bold text-slate-800"
             >
               <Phone className="w-3.5 h-3.5 text-red-600" />
-              <span>{BRAND_CONFIG.displayPhone}</span>
+              <span dir="ltr">{BRAND_CONFIG.displayPhone}</span>
             </a>
             
             <a 
@@ -128,34 +136,59 @@ export const Header: React.FC<HeaderProps> = ({ onOpenAbout, onOpenContact }) =>
 
             <div className="flex items-center gap-1.5 text-slate-500">
               <Clock className="w-3.5 h-3.5 text-slate-400" />
-              <span>Service client 7j/7 (8h30 - 20h00)</span>
+              <span>{language === 'ar' ? 'خدمة الزبائن 7/7 (8:30 - 20:00)' : 'Service client 7j/7 (8h30 - 20h00)'}</span>
             </div>
           </div>
 
-          {hasAdminAccess && (
-            <div className="flex items-center gap-2 absolute right-0">
-              <button
-                onClick={() => openAdmin('media')}
-                className="flex items-center gap-1.5 text-slate-900 font-extrabold text-xs bg-amber-400 hover:bg-amber-300 px-2.5 py-1 rounded-lg transition shadow-xs cursor-pointer"
-                title="Modifier les affiches promo et images du site"
-              >
-                <ImageIcon className="w-3.5 h-3.5 text-slate-950" />
-                <span>Changer Images</span>
-              </button>
+          <div className="flex items-center gap-3">
+            {/* Bilingual Quick Toggle in Sub-bar (Only when Arabic is enabled in Admin) */}
+            {arabicEnabled && (
+              <div className="flex items-center bg-white border border-slate-200 rounded-lg p-0.5 shadow-2xs">
+                <button
+                  onClick={() => toggleLanguage()}
+                  className="flex items-center gap-1.5 px-2 py-0.5 rounded text-xs font-black hover:text-red-600 transition cursor-pointer"
+                  title={language === 'fr' ? 'Passer en arabe' : 'Passer en français'}
+                >
+                  <span>{language === 'fr' ? '🇲🇦 العربية' : '🇫🇷 Français'}</span>
+                </button>
+              </div>
+            )}
 
-              <button
-                onClick={() => openAdmin('orders')}
-                className="flex items-center gap-1.5 text-white font-bold text-xs bg-red-600 hover:bg-red-700 px-2.5 py-1 rounded-lg transition shadow-sm cursor-pointer"
-                title="Accès Administrateur & Commandes"
-              >
-                <Lock className="w-3 h-3 text-white" />
-                <span>Espace Admin</span>
-                {pendingOrdersCount > 0 && (
-                  <span className="w-2 h-2 rounded-full bg-amber-300 animate-pulse" />
+            {hasStaffOrAdminAccess && (
+              <div className="flex items-center gap-2">
+                {canAccessTab('media') && (
+                  <button
+                    onClick={() => openAdmin('media')}
+                    className="flex items-center gap-1.5 text-slate-900 font-extrabold text-xs bg-amber-400 hover:bg-amber-300 px-2.5 py-1 rounded-lg transition shadow-xs cursor-pointer"
+                    title="Modifier les affiches promo et images du site"
+                  >
+                    <ImageIcon className="w-3.5 h-3.5 text-slate-950" />
+                    <span>{language === 'ar' ? 'تعديل الصور' : 'Changer Images'}</span>
+                  </button>
                 )}
-              </button>
-            </div>
-          )}
+
+                <button
+                  onClick={() => openAdmin(getDefaultTabForUser())}
+                  className="flex items-center gap-1.5 text-white font-bold text-xs bg-red-600 hover:bg-red-700 px-2.5 py-1 rounded-lg transition shadow-sm cursor-pointer"
+                  title="Accès Espace Gestion & Tableau de bord"
+                >
+                  <Lock className="w-3 h-3 text-white" />
+                  <span>
+                    {userRole === 'delivery' 
+                      ? (language === 'ar' ? 'فضاء التوصيل' : 'Espace Livreur')
+                      : userRole === 'employee'
+                      ? (language === 'ar' ? 'إدارة المنتجات' : 'Espace Catalogue')
+                      : userRole === 'manager'
+                      ? (language === 'ar' ? 'تسيير المتجر' : 'Espace Gérant')
+                      : (language === 'ar' ? 'لوحة الإدارة' : 'Espace Admin')}
+                  </span>
+                  {pendingOrdersCount > 0 && canAccessTab('orders') && userRole !== 'delivery' && (
+                    <span className="w-2 h-2 rounded-full bg-amber-300 animate-pulse" />
+                  )}
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
@@ -189,7 +222,7 @@ export const Header: React.FC<HeaderProps> = ({ onOpenAbout, onOpenContact }) =>
               onClick={() => handleNavClick('hero')} 
               className="px-3 py-2 rounded-lg hover:bg-red-50 hover:text-red-600 transition cursor-pointer"
             >
-              Accueil
+              {t('nav.home')}
             </button>
             
             {/* Nos Produits Dropdown */}
@@ -198,13 +231,13 @@ export const Header: React.FC<HeaderProps> = ({ onOpenAbout, onOpenContact }) =>
                 onClick={() => handleCategoryClick('all')} 
                 className="px-3 py-2 rounded-lg hover:bg-red-50 hover:text-red-600 transition cursor-pointer flex items-center gap-1"
               >
-                Nos produits
+                {t('nav.products')}
                 <svg className="w-4 h-4 transition-transform group-hover:rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                 </svg>
               </button>
               
-              <div className="absolute left-0 top-full pt-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
+              <div className={`absolute ${isRTL ? 'right-0' : 'left-0'} top-full pt-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50`}>
                 <div className="w-64 bg-white rounded-xl shadow-xl border border-slate-100 overflow-hidden py-1">
                   {CATEGORIES.map((cat) => {
                     const dynamicCount = getCategoryCount(cat.id, allProducts);
@@ -214,7 +247,7 @@ export const Header: React.FC<HeaderProps> = ({ onOpenAbout, onOpenContact }) =>
                       <button
                         key={cat.id}
                         onClick={() => handleCategoryClick(cat.id)}
-                        className={`w-full text-left px-4 py-2.5 text-sm transition-colors flex items-center justify-between ${
+                        className={`w-full ${isRTL ? 'text-right' : 'text-left'} px-4 py-2.5 text-sm transition-colors flex items-center justify-between ${
                           activeCategory === cat.id 
                             ? 'bg-red-50 text-red-600 font-bold' 
                             : 'text-slate-700 hover:bg-slate-50 hover:text-red-600'
@@ -222,7 +255,7 @@ export const Header: React.FC<HeaderProps> = ({ onOpenAbout, onOpenContact }) =>
                       >
                         <div className="flex items-center gap-2">
                           {cat.id === 'offres-speciales' && <Flame className="w-3.5 h-3.5 text-red-600" />}
-                          <span>{cat.name}</span>
+                          <span>{translateCategory(cat.id, cat.name)}</span>
                         </div>
                         <span className="text-[10px] bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded-full font-bold">
                           {dynamicCount}
@@ -235,10 +268,16 @@ export const Header: React.FC<HeaderProps> = ({ onOpenAbout, onOpenContact }) =>
             </div>
 
             <button 
+              onClick={() => handleNavClick('guide-freestyle')} 
+              className="px-3 py-2 rounded-lg hover:bg-red-50 hover:text-red-600 transition cursor-pointer"
+            >
+              {t('nav.guide')}
+            </button>
+            <button 
               onClick={onOpenAbout} 
               className="px-3 py-2 rounded-lg hover:bg-red-50 hover:text-red-600 transition cursor-pointer"
             >
-              À propos
+              {t('nav.about')}
             </button>
             <button 
               onClick={() => handleNavClick('faq')} 
@@ -250,11 +289,11 @@ export const Header: React.FC<HeaderProps> = ({ onOpenAbout, onOpenContact }) =>
               onClick={onOpenContact} 
               className="px-3 py-2 rounded-lg hover:bg-red-50 hover:text-red-600 transition cursor-pointer"
             >
-              Contact
+              {t('nav.contact')}
             </button>
           </nav>
 
-          {/* Right: Search, WhatsApp button, Cart Button */}
+          {/* Right: Search, WhatsApp button, Language Switcher, Cart Button */}
           <div className="flex items-center space-x-2 sm:space-x-3">
             {/* Search Input (Desktop) */}
             <div className="hidden xl:flex items-center relative w-56">
@@ -265,19 +304,31 @@ export const Header: React.FC<HeaderProps> = ({ onOpenAbout, onOpenContact }) =>
                   setSearchQuery(e.target.value);
                   scrollToSection('nos-produits');
                 }}
-                placeholder="Rechercher capteur, pack..."
-                className="w-full pl-9 pr-3 py-2 bg-slate-100 border border-slate-200 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-red-500 focus:bg-white transition"
+                placeholder={t('nav.search_placeholder')}
+                className={`w-full ${isRTL ? 'pr-9 pl-3' : 'pl-9 pr-3'} py-2 bg-slate-100 border border-slate-200 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-red-500 focus:bg-white transition`}
               />
-              <Search className="w-4 h-4 text-slate-400 absolute left-2.5 pointer-events-none" />
+              <Search className={`w-4 h-4 text-slate-400 absolute ${isRTL ? 'right-2.5' : 'left-2.5'} pointer-events-none`} />
               {searchQuery && (
                 <button 
                   onClick={() => setSearchQuery('')} 
-                  className="absolute right-2 text-slate-400 hover:text-slate-600 text-xs"
+                  className={`absolute ${isRTL ? 'left-2' : 'right-2'} text-slate-400 hover:text-slate-600 text-xs`}
                 >
                   ✕
                 </button>
               )}
             </div>
+
+            {/* Language Switcher Button (Desktop & Tablet) - Only when Arabic is enabled in Admin */}
+            {arabicEnabled && (
+              <button
+                onClick={toggleLanguage}
+                className="flex items-center gap-1.5 px-2.5 sm:px-3 py-2 rounded-lg border border-slate-200 bg-slate-50 hover:bg-red-50 text-slate-800 hover:text-red-600 text-xs font-black transition-all shadow-xs cursor-pointer"
+                title={language === 'fr' ? 'Passer en Arabe (العربية)' : 'Passer en Français'}
+              >
+                <span className="text-sm">{language === 'fr' ? '🇲🇦' : '🇫🇷'}</span>
+                <span className="font-extrabold">{language === 'fr' ? 'العربية' : 'Français'}</span>
+              </button>
+            )}
 
             {/* Mobile search toggle */}
             <button 
@@ -288,15 +339,15 @@ export const Header: React.FC<HeaderProps> = ({ onOpenAbout, onOpenContact }) =>
               <Search className="w-5 h-5" />
             </button>
 
-            {/* Quick Admin / Images button - ONLY visible for authenticated Administrator */}
-            {hasAdminAccess && (
+            {/* Quick Admin / Images button - ONLY visible for authenticated staff with media permission */}
+            {hasStaffOrAdminAccess && canAccessTab('media') && (
               <button
                 onClick={() => openAdmin('media')}
                 className="flex items-center gap-1.5 bg-amber-400 hover:bg-amber-300 text-slate-950 px-2.5 py-2 rounded-lg text-xs font-black transition shadow-xs cursor-pointer"
                 title="Modifier les images, affiches et photos du site"
               >
                 <ImageIcon className="w-4 h-4 text-slate-950" />
-                <span className="text-[11px] font-black">Images</span>
+                <span className="text-[11px] font-black">{language === 'ar' ? 'الصور' : 'Images'}</span>
               </button>
             )}
 
@@ -321,21 +372,9 @@ export const Header: React.FC<HeaderProps> = ({ onOpenAbout, onOpenContact }) =>
                 title="Se connecter ou créer un compte"
               >
                 <UserIcon className="w-4 h-4 text-slate-600" />
-                <span className="hidden sm:inline">Connexion</span>
+                <span className="hidden sm:inline">{t('nav.account')}</span>
               </button>
             )}
-
-            {/* WhatsApp Quick Order button */}
-            <a
-              href={`https://wa.me/${BRAND_CONFIG.whatsapp}?text=${encodeURIComponent(BRAND_CONFIG.whatsappMessage)}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="hidden sm:inline-flex lg:hidden items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white px-3.5 py-2 rounded-lg text-xs font-bold shadow-sm transition-all hover:shadow"
-              title="Commander ou demander conseil sur WhatsApp"
-            >
-              <MessageCircle className="w-4 h-4 fill-white text-emerald-600" />
-              <span>WhatsApp</span>
-            </a>
 
             {/* Cart Trigger */}
             <button
@@ -344,7 +383,7 @@ export const Header: React.FC<HeaderProps> = ({ onOpenAbout, onOpenContact }) =>
               aria-label="Voir le panier"
             >
               <ShoppingBag className="w-4 h-4 text-amber-300 group-hover:scale-110 transition-transform" />
-              <span className="hidden sm:inline font-semibold">Panier</span>
+              <span className="hidden sm:inline font-semibold">{t('nav.cart')}</span>
               {totalItemsCount > 0 && (
                 <span className="bg-amber-400 text-slate-950 font-black text-[11px] px-1.5 py-0.5 rounded-full min-w-5 text-center shadow-xs">
                   {totalItemsCount}
@@ -384,9 +423,9 @@ export const Header: React.FC<HeaderProps> = ({ onOpenAbout, onOpenContact }) =>
         )}
       </div>
 
-      {/* 4. Mobile Left Slide-in Drawer Menu */}
+      {/* 4. Mobile Slide-in Drawer Menu */}
       {isMobileMenuOpen && (
-        <div className="fixed inset-0 z-50 lg:hidden">
+        <div className="fixed inset-0 z-50 lg:hidden" dir={isRTL ? 'rtl' : 'ltr'}>
           {/* Backdrop */}
           <div 
             className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity" 
@@ -394,7 +433,7 @@ export const Header: React.FC<HeaderProps> = ({ onOpenAbout, onOpenContact }) =>
           />
 
           {/* Drawer content */}
-          <div className="fixed inset-y-0 left-0 max-w-xs w-full bg-white shadow-2xl z-50 flex flex-col justify-between overflow-y-auto animate-in slide-in-from-left duration-300">
+          <div className={`fixed inset-y-0 ${isRTL ? 'right-0' : 'left-0'} max-w-xs w-full bg-white shadow-2xl z-50 flex flex-col justify-between overflow-y-auto animate-in ${isRTL ? 'slide-in-from-right' : 'slide-in-from-left'} duration-300`}>
             <div>
               {/* Drawer Top */}
               <div className="p-4 border-b border-slate-200 flex items-center justify-between bg-slate-50">
@@ -406,6 +445,33 @@ export const Header: React.FC<HeaderProps> = ({ onOpenAbout, onOpenContact }) =>
                   <X className="w-5 h-5" />
                 </button>
               </div>
+
+              {/* Language Selector in Mobile Drawer (Only when Arabic is enabled in Admin) */}
+              {arabicEnabled && (
+                <div className="p-3 bg-slate-100/90 border-b border-slate-200 flex items-center justify-between">
+                  <span className="text-xs font-bold text-slate-600">
+                    {language === 'ar' ? 'لغة الموقع :' : 'Langue du site :'}
+                  </span>
+                  <div className="flex items-center gap-1.5 bg-white p-1 rounded-xl border border-slate-200 shadow-2xs">
+                    <button
+                      onClick={() => setLanguage('fr')}
+                      className={`px-2.5 py-1 rounded-lg text-xs font-black transition cursor-pointer ${
+                        language === 'fr' ? 'bg-red-600 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'
+                      }`}
+                    >
+                      🇫🇷 FR
+                    </button>
+                    <button
+                      onClick={() => setLanguage('ar')}
+                      className={`px-2.5 py-1 rounded-lg text-xs font-black transition cursor-pointer ${
+                        language === 'ar' ? 'bg-red-600 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'
+                      }`}
+                    >
+                      🇲🇦 العربية
+                    </button>
+                  </div>
+                </div>
+              )}
 
               {/* Account Section in Mobile Menu */}
               {currentUser ? (
@@ -424,9 +490,9 @@ export const Header: React.FC<HeaderProps> = ({ onOpenAbout, onOpenContact }) =>
                       setIsMobileMenuOpen(false);
                       setIsAccountModalOpen(true);
                     }}
-                    className="text-xs bg-white/20 hover:bg-white/30 text-white font-bold px-3 py-1.5 rounded-lg transition shrink-0"
+                    className="text-xs bg-white/20 hover:bg-white/30 text-white font-bold px-3 py-1.5 rounded-lg transition shrink-0 cursor-pointer"
                   >
-                    Mon Compte
+                    {t('nav.account')}
                   </button>
                 </div>
               ) : (
@@ -437,20 +503,20 @@ export const Header: React.FC<HeaderProps> = ({ onOpenAbout, onOpenContact }) =>
                         setIsMobileMenuOpen(false);
                         openAuthModal('login');
                       }}
-                      className="flex items-center justify-center gap-1.5 py-2 px-3 bg-[#002f6c] text-white rounded-xl text-xs font-bold shadow-sm"
+                      className="flex items-center justify-center gap-1.5 py-2 px-3 bg-[#002f6c] text-white rounded-xl text-xs font-bold shadow-sm cursor-pointer"
                     >
                       <LogIn className="w-3.5 h-3.5" />
-                      <span>Connexion</span>
+                      <span>{language === 'ar' ? 'تسجيل الدخول' : 'Connexion'}</span>
                     </button>
                     <button
                       onClick={() => {
                         setIsMobileMenuOpen(false);
                         openAuthModal('register');
                       }}
-                      className="flex items-center justify-center gap-1.5 py-2 px-3 bg-white border border-slate-300 text-slate-800 rounded-xl text-xs font-bold shadow-sm"
+                      className="flex items-center justify-center gap-1.5 py-2 px-3 bg-white border border-slate-300 text-slate-800 rounded-xl text-xs font-bold shadow-sm cursor-pointer"
                     >
                       <UserPlus className="w-3.5 h-3.5" />
-                      <span>S'inscrire</span>
+                      <span>{language === 'ar' ? 'حساب جديد' : "S'inscrire"}</span>
                     </button>
                   </div>
                 </div>
@@ -459,13 +525,13 @@ export const Header: React.FC<HeaderProps> = ({ onOpenAbout, onOpenContact }) =>
               {/* Delivery badge in menu */}
               <div className="p-3 bg-red-50 border-b border-red-100 flex items-center gap-2 text-xs text-red-900 font-bold">
                 <Truck className="w-4 h-4 text-red-600 shrink-0" />
-                <span>Livraison partout au Maroc (24h/48h)</span>
+                <span>{language === 'ar' ? 'توصيل لجميع مدن المغرب (24/48 ساعة)' : 'Livraison partout au Maroc (24h/48h)'}</span>
               </div>
 
               {/* Navigation Items */}
               <div className="p-3 space-y-1">
                 <p className="px-3 pt-2 pb-1 text-[11px] font-bold text-slate-400 uppercase tracking-wider">
-                  Catégories & Offres
+                  {language === 'ar' ? 'الفئات والعروض' : 'Catégories & Offres'}
                 </p>
 
                 {CATEGORIES.map((cat) => {
@@ -476,7 +542,9 @@ export const Header: React.FC<HeaderProps> = ({ onOpenAbout, onOpenContact }) =>
                     <button
                       key={cat.id}
                       onClick={() => handleCategoryClick(cat.id)}
-                      className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-semibold text-left transition cursor-pointer ${
+                      className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-semibold transition cursor-pointer ${
+                        isRTL ? 'text-right' : 'text-left'
+                      } ${
                         activeCategory === cat.id 
                           ? 'bg-red-600 text-white shadow-sm font-bold' 
                           : 'text-slate-700 hover:bg-slate-100'
@@ -486,7 +554,7 @@ export const Header: React.FC<HeaderProps> = ({ onOpenAbout, onOpenContact }) =>
                         {cat.id === 'offres-speciales' && (
                           <Flame className={`w-4 h-4 ${activeCategory === cat.id ? 'text-white fill-white' : 'text-red-600 fill-red-100'}`} />
                         )}
-                        <span>{cat.name}</span>
+                        <span>{translateCategory(cat.id, cat.name)}</span>
                       </div>
                       <span className={`text-xs px-2 py-0.5 rounded-full font-bold ${
                         activeCategory === cat.id ? 'bg-red-700 text-white' : 'bg-slate-100 text-slate-600'
@@ -499,23 +567,23 @@ export const Header: React.FC<HeaderProps> = ({ onOpenAbout, onOpenContact }) =>
 
                 <div className="pt-3 pb-1 border-t border-slate-100 mt-2">
                   <p className="px-3 pb-1 text-[11px] font-bold text-slate-400 uppercase tracking-wider">
-                    Informations
+                    {language === 'ar' ? 'معلومات وروابط' : 'Informations'}
                   </p>
 
                   <button
                     onClick={() => handleNavClick('guide-freestyle')}
-                    className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-sm text-slate-700 hover:bg-slate-100"
+                    className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-sm text-slate-700 hover:bg-slate-100 cursor-pointer"
                   >
-                    <span>Guide FreeStyle Libre</span>
-                    <ChevronRight className="w-4 h-4 text-slate-400" />
+                    <span>{t('nav.guide')}</span>
+                    <ChevronRight className={`w-4 h-4 text-slate-400 ${isRTL ? 'rotate-180' : ''}`} />
                   </button>
 
                   <button
                     onClick={() => handleNavClick('faq')}
-                    className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-sm text-slate-700 hover:bg-slate-100"
+                    className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-sm text-slate-700 hover:bg-slate-100 cursor-pointer"
                   >
-                    <span>Questions fréquentes (FAQ)</span>
-                    <ChevronRight className="w-4 h-4 text-slate-400" />
+                    <span>{language === 'ar' ? 'الأسئلة الشائعة (FAQ)' : 'Questions fréquentes (FAQ)'}</span>
+                    <ChevronRight className={`w-4 h-4 text-slate-400 ${isRTL ? 'rotate-180' : ''}`} />
                   </button>
 
                   <button
@@ -523,10 +591,10 @@ export const Header: React.FC<HeaderProps> = ({ onOpenAbout, onOpenContact }) =>
                       setIsMobileMenuOpen(false);
                       onOpenAbout();
                     }}
-                    className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-sm text-slate-700 hover:bg-slate-100"
+                    className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-sm text-slate-700 hover:bg-slate-100 cursor-pointer"
                   >
-                    <span>À propos de Parailaf</span>
-                    <ChevronRight className="w-4 h-4 text-slate-400" />
+                    <span>{t('nav.about')}</span>
+                    <ChevronRight className={`w-4 h-4 text-slate-400 ${isRTL ? 'rotate-180' : ''}`} />
                   </button>
 
                   <button
@@ -534,14 +602,14 @@ export const Header: React.FC<HeaderProps> = ({ onOpenAbout, onOpenContact }) =>
                       setIsMobileMenuOpen(false);
                       onOpenContact();
                     }}
-                    className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-sm text-slate-700 hover:bg-slate-100"
+                    className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-sm text-slate-700 hover:bg-slate-100 cursor-pointer"
                   >
-                    <span>Contact & Service client</span>
-                    <ChevronRight className="w-4 h-4 text-slate-400" />
+                    <span>{t('nav.contact')}</span>
+                    <ChevronRight className={`w-4 h-4 text-slate-400 ${isRTL ? 'rotate-180' : ''}`} />
                   </button>
 
                   {/* Espace Admin & Modification des Produits (Mobile Drawer) */}
-                  {hasAdminAccess ? (
+                  {hasStaffOrAdminAccess ? (
                     <div className="mt-3 p-3.5 bg-gradient-to-br from-slate-900 via-slate-800 to-[#002f6c] rounded-2xl text-white shadow-md border border-slate-700">
                       <div className="flex items-center justify-between mb-2.5">
                         <div className="flex items-center gap-2">
@@ -550,52 +618,96 @@ export const Header: React.FC<HeaderProps> = ({ onOpenAbout, onOpenContact }) =>
                           </div>
                           <div>
                             <div className="text-xs font-black flex items-center gap-1.5">
-                              <span>Espace Administrateur</span>
-                              <span className="text-[9px] font-black px-1.5 py-0.2 bg-red-600 text-white rounded uppercase">ACTIF</span>
+                              <span>
+                                {userRole === 'delivery' 
+                                  ? 'Espace Livreur' 
+                                  : userRole === 'employee' 
+                                  ? 'Espace Catalogue' 
+                                  : userRole === 'manager'
+                                  ? 'Espace Gérant'
+                                  : 'Espace Administrateur'}
+                              </span>
+                              <span className="text-[9px] font-black px-1.5 py-0.2 bg-red-600 text-white rounded uppercase">
+                                {userRole ? userRole.toUpperCase() : 'ACTIF'}
+                              </span>
                             </div>
-                            <div className="text-[11px] text-slate-300">Catalogue, textes IA & photos</div>
+                            <div className="text-[11px] text-slate-300">
+                              {userRole === 'delivery' 
+                                ? 'Colis confirmés & contacts clients' 
+                                : userRole === 'employee'
+                                ? 'Gestion catalogue, prix & stocks'
+                                : 'Catalogue, commandes & réglages'}
+                            </div>
                           </div>
                         </div>
                       </div>
 
                       <div className="space-y-2 mt-2">
-                        {/* Primary button: Edit Products */}
-                        <button
-                          onClick={() => {
-                            setIsMobileMenuOpen(false);
-                            openAdmin('products');
-                          }}
-                          className="w-full bg-red-600 hover:bg-red-700 active:scale-98 text-white text-xs font-black py-2.5 px-3 rounded-xl flex items-center justify-center gap-2 transition shadow-sm cursor-pointer"
-                        >
-                          <Edit3 className="w-4 h-4" />
-                          <span>Modifier les Produits (Textes & Photos)</span>
-                        </button>
-
-                        <div className="grid grid-cols-2 gap-2">
-                          <button
-                            onClick={() => {
-                              setIsMobileMenuOpen(false);
-                              openAdmin('media');
-                            }}
-                            className="bg-amber-400 hover:bg-amber-300 text-slate-950 text-xs font-extrabold py-2 px-2.5 rounded-xl flex items-center justify-center gap-1.5 transition shadow-xs cursor-pointer"
-                          >
-                            <ImageIcon className="w-3.5 h-3.5 text-slate-950" />
-                            <span>Bannières</span>
-                          </button>
-
+                        {/* Primary button based on role */}
+                        {userRole === 'delivery' ? (
                           <button
                             onClick={() => {
                               setIsMobileMenuOpen(false);
                               openAdmin('orders');
                             }}
-                            className="bg-white/10 hover:bg-white/20 text-white text-xs font-bold py-2 px-2.5 rounded-xl flex items-center justify-center gap-1.5 transition border border-white/20 cursor-pointer"
+                            className="w-full bg-blue-600 hover:bg-blue-700 active:scale-98 text-white text-xs font-black py-2.5 px-3 rounded-xl flex items-center justify-center gap-2 transition shadow-sm cursor-pointer"
                           >
-                            <Package className="w-3.5 h-3.5" />
-                            <span>Commandes</span>
-                            {pendingOrdersCount > 0 && (
-                              <span className="w-2 h-2 rounded-full bg-amber-300 animate-pulse" />
-                            )}
+                            <Truck className="w-4 h-4" />
+                            <span>Voir les Commandes à Livrer</span>
                           </button>
+                        ) : canAccessTab('products') ? (
+                          <button
+                            onClick={() => {
+                              setIsMobileMenuOpen(false);
+                              openAdmin('products');
+                            }}
+                            className="w-full bg-red-600 hover:bg-red-700 active:scale-98 text-white text-xs font-black py-2.5 px-3 rounded-xl flex items-center justify-center gap-2 transition shadow-sm cursor-pointer"
+                          >
+                            <Edit3 className="w-4 h-4" />
+                            <span>Modifier les Produits & Stocks</span>
+                          </button>
+                        ) : (
+                          <button
+                            onClick={() => {
+                              setIsMobileMenuOpen(false);
+                              openAdmin(getDefaultTabForUser());
+                            }}
+                            className="w-full bg-[#002f6c] hover:bg-blue-900 active:scale-98 text-white text-xs font-black py-2.5 px-3 rounded-xl flex items-center justify-center gap-2 transition shadow-sm cursor-pointer"
+                          >
+                            <ShieldCheck className="w-4 h-4" />
+                            <span>Accéder à mon Espace</span>
+                          </button>
+                        )}
+
+                        <div className="grid grid-cols-2 gap-2">
+                          {canAccessTab('media') && (
+                            <button
+                              onClick={() => {
+                                setIsMobileMenuOpen(false);
+                                openAdmin('media');
+                              }}
+                              className="bg-amber-400 hover:bg-amber-300 text-slate-950 text-xs font-extrabold py-2 px-2.5 rounded-xl flex items-center justify-center gap-1.5 transition shadow-xs cursor-pointer"
+                            >
+                              <ImageIcon className="w-3.5 h-3.5 text-slate-950" />
+                              <span>Bannières</span>
+                            </button>
+                          )}
+
+                          {canAccessTab('orders') && userRole !== 'delivery' && (
+                            <button
+                              onClick={() => {
+                                setIsMobileMenuOpen(false);
+                                openAdmin('orders');
+                              }}
+                              className="bg-white/10 hover:bg-white/20 text-white text-xs font-bold py-2 px-2.5 rounded-xl flex items-center justify-center gap-1.5 transition border border-white/20 cursor-pointer"
+                            >
+                              <Package className="w-3.5 h-3.5" />
+                              <span>Commandes</span>
+                              {pendingOrdersCount > 0 && (
+                                <span className="w-2 h-2 rounded-full bg-amber-300 animate-pulse" />
+                              )}
+                            </button>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -628,7 +740,7 @@ export const Header: React.FC<HeaderProps> = ({ onOpenAbout, onOpenContact }) =>
                 className="w-full flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white py-2.5 px-4 rounded-xl text-sm font-bold shadow transition"
               >
                 <MessageCircle className="w-4 h-4 fill-white" />
-                <span>Assistance WhatsApp 7j/7</span>
+                <span>{language === 'ar' ? 'مساعدة عبر واتساب 7/7' : 'Assistance WhatsApp 7j/7'}</span>
               </a>
 
               <a
@@ -636,12 +748,12 @@ export const Header: React.FC<HeaderProps> = ({ onOpenAbout, onOpenContact }) =>
                 className="w-full flex items-center justify-center gap-2 bg-white border border-slate-300 text-slate-700 hover:bg-slate-100 py-2.5 px-4 rounded-xl text-sm font-bold transition"
               >
                 <Phone className="w-4 h-4 text-red-600" />
-                <span>Appeler : {BRAND_CONFIG.displayPhone}</span>
+                <span>{language === 'ar' ? 'اتصال مباشر : ' : 'Appeler : '} <span dir="ltr">{BRAND_CONFIG.displayPhone}</span></span>
               </a>
 
               <div className="flex items-center justify-center gap-1 text-[11px] text-red-700 pt-1 font-bold">
                 <CheckCircle2 className="w-3.5 h-3.5 text-red-600" />
-                <span>Paiement à la livraison partout au Maroc</span>
+                <span>{language === 'ar' ? 'الدفع نقداً عند الاستلام بكل أمان' : 'Paiement à la livraison partout au Maroc'}</span>
               </div>
             </div>
           </div>

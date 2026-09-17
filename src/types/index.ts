@@ -40,8 +40,11 @@ export interface CartItem {
 
 export interface MoroccanCity {
   name: string;
+  nameAr?: string;
   region: string;
+  regionAr?: string;
   deliveryTime: string;
+  deliveryTimeAr?: string;
   deliveryFee: number;
 }
 
@@ -71,6 +74,8 @@ export interface Order {
   userId?: string;
 }
 
+export type UserRole = 'customer' | 'admin' | 'manager' | 'delivery' | 'employee';
+
 export interface User {
   id: string;
   fullName: string;
@@ -79,7 +84,7 @@ export interface User {
   city?: string;
   address?: string;
   createdAt: string;
-  role?: 'customer' | 'admin';
+  role?: UserRole;
 }
 
 export interface StoredUserAccount extends User {
@@ -91,6 +96,8 @@ export interface FAQItem {
   question: string;
   answer: string;
   category: 'general' | 'usage' | 'livraison' | 'paiement';
+  questionAr?: string;
+  answerAr?: string;
 }
 
 export interface Review {
@@ -102,6 +109,11 @@ export interface Review {
   comment: string;
   verified: boolean;
   productName: string;
+  authorAr?: string;
+  cityAr?: string;
+  dateAr?: string;
+  commentAr?: string;
+  productNameAr?: string;
 }
 
 export interface BrandConfig {

@@ -26,6 +26,7 @@ export const CATEGORIES: CategoryItem[] = [
  * Checks whether a product belongs to a given category ID with smart keyword, brand, and badge fallbacks.
  */
 export function matchesProductCategory(product: Product, categoryId: string): boolean {
+  if (!product) return false;
   if (!categoryId || categoryId === 'all') return true;
 
   const cat = (product.category || '').toLowerCase();
@@ -33,7 +34,7 @@ export function matchesProductCategory(product: Product, categoryId: string): bo
   const name = (product.name || '').toLowerCase();
   const brand = (product.brand || '').toLowerCase();
   const id = (product.id || '').toLowerCase();
-  const badge = (product.badge || '').toLowerCase();
+  const badge = (product?.badge || '').toLowerCase();
   const discount = product.discountPercentage || 0;
 
   switch (categoryId) {
@@ -147,8 +148,9 @@ export function matchesProductCategory(product: Product, categoryId: string): bo
  * Calculates dynamic product count for a given category based on active catalog
  */
 export function getCategoryCount(categoryId: string, products: Product[]): number {
-  if (categoryId === 'all') return products.length;
-  return products.filter(p => matchesProductCategory(p, categoryId)).length;
+  if (!Array.isArray(products)) return 0;
+  if (!categoryId || categoryId === 'all') return products.filter(Boolean).length;
+  return products.filter(p => p && matchesProductCategory(p, categoryId)).length;
 }
 
 export const PRODUCTS: Product[] = [

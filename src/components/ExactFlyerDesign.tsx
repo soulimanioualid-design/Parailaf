@@ -13,6 +13,7 @@ import {
   PhoneCall
 } from 'lucide-react';
 import { useCart } from '../context/CartContext';
+import { useLanguage } from '../context/LanguageContext';
 import flyerGenerated from '../assets/images/active_parailaf_flyer_image_custom.jpg';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { db } from '../utils/firebase';
@@ -23,6 +24,7 @@ interface ExactFlyerDesignProps {
 
 export const ExactFlyerDesign: React.FC<ExactFlyerDesignProps> = ({ onZoom }) => {
   const { addToCart, setIsCartOpen, allProducts } = useCart();
+  const { language, isRTL, t } = useLanguage();
   const [images, setImages] = useState<{ desktop: string | null; mobile: string | null }>({ desktop: flyerGenerated, mobile: flyerGenerated });
 
   const pack4 = allProducts.find(p => p.id === 'pack-4-fsl2-plus') || allProducts[0];
@@ -83,27 +85,27 @@ export const ExactFlyerDesign: React.FC<ExactFlyerDesignProps> = ({ onZoom }) =>
   };
 
   return (
-    <div className="w-full mx-auto bg-white sm:rounded-3xl shadow-2xl border-y-4 sm:border-4 border-[#c8102e] lg:border-none lg:rounded-none overflow-hidden text-slate-900 font-sans relative group">
+    <div className="w-full mx-auto bg-white sm:rounded-3xl shadow-2xl border-y-4 sm:border-4 border-[#c8102e] lg:border-none lg:rounded-none overflow-hidden text-slate-900 font-sans relative group" dir={isRTL ? 'rtl' : 'ltr'}>
       
       {/* Top Banner with Red & Gold Branding */}
       <div className="bg-gradient-to-r from-[#b71124] via-[#cb1429] to-[#b71124] text-white py-3 px-4 text-center relative shadow-md">
         <div className="flex items-center justify-center gap-2">
           <Flame className="w-5 h-5 text-amber-300 fill-amber-300 animate-bounce" />
           <h2 className="text-xl sm:text-3xl font-black tracking-widest uppercase font-serif drop-shadow-sm">
-            EXCLUSIVITÉ
+            {language === 'ar' ? 'حصرياً بالمغرب' : 'EXCLUSIVITÉ'}
           </h2>
           <Flame className="w-5 h-5 text-amber-300 fill-amber-300 animate-bounce" />
         </div>
 
         {onZoom && (
-          <div className="absolute right-3 top-2.5 flex items-center gap-1.5">
+          <div className={`absolute ${isRTL ? 'left-3' : 'right-3'} top-2.5 flex items-center gap-1.5`}>
             <button
               onClick={onZoom}
               className="bg-white/20 hover:bg-white/30 text-white p-1.5 rounded-lg transition cursor-pointer flex items-center gap-1 text-xs font-bold"
-              title="Agrandir l'affiche"
+              title={language === 'ar' ? 'تكبير الإعلان' : "Agrandir l'affiche"}
             >
               <Maximize2 className="w-4 h-4" />
-              <span className="hidden sm:inline">Agrandir</span>
+              <span className="hidden sm:inline">{language === 'ar' ? 'تكبير' : 'Agrandir'}</span>
             </button>
           </div>
         )}
@@ -135,7 +137,7 @@ export const ExactFlyerDesign: React.FC<ExactFlyerDesignProps> = ({ onZoom }) =>
           <div className="absolute inset-0 bg-slate-950/0 group-hover:bg-slate-950/10 transition-colors pointer-events-none flex items-center justify-center">
             <span className="opacity-0 group-hover:opacity-100 transition-opacity bg-slate-900/90 text-white text-xs font-black px-4 py-2 rounded-full shadow-xl flex items-center gap-2">
               <Maximize2 className="w-4 h-4" />
-              Cliquez pour voir en grand
+              {language === 'ar' ? 'انقر للمشاهدة بحجم كبير' : 'Cliquez pour voir en grand'}
             </span>
           </div>
         </div>
@@ -144,10 +146,10 @@ export const ExactFlyerDesign: React.FC<ExactFlyerDesignProps> = ({ onZoom }) =>
         <div className="w-full bg-white p-3 border-t-2 border-slate-200">
           <div className="flex items-center justify-between mb-2">
             <p className="text-[11px] font-black text-slate-700 uppercase tracking-wider">
-              Commander un produit de l'affiche :
+              {language === 'ar' ? 'اطلب منتجاً من الإعلان :' : "Commander un produit de l'affiche :"}
             </p>
             <span className="text-[10px] text-emerald-600 font-bold flex items-center gap-1">
-              <CheckCircle2 className="w-3.5 h-3.5" /> En stock
+              <CheckCircle2 className="w-3.5 h-3.5" /> {t('product.in_stock')}
             </span>
           </div>
 
@@ -157,13 +159,15 @@ export const ExactFlyerDesign: React.FC<ExactFlyerDesignProps> = ({ onZoom }) =>
               onClick={(e) => handleQuickOrder(pack4, e)}
               className="bg-amber-50 hover:bg-amber-100 border border-amber-300 p-2 rounded-xl text-left transition cursor-pointer group/btn"
             >
-              <span className="block text-[10px] font-black uppercase text-amber-900">Pack 4 Pièces</span>
+              <span className="block text-[10px] font-black uppercase text-amber-900">
+                {language === 'ar' ? 'باقة 4 قطع' : 'Pack 4 Pièces'}
+              </span>
               <div className="flex items-baseline justify-between mt-0.5">
-                <span className="text-sm font-black text-[#c8102e]">540 DH</span>
-                <span className="text-[9px] text-slate-500 font-bold">135 DH/u</span>
+                <span className="text-sm font-black text-[#c8102e]">540 {t('common.dh')}</span>
+                <span className="text-[9px] text-slate-500 font-bold">135 {t('common.dh')}/u</span>
               </div>
               <span className="block text-[9px] text-red-600 font-bold mt-0.5 group-hover/btn:underline">
-                Commander &rarr;
+                {language === 'ar' ? 'طلب الآن ←' : 'Commander →'}
               </span>
             </button>
 
@@ -171,13 +175,15 @@ export const ExactFlyerDesign: React.FC<ExactFlyerDesignProps> = ({ onZoom }) =>
               onClick={(e) => handleQuickOrder(pack10, e)}
               className="bg-red-50 hover:bg-red-100 border border-red-300 p-2 rounded-xl text-left transition cursor-pointer group/btn"
             >
-              <span className="block text-[10px] font-black uppercase text-red-900">Pack 10 Pièces</span>
+              <span className="block text-[10px] font-black uppercase text-red-900">
+                {language === 'ar' ? 'باقة 10 قطع' : 'Pack 10 Pièces'}
+              </span>
               <div className="flex items-baseline justify-between mt-0.5">
-                <span className="text-sm font-black text-[#c8102e]">530 DH</span>
-                <span className="text-[9px] text-slate-500 font-bold">53 DH/u</span>
+                <span className="text-sm font-black text-[#c8102e]">530 {t('common.dh')}</span>
+                <span className="text-[9px] text-slate-500 font-bold">53 {t('common.dh')}/u</span>
               </div>
               <span className="block text-[9px] text-red-600 font-bold mt-0.5 group-hover/btn:underline">
-                Commander &rarr;
+                {language === 'ar' ? 'طلب الآن ←' : 'Commander →'}
               </span>
             </button>
 
@@ -187,11 +193,11 @@ export const ExactFlyerDesign: React.FC<ExactFlyerDesignProps> = ({ onZoom }) =>
             >
               <span className="block text-[10px] font-black uppercase text-[#002f6c]">Libre 3 PLUS</span>
               <div className="flex items-baseline justify-between mt-0.5">
-                <span className="text-sm font-black text-slate-900">800 DH</span>
-                <span className="text-[9px] text-amber-600 font-bold">Nouveau</span>
+                <span className="text-sm font-black text-slate-900">800 {t('common.dh')}</span>
+                <span className="text-[9px] text-amber-600 font-bold">{language === 'ar' ? 'جديد' : 'Nouveau'}</span>
               </div>
               <span className="block text-[9px] text-[#002f6c] font-bold mt-0.5 group-hover/btn:underline">
-                Commander &rarr;
+                {language === 'ar' ? 'طلب الآن ←' : 'Commander →'}
               </span>
             </button>
 
@@ -201,11 +207,11 @@ export const ExactFlyerDesign: React.FC<ExactFlyerDesignProps> = ({ onZoom }) =>
             >
               <span className="block text-[10px] font-black uppercase text-slate-700">Omnipod 5</span>
               <div className="flex items-baseline justify-between mt-0.5">
-                <span className="text-sm font-black text-slate-900">3000 DH</span>
-                <span className="text-[9px] text-slate-500 font-bold">10 Pods</span>
+                <span className="text-sm font-black text-slate-900">3000 {t('common.dh')}</span>
+                <span className="text-[9px] text-slate-500 font-bold">{language === 'ar' ? '10 بودات' : '10 Pods'}</span>
               </div>
               <span className="block text-[9px] text-[#002f6c] font-bold mt-0.5 group-hover/btn:underline">
-                Commander &rarr;
+                {language === 'ar' ? 'طلب الآن ←' : 'Commander →'}
               </span>
             </button>
 
@@ -219,19 +225,19 @@ export const ExactFlyerDesign: React.FC<ExactFlyerDesignProps> = ({ onZoom }) =>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center">
           <div className="flex items-center justify-center gap-1">
             <ShieldCheck className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-            <span>Produit original certifié</span>
+            <span>{language === 'ar' ? 'منتج أصلي معتمد' : 'Produit original certifié'}</span>
           </div>
           <div className="flex items-center justify-center gap-1">
             <Truck className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-            <span>Livraison partout au Maroc</span>
+            <span>{language === 'ar' ? 'توصيل لجميع مدن المغرب' : 'Livraison partout au Maroc'}</span>
           </div>
           <div className="flex items-center justify-center gap-1">
             <PhoneCall className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-            <span>Service client disponible</span>
+            <span>{language === 'ar' ? 'خدمة عملاء رهن إشارتكم' : 'Service client disponible'}</span>
           </div>
           <div className="flex items-center justify-center gap-1">
             <CheckCircle2 className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-            <span>Paiement à la réception</span>
+            <span>{language === 'ar' ? 'الدفع عند الاستلام' : 'Paiement à la réception'}</span>
           </div>
         </div>
       </div>

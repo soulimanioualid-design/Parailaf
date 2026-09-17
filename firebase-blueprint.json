@@ -11,7 +11,7 @@
         "city": { "type": "string", "maxLength": 50 },
         "address": { "type": "string", "maxLength": 200 },
         "createdAt": { "type": "string" },
-        "role": { "type": "string", "enum": ["customer", "admin"] }
+        "role": { "type": "string", "enum": ["customer", "admin", "manager", "delivery", "employee"] }
       },
       "required": ["fullName", "email", "createdAt", "role"]
     },
@@ -54,6 +54,11 @@
       "title": "CatalogProduct",
       "description": "Stores e-commerce catalog product data and customizations.",
       "type": "object"
+    },
+    "SiteSettings": {
+      "title": "SiteSettings",
+      "description": "Stores general site configuration including language toggles.",
+      "type": "object"
     }
   },
   "firestore": {
@@ -72,6 +77,10 @@
     "/products/{productId}": {
       "schema": { "$ref": "#/entities/CatalogProduct" },
       "description": "Stores products catalog and individual product customizations."
+    },
+    "/settings/{settingId}": {
+      "schema": { "$ref": "#/entities/SiteSettings" },
+      "description": "Stores site settings and language enablement."
     }
   }
 }

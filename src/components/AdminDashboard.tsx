@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { 
   X, 
   Search, 
@@ -31,11 +31,17 @@ import {
   Key,
   LogIn,
   Image as ImageIcon,
-  Users
+  Users,
+  Globe,
+  Briefcase,
+  Layers,
+  UserCheck,
+  MapPin
 } from 'lucide-react';
 import { useCart } from '../context/CartContext';
-import { useAuth } from '../context/AuthContext';
-import { Order, Product } from '../types';
+import { useAuth, ROLE_CONFIGS, AdminTab } from '../context/AuthContext';
+import { useLanguage } from '../context/LanguageContext';
+import { Order, Product, UserRole } from '../types';
 import { MOROCCAN_CITIES, BRAND_CONFIG } from '../data/config';
 import { 
   getAdminEmailSettings, 
@@ -46,6 +52,7 @@ import {
 } from '../utils/notificationService';
 import { AdminMediaManager } from './AdminMediaManager';
 import { AdminProductManager } from './AdminProductManager';
+import { AdminLanguageManager } from './AdminLanguageManager';
 
 export const AdminDashboard: React.FC = () => {
   const { 
@@ -67,12 +74,25 @@ export const AdminDashboard: React.FC = () => {
   const { 
     currentUser, 
     isAdmin, 
+    isStaff,
+    userRole,
+    roleConfig,
     isAdminSessionActive, 
     verifyAdminAccess, 
-    lockAdminSession 
+    lockAdminSession,
+    allUsers, 
+    createEmployee, 
+    updateUserRole, 
+    deleteUser,
+    isPrimaryAdmin,
+    canAccessTab,
+    getAllowedTabs,
+    getDefaultTabForUser
   } = useAuth();
 
-  const isAuthorized = isAdmin || isAdminSessionActive;
+  const { arabicEnabled } = useLanguage();
+
+  const isAuthorized = isAdmin || isAdminSessionActive || isStaff;
 
   // Gatekeeper Authentication State
   const [authMethod, setAuthMethod] = useState<'passcode' | 'credentials'>('passcode');
@@ -86,6 +106,16 @@ export const AdminDashboard: React.FC = () => {
   const [authError, setAuthError] = useState<string | null>(null);
   const [isVerifying, setIsVerifying] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+
+  // Auto-redirect if current tab is not permitted for the user's role
+  useEffect(() => {
+    if (isAuthorized && !canAccessTab(activeTab)) {
+      const allowed = getAllowedTabs();
+      if (allowed.length > 0) {
+        setActiveTab(allowed[0]);
+      }
+    }
+  }, [activeTab, isAuthorized, userRole]);
 
   // Orders Filters
   const [searchTerm, setSearchTerm] = useState('');
@@ -111,14 +141,13 @@ export const AdminDashboard: React.FC = () => {
   const [manualCity, setManualCity] = useState(MOROCCAN_CITIES[0].name);
   const [manualAddress, setManualAddress] = useState('');
   const [manualNotes, setManualNotes] = useState('');
-  const [manualProductId, setManualProductId] = useState(allProducts[0].id);
+  const [manualProductId, setManualProductId] = useState(allProducts[0]?.id || '');
   const [manualQuantity, setManualQuantity] = useState(1);
-  const { allUsers, createEmployee, updateUserRole, deleteUser } = useAuth();
   
   const [newEmpName, setNewEmpName] = useState('');
   const [newEmpEmail, setNewEmpEmail] = useState('');
   const [newEmpPhone, setNewEmpPhone] = useState('');
-  const [newEmpRole, setNewEmpRole] = useState('employee');
+  const [newEmpRole, setNewEmpRole] = useState<UserRole>('employee');
   const [newEmpPassword, setNewEmpPassword] = useState('');
 
   const handleCreateEmployee = async (e: React.FormEvent) => {
@@ -140,6 +169,7 @@ export const AdminDashboard: React.FC = () => {
       setNewEmpEmail('');
       setNewEmpPhone('');
       setNewEmpPassword('');
+      setNewEmpRole('employee');
     } else {
       showToast(res.error || 'Erreur lors de la création.');
     }
@@ -192,15 +222,15 @@ export const AdminDashboard: React.FC = () => {
           {/* Header Bar */}
           <div className="bg-gradient-to-r from-[#002f6c] to-[#001f4d] text-white p-5 flex items-center justify-between border-b border-blue-950">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-2xl bg-red-600 text-white flex items-center justify-center font-black shadow-md">
+              <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-red-600 to-amber-500 text-white flex items-center justify-center font-black shadow-md">
                 <Lock className="w-5 h-5" />
               </div>
               <div>
                 <h3 className="text-base font-black font-heading tracking-tight">
-                  Accès Restreint Administrateur
+                  Espace Gestion & Personnel
                 </h3>
                 <p className="text-xs text-blue-200">
-                  Parailaf Maroc • Espace de Gestion
+                  Parailaf Maroc • Administration, Gérance & Équipe
                 </p>
               </div>
             </div>
@@ -217,29 +247,29 @@ export const AdminDashboard: React.FC = () => {
           {/* Gate Content */}
           <div className="p-6 space-y-5">
             {/* Warning Shield Card */}
-            <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 flex items-start gap-3.5">
-              <div className="w-9 h-9 rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center shrink-0 mt-0.5">
-                <ShieldAlert className="w-5 h-5 text-amber-700" />
+            <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 flex items-start gap-3.5">
+              <div className="w-9 h-9 rounded-xl bg-blue-100 text-[#002f6c] flex items-center justify-center shrink-0 mt-0.5 font-black">
+                <ShieldAlert className="w-5 h-5 text-[#002f6c]" />
               </div>
-              <div className="text-xs text-amber-900 space-y-1">
-                <p className="font-extrabold text-amber-950">
-                  Espace Réservé Exclusivement à l'Administrateur
+              <div className="text-xs text-slate-800 space-y-1">
+                <p className="font-extrabold text-slate-900">
+                  Accès Réservé au Personnel Autorisé
                 </p>
-                <p className="text-amber-800 leading-relaxed">
-                  L'accès à la gestion des commandes, aux données clients et aux bannières est strictement protégé et réservé à l'administrateur autorisé.
+                <p className="text-slate-600 leading-relaxed">
+                  Connectez-vous selon votre profil : <strong>Administrateur</strong> (accès complet), <strong>Gérant</strong> (opérations & stats), <strong>Employé</strong> (catalogue & commandes), ou <strong>Livreur</strong> (commandes confirmées).
                 </p>
               </div>
             </div>
 
             {/* If logged in as customer */}
-            {currentUser && currentUser.role !== 'admin' && (
-              <div className="bg-slate-100 border border-slate-200 rounded-xl p-3 text-xs text-slate-600 flex items-center justify-between">
+            {currentUser && currentUser.role === 'customer' && (
+              <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 text-xs text-amber-900 flex items-center justify-between">
                 <div>
-                  <span className="text-slate-400 block text-[10px] uppercase font-bold tracking-wider">Session actuelle</span>
-                  <span className="font-bold text-slate-800">{currentUser.fullName}</span> (Client)
+                  <span className="text-amber-700 block text-[10px] uppercase font-bold tracking-wider">Session actuelle</span>
+                  <span className="font-bold text-amber-950">{currentUser.fullName}</span> (Compte Client)
                 </div>
-                <span className="px-2 py-0.5 bg-slate-200 text-slate-700 text-[10px] font-bold rounded-md">
-                  Non Admin
+                <span className="px-2 py-0.5 bg-amber-200 text-amber-900 text-[10px] font-bold rounded-md">
+                  Non Staff
                 </span>
               </div>
             )}
@@ -256,7 +286,7 @@ export const AdminDashboard: React.FC = () => {
                 }`}
               >
                 <Key className="w-3.5 h-3.5" />
-                <span>Code PIN Secret</span>
+                <span>Code PIN Direct</span>
               </button>
               <button
                 type="button"
@@ -268,7 +298,7 @@ export const AdminDashboard: React.FC = () => {
                 }`}
               >
                 <LogIn className="w-3.5 h-3.5" />
-                <span>Identifiants Admin</span>
+                <span>Email & Mot de passe</span>
               </button>
             </div>
 
@@ -392,8 +422,16 @@ export const AdminDashboard: React.FC = () => {
     );
   }
 
+  // Delivery person role check
+  const isDeliveryStaff = userRole === 'delivery';
+
   // Filtered Orders
   const filteredOrders = allOrders.filter(order => {
+    // Delivery staff only accesses confirmed, shipping, or delivered orders
+    if (isDeliveryStaff && (order.status === 'pending' || order.status === 'cancelled')) {
+      return false;
+    }
+
     const matchesSearch = 
       order.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
       order.customer.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -410,6 +448,7 @@ export const AdminDashboard: React.FC = () => {
   const totalRevenue = allOrders.reduce((sum, o) => sum + (o.status !== 'cancelled' ? o.total : 0), 0);
   const pendingOrdersCount = allOrders.filter(o => o.status === 'pending').length;
   const confirmedOrdersCount = allOrders.filter(o => o.status === 'confirmed').length;
+  const shippingOrdersCount = allOrders.filter(o => o.status === 'shipping').length;
   const deliveredOrdersCount = allOrders.filter(o => o.status === 'delivered').length;
 
   // Export CSV
@@ -521,131 +560,199 @@ export const AdminDashboard: React.FC = () => {
         </div>
 
         <div className="flex-1 overflow-y-auto py-6 px-4 space-y-1">
-          <div className="text-[10px] font-bold text-blue-300/70 uppercase tracking-widest mb-3 px-3">Menu Principal</div>
+          <div className="text-[10px] font-bold text-blue-300/70 uppercase tracking-widest mb-3 px-3">
+            Menu Principal • {roleConfig.name}
+          </div>
           
-          <button
-            onClick={() => setActiveTab('orders')}
-            className={`w-full flex items-center justify-between px-4 py-3 rounded-xl text-sm font-bold transition-all cursor-pointer ${
-              activeTab === 'orders'
-                ? 'bg-red-600 text-white shadow-md'
-                : 'text-blue-100 hover:bg-white/10 hover:text-white'
-            }`}
-          >
-            <div className="flex items-center gap-3">
-              <Package className="w-5 h-5" />
-              <span>Commandes</span>
-            </div>
-            {pendingOrdersCount > 0 && (
-              <span className={`px-2 py-0.5 rounded-full text-[10px] font-black ${activeTab === 'orders' ? 'bg-white text-red-600' : 'bg-red-500 text-white animate-pulse'}`}>
-                {pendingOrdersCount}
+          {canAccessTab('orders') && (
+            <button
+              onClick={() => setActiveTab('orders')}
+              className={`w-full flex items-center justify-between px-4 py-3 rounded-xl text-sm font-bold transition-all cursor-pointer ${
+                activeTab === 'orders'
+                  ? 'bg-red-600 text-white shadow-md'
+                  : 'text-blue-100 hover:bg-white/10 hover:text-white'
+              }`}
+            >
+              <div className="flex items-center gap-3">
+                {isDeliveryStaff ? <Truck className="w-5 h-5 text-amber-300" /> : <Package className="w-5 h-5" />}
+                <span>{isDeliveryStaff ? 'Commandes & Livraisons' : 'Commandes'}</span>
+              </div>
+              {isDeliveryStaff ? (
+                (confirmedOrdersCount + shippingOrdersCount) > 0 && (
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-amber-400 text-slate-950">
+                    {confirmedOrdersCount + shippingOrdersCount}
+                  </span>
+                )
+              ) : (
+                pendingOrdersCount > 0 && (
+                  <span className={`px-2 py-0.5 rounded-full text-[10px] font-black ${activeTab === 'orders' ? 'bg-white text-red-600' : 'bg-red-500 text-white animate-pulse'}`}>
+                    {pendingOrdersCount}
+                  </span>
+                )
+              )}
+            </button>
+          )}
+
+          {canAccessTab('products') && (
+            <button
+              onClick={() => setActiveTab('products')}
+              className={`w-full flex items-center justify-between px-4 py-3 rounded-xl text-sm font-bold transition-all cursor-pointer ${
+                activeTab === 'products'
+                  ? 'bg-red-600 text-white shadow-md'
+                  : 'text-blue-100 hover:bg-white/10 hover:text-white'
+              }`}
+            >
+              <div className="flex items-center gap-3">
+                <Package className="w-5 h-5" />
+                <span>Catalogue Produits</span>
+              </div>
+              <span className={`px-2 py-0.5 rounded-full text-[10px] font-black ${activeTab === 'products' ? 'bg-white text-red-600' : 'bg-white/15 text-blue-200'}`}>
+                {allProducts.length}
               </span>
-            )}
-          </button>
+            </button>
+          )}
 
-          <button
-            onClick={() => setActiveTab('products')}
-            className={`w-full flex items-center justify-between px-4 py-3 rounded-xl text-sm font-bold transition-all cursor-pointer ${
-              activeTab === 'products'
-                ? 'bg-red-600 text-white shadow-md'
-                : 'text-blue-100 hover:bg-white/10 hover:text-white'
-            }`}
-          >
-            <div className="flex items-center gap-3">
-              <Package className="w-5 h-5" />
-              <span>Catalogue Produits</span>
-            </div>
-            <span className={`px-2 py-0.5 rounded-full text-[10px] font-black ${activeTab === 'products' ? 'bg-white text-red-600' : 'bg-white/15 text-blue-200'}`}>
-              {allProducts.length}
-            </span>
-          </button>
+          {canAccessTab('analytics') && (
+            <button
+              onClick={() => setActiveTab('analytics')}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all cursor-pointer ${
+                activeTab === 'analytics'
+                  ? 'bg-red-600 text-white shadow-md'
+                  : 'text-blue-100 hover:bg-white/10 hover:text-white'
+              }`}
+            >
+              <BarChart3 className="w-5 h-5" />
+              <span>Statistiques & Villes</span>
+            </button>
+          )}
 
-          <button
-            onClick={() => setActiveTab('analytics')}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all cursor-pointer ${
-              activeTab === 'analytics'
-                ? 'bg-red-600 text-white shadow-md'
-                : 'text-blue-100 hover:bg-white/10 hover:text-white'
-            }`}
-          >
-            <BarChart3 className="w-5 h-5" />
-            <span>Statistiques & Villes</span>
-          </button>
+          {canAccessTab('media') && (
+            <button
+              onClick={() => setActiveTab('media')}
+              className={`w-full flex items-center justify-between px-4 py-3 rounded-xl text-sm font-bold transition-all cursor-pointer ${
+                activeTab === 'media'
+                  ? 'bg-amber-400 text-[#002f6c] shadow-md'
+                  : 'text-blue-100 hover:bg-white/10 hover:text-white'
+              }`}
+            >
+              <div className="flex items-center gap-3">
+                <ImageIcon className="w-5 h-5" />
+                <span>Gestion des Images</span>
+              </div>
+            </button>
+          )}
 
-          <button
-            onClick={() => setActiveTab('media')}
-            className={`w-full flex items-center justify-between px-4 py-3 rounded-xl text-sm font-bold transition-all cursor-pointer ${
-              activeTab === 'media'
-                ? 'bg-amber-400 text-[#002f6c] shadow-md'
-                : 'text-blue-100 hover:bg-white/10 hover:text-white'
-            }`}
-          >
-            <div className="flex items-center gap-3">
-              <ImageIcon className="w-5 h-5" />
-              <span>Gestion des Images</span>
-            </div>
-          </button>
+          {(canAccessTab('new-order') || canAccessTab('email') || canAccessTab('employees') || canAccessTab('languages')) && (
+            <div className="text-[10px] font-bold text-blue-300/70 uppercase tracking-widest mt-8 mb-3 px-3">Outils & Paramètres</div>
+          )}
 
-          <div className="text-[10px] font-bold text-blue-300/70 uppercase tracking-widest mt-8 mb-3 px-3">Outils & Paramètres</div>
+          {canAccessTab('new-order') && (
+            <button
+              onClick={() => setActiveTab('new-order')}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all cursor-pointer ${
+                activeTab === 'new-order'
+                  ? 'bg-white/20 text-white shadow-md'
+                  : 'text-blue-100 hover:bg-white/10 hover:text-white'
+              }`}
+            >
+              <Plus className="w-5 h-5" />
+              <span>Créer une commande</span>
+            </button>
+          )}
 
-          <button
-            onClick={() => setActiveTab('new-order')}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all cursor-pointer ${
-              activeTab === 'new-order'
-                ? 'bg-white/20 text-white shadow-md'
-                : 'text-blue-100 hover:bg-white/10 hover:text-white'
-            }`}
-          >
-            <Plus className="w-5 h-5" />
-            <span>Créer une commande</span>
-          </button>
+          {canAccessTab('email') && (
+            <button
+              onClick={() => setActiveTab('email')}
+              className={`w-full flex items-center justify-between px-4 py-3 rounded-xl text-sm font-bold transition-all cursor-pointer ${
+                activeTab === 'email'
+                  ? 'bg-white/20 text-white shadow-md'
+                  : 'text-blue-100 hover:bg-white/10 hover:text-white'
+              }`}
+            >
+              <div className="flex items-center gap-3">
+                <Mail className="w-5 h-5" />
+                <span>Notifications Email</span>
+              </div>
+              <span className="w-2 h-2 rounded-full bg-emerald-400" />
+            </button>
+          )}
 
-          <button
-            onClick={() => setActiveTab('email')}
-            className={`w-full flex items-center justify-between px-4 py-3 rounded-xl text-sm font-bold transition-all cursor-pointer ${
-              activeTab === 'email'
-                ? 'bg-white/20 text-white shadow-md'
-                : 'text-blue-100 hover:bg-white/10 hover:text-white'
-            }`}
-          >
-            <div className="flex items-center gap-3">
-              <Mail className="w-5 h-5" />
-              <span>Notifications Email</span>
-            </div>
-            <span className="w-2 h-2 rounded-full bg-emerald-400" />
-          </button>
+          {canAccessTab('employees') && (
+            <button
+              onClick={() => setActiveTab('employees')}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all cursor-pointer ${
+                activeTab === 'employees'
+                  ? 'bg-white/20 text-white shadow-md'
+                  : 'text-blue-100 hover:bg-white/10 hover:text-white'
+              }`}
+            >
+              <Users className="w-5 h-5" />
+              <span>Gestion des Employés</span>
+            </button>
+          )}
 
-          <button
-            onClick={() => setActiveTab('employees')}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all cursor-pointer ${
-              activeTab === 'employees'
-                ? 'bg-white/20 text-white shadow-md'
-                : 'text-blue-100 hover:bg-white/10 hover:text-white'
-            }`}
-          >
-            <Users className="w-5 h-5" />
-            <span>Gestion des Employés</span>
-          </button>
+          {canAccessTab('languages') && (
+            <button
+              onClick={() => setActiveTab('languages')}
+              className={`w-full flex items-center justify-between px-4 py-3 rounded-xl text-sm font-bold transition-all cursor-pointer ${
+                activeTab === 'languages'
+                  ? 'bg-red-600 text-white shadow-md'
+                  : 'text-blue-100 hover:bg-white/10 hover:text-white'
+              }`}
+            >
+              <div className="flex items-center gap-3">
+                <Globe className="w-5 h-5" />
+                <span>Langues (FR / AR)</span>
+              </div>
+              <span className={`px-2 py-0.5 rounded-full text-[10px] font-black ${
+                arabicEnabled ? 'bg-emerald-500 text-white' : 'bg-white/20 text-slate-200'
+              }`}>
+                {arabicEnabled ? 'Arabe Actif' : 'Arabe Inactif'}
+              </span>
+            </button>
+          )}
         </div>
 
         <div className="p-4 border-t border-white/10 bg-black/20">
           <div className="flex items-center gap-3 mb-4 px-2">
-            <div className="w-8 h-8 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold text-xs border border-emerald-500/30">
+            <div className={`w-9 h-9 rounded-xl flex items-center justify-center font-black text-xs border ${
+              userRole === 'admin'
+                ? 'bg-amber-400/20 text-amber-300 border-amber-400/30'
+                : userRole === 'manager'
+                ? 'bg-purple-400/20 text-purple-300 border-purple-400/30'
+                : userRole === 'delivery'
+                ? 'bg-emerald-400/20 text-emerald-300 border-emerald-400/30'
+                : 'bg-blue-400/20 text-blue-300 border-blue-400/30'
+            }`}>
               {currentUser?.fullName?.charAt(0) || 'A'}
             </div>
             <div className="overflow-hidden">
-              <p className="text-sm font-bold text-white truncate">{currentUser?.fullName || 'Administrateur'}</p>
-              <p className="text-[10px] text-emerald-400 font-medium">Session sécurisée</p>
+              <p className="text-sm font-bold text-white truncate">{currentUser?.fullName || 'Personnel Parailaf'}</p>
+              <div className="flex items-center gap-1.5 mt-0.5">
+                <span className={`inline-block px-1.5 py-0.2 rounded text-[9px] font-extrabold tracking-wide uppercase ${
+                  userRole === 'admin'
+                    ? 'bg-amber-400 text-slate-950'
+                    : userRole === 'manager'
+                    ? 'bg-purple-400 text-slate-950'
+                    : userRole === 'delivery'
+                    ? 'bg-emerald-400 text-slate-950'
+                    : 'bg-blue-300 text-slate-950'
+                }`}>
+                  {roleConfig.name}
+                </span>
+                <span className="text-[10px] text-emerald-400 font-medium">• Actif</span>
+              </div>
             </div>
           </div>
           <button
             onClick={() => {
               lockAdminSession();
-              showToast("✓ Session administrateur verrouillée.");
+              showToast("✓ Session fermée avec succès.");
             }}
             className="w-full py-2.5 px-4 bg-red-600/20 hover:bg-red-600 text-red-300 hover:text-white rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-colors cursor-pointer"
           >
             <Lock className="w-4 h-4" />
-            <span>Verrouiller</span>
+            <span>Déconnexion / Verrouiller</span>
           </button>
         </div>
       </div>
@@ -667,6 +774,7 @@ export const AdminDashboard: React.FC = () => {
                 {activeTab === 'employees' && 'Employés'}
                 {activeTab === 'email' && 'Notifications Email'}
                 {activeTab === 'new-order' && 'Nouvelle Commande'}
+                {activeTab === 'languages' && 'Gestion des Langues'}
               </h1>
               <p className="text-[10px] text-slate-400 font-medium">Panneau Administrateur</p>
             </div>
@@ -681,6 +789,7 @@ export const AdminDashboard: React.FC = () => {
               {activeTab === 'new-order' && 'Nouvelle Commande Manuelle'}
               {activeTab === 'email' && 'Configuration Notifications'}
               {activeTab === 'employees' && 'Gestion des Employés'}
+              {activeTab === 'languages' && 'Activation & Désactivation des Langues'}
             </h2>
           </div>
 
@@ -718,89 +827,132 @@ export const AdminDashboard: React.FC = () => {
           </div>
         </div>
 
-        {/* Mobile Tab Navigation - ALL TABS VISIBLE WITH HORIZONTAL SCROLL */}
+        {/* Mobile Tab Navigation - ALL TABS VISIBLE WITH HORIZONTAL SCROLL ACCORDING TO ROLE */}
         <div className="md:hidden bg-white border-b border-slate-200 flex items-center gap-1.5 px-3 py-2.5 overflow-x-auto hide-scrollbar shrink-0 shadow-xs">
-          <button
-            onClick={() => setActiveTab('products')}
-            className={`flex items-center gap-1.5 py-2 px-3 rounded-xl font-black text-xs whitespace-nowrap transition-all shrink-0 cursor-pointer ${
-              activeTab === 'products' 
-                ? 'bg-red-600 text-white shadow-sm ring-2 ring-red-200' 
-                : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
-            }`}
-          >
-            <Package className="w-4 h-4 text-inherit" />
-            <span>Catalogue ({allProducts.length})</span>
-          </button>
-          <button
-            onClick={() => setActiveTab('orders')}
-            className={`flex items-center gap-1.5 py-2 px-3 rounded-xl font-bold text-xs whitespace-nowrap transition-all shrink-0 cursor-pointer ${
-              activeTab === 'orders' 
-                ? 'bg-red-600 text-white shadow-sm ring-2 ring-red-200' 
-                : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
-            }`}
-          >
-            <span>Commandes</span>
-            {pendingOrdersCount > 0 && (
-              <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-black ${activeTab === 'orders' ? 'bg-white text-red-600' : 'bg-red-500 text-white'}`}>
-                {pendingOrdersCount}
-              </span>
-            )}
-          </button>
-          <button
-            onClick={() => setActiveTab('media')}
-            className={`flex items-center gap-1.5 py-2 px-3 rounded-xl font-bold text-xs whitespace-nowrap transition-all shrink-0 cursor-pointer ${
-              activeTab === 'media' 
-                ? 'bg-amber-500 text-white shadow-sm' 
-                : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
-            }`}
-          >
-            <ImageIcon className="w-4 h-4 text-inherit" />
-            <span>Médias & Images</span>
-          </button>
-          <button
-            onClick={() => setActiveTab('analytics')}
-            className={`flex items-center gap-1.5 py-2 px-3 rounded-xl font-bold text-xs whitespace-nowrap transition-all shrink-0 cursor-pointer ${
-              activeTab === 'analytics' 
-                ? 'bg-red-600 text-white shadow-sm' 
-                : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
-            }`}
-          >
-            <BarChart3 className="w-4 h-4 text-inherit" />
-            <span>Stats</span>
-          </button>
-          <button
-            onClick={() => setActiveTab('employees')}
-            className={`flex items-center gap-1.5 py-2 px-3 rounded-xl font-bold text-xs whitespace-nowrap transition-all shrink-0 cursor-pointer ${
-              activeTab === 'employees' 
-                ? 'bg-red-600 text-white shadow-sm' 
-                : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
-            }`}
-          >
-            <Users className="w-4 h-4 text-inherit" />
-            <span>Employés</span>
-          </button>
-          <button
-            onClick={() => setActiveTab('email')}
-            className={`flex items-center gap-1.5 py-2 px-3 rounded-xl font-bold text-xs whitespace-nowrap transition-all shrink-0 cursor-pointer ${
-              activeTab === 'email' 
-                ? 'bg-red-600 text-white shadow-sm' 
-                : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
-            }`}
-          >
-            <Mail className="w-4 h-4 text-inherit" />
-            <span>Email</span>
-          </button>
-          <button
-            onClick={() => setActiveTab('new-order')}
-            className={`flex items-center gap-1.5 py-2 px-3 rounded-xl font-bold text-xs whitespace-nowrap transition-all shrink-0 cursor-pointer ${
-              activeTab === 'new-order' 
-                ? 'bg-red-600 text-white shadow-sm' 
-                : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
-            }`}
-          >
-            <Plus className="w-4 h-4 text-inherit" />
-            <span>+ Commande</span>
-          </button>
+          {canAccessTab('orders') && (
+            <button
+              onClick={() => setActiveTab('orders')}
+              className={`flex items-center gap-1.5 py-2 px-3 rounded-xl font-bold text-xs whitespace-nowrap transition-all shrink-0 cursor-pointer ${
+                activeTab === 'orders' 
+                  ? 'bg-red-600 text-white shadow-sm ring-2 ring-red-200' 
+                  : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+              }`}
+            >
+              {isDeliveryStaff ? <Truck className="w-4 h-4 text-inherit" /> : <Package className="w-4 h-4 text-inherit" />}
+              <span>{isDeliveryStaff ? 'Livraisons' : 'Commandes'}</span>
+              {isDeliveryStaff ? (
+                (confirmedOrdersCount + shippingOrdersCount) > 0 && (
+                  <span className="px-1.5 py-0.2 rounded-full text-[10px] font-black bg-amber-400 text-slate-950">
+                    {confirmedOrdersCount + shippingOrdersCount}
+                  </span>
+                )
+              ) : (
+                pendingOrdersCount > 0 && (
+                  <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-black ${activeTab === 'orders' ? 'bg-white text-red-600' : 'bg-red-500 text-white'}`}>
+                    {pendingOrdersCount}
+                  </span>
+                )
+              )}
+            </button>
+          )}
+
+          {canAccessTab('products') && (
+            <button
+              onClick={() => setActiveTab('products')}
+              className={`flex items-center gap-1.5 py-2 px-3 rounded-xl font-black text-xs whitespace-nowrap transition-all shrink-0 cursor-pointer ${
+                activeTab === 'products' 
+                  ? 'bg-red-600 text-white shadow-sm ring-2 ring-red-200' 
+                  : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+              }`}
+            >
+              <Package className="w-4 h-4 text-inherit" />
+              <span>Catalogue ({allProducts.length})</span>
+            </button>
+          )}
+
+          {canAccessTab('media') && (
+            <button
+              onClick={() => setActiveTab('media')}
+              className={`flex items-center gap-1.5 py-2 px-3 rounded-xl font-bold text-xs whitespace-nowrap transition-all shrink-0 cursor-pointer ${
+                activeTab === 'media' 
+                  ? 'bg-amber-500 text-white shadow-sm' 
+                  : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+              }`}
+            >
+              <ImageIcon className="w-4 h-4 text-inherit" />
+              <span>Médias</span>
+            </button>
+          )}
+
+          {canAccessTab('analytics') && (
+            <button
+              onClick={() => setActiveTab('analytics')}
+              className={`flex items-center gap-1.5 py-2 px-3 rounded-xl font-bold text-xs whitespace-nowrap transition-all shrink-0 cursor-pointer ${
+                activeTab === 'analytics' 
+                  ? 'bg-red-600 text-white shadow-sm' 
+                  : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+              }`}
+            >
+              <BarChart3 className="w-4 h-4 text-inherit" />
+              <span>Stats</span>
+            </button>
+          )}
+
+          {canAccessTab('employees') && (
+            <button
+              onClick={() => setActiveTab('employees')}
+              className={`flex items-center gap-1.5 py-2 px-3 rounded-xl font-bold text-xs whitespace-nowrap transition-all shrink-0 cursor-pointer ${
+                activeTab === 'employees' 
+                  ? 'bg-red-600 text-white shadow-sm' 
+                  : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+              }`}
+            >
+              <Users className="w-4 h-4 text-inherit" />
+              <span>Employés</span>
+            </button>
+          )}
+
+          {canAccessTab('email') && (
+            <button
+              onClick={() => setActiveTab('email')}
+              className={`flex items-center gap-1.5 py-2 px-3 rounded-xl font-bold text-xs whitespace-nowrap transition-all shrink-0 cursor-pointer ${
+                activeTab === 'email' 
+                  ? 'bg-red-600 text-white shadow-sm' 
+                  : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+              }`}
+            >
+              <Mail className="w-4 h-4 text-inherit" />
+              <span>Email</span>
+            </button>
+          )}
+
+          {canAccessTab('languages') && (
+            <button
+              onClick={() => setActiveTab('languages')}
+              className={`flex items-center gap-1.5 py-2 px-3 rounded-xl font-bold text-xs whitespace-nowrap transition-all shrink-0 cursor-pointer ${
+                activeTab === 'languages' 
+                  ? 'bg-red-600 text-white shadow-sm ring-2 ring-red-200' 
+                  : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+              }`}
+            >
+              <Globe className="w-4 h-4 text-inherit" />
+              <span>Langues ({arabicEnabled ? 'FR+AR' : 'FR'})</span>
+            </button>
+          )}
+
+          {canAccessTab('new-order') && (
+            <button
+              onClick={() => setActiveTab('new-order')}
+              className={`flex items-center gap-1.5 py-2 px-3 rounded-xl font-bold text-xs whitespace-nowrap transition-all shrink-0 cursor-pointer ${
+                activeTab === 'new-order' 
+                  ? 'bg-red-600 text-white shadow-sm' 
+                  : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+              }`}
+            >
+              <Plus className="w-4 h-4 text-inherit" />
+              <span>Commande</span>
+            </button>
+          )}
         </div>
 
         {/* Dashboard Content Body */}
@@ -810,40 +962,105 @@ export const AdminDashboard: React.FC = () => {
           {activeTab === 'orders' && (
             <div className="space-y-6">
               
+              {/* Delivery Staff Contextual Banner */}
+              {isDeliveryStaff && (
+                <div className="bg-gradient-to-r from-blue-900 via-[#002f6c] to-slate-900 text-white p-4 sm:p-5 rounded-2xl shadow-sm border border-blue-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div className="flex items-center gap-3.5">
+                    <div className="w-10 h-10 rounded-xl bg-amber-400 text-slate-950 flex items-center justify-center font-black shrink-0 shadow-md">
+                      <Truck className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-black tracking-tight flex items-center gap-2">
+                        <span>Espace Livreur • Commandes Confirmées & Expéditions</span>
+                        <span className="text-[10px] bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-2 py-0.5 rounded-full font-bold">
+                          Rôle Livreur Actif
+                        </span>
+                      </h3>
+                      <p className="text-xs text-blue-200 mt-0.5">
+                        Vous avez accès uniquement aux commandes validées et prêtes à être expédiées. Utilisez les boutons Appel et WhatsApp pour coordonner avec les clients.
+                      </p>
+                    </div>
+                  </div>
+                  <div className="text-right shrink-0">
+                    <span className="px-3 py-1.5 bg-white/10 rounded-xl text-xs font-bold text-amber-300 border border-white/10">
+                      {filteredOrders.length} commande(s) à traiter
+                    </span>
+                  </div>
+                </div>
+              )}
+
               {/* KPI Summary Cards */}
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
                 
-                <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs">
-                  <span className="text-xs text-slate-500 font-bold uppercase tracking-wider">Total Commandes</span>
-                  <div className="flex items-baseline justify-between mt-2">
-                    <span className="text-2xl sm:text-3xl font-black text-slate-900 font-heading">{allOrders.length}</span>
-                    <span className="text-xs bg-slate-100 text-slate-700 font-bold px-2 py-0.5 rounded">Reçues</span>
-                  </div>
-                </div>
+                {isDeliveryStaff ? (
+                  <>
+                    <div className="bg-white p-4 rounded-2xl border border-blue-200 bg-blue-50/30 shadow-xs">
+                      <span className="text-xs text-blue-900 font-bold uppercase tracking-wider">Prêtes à livrer</span>
+                      <div className="flex items-baseline justify-between mt-2">
+                        <span className="text-2xl sm:text-3xl font-black text-blue-700 font-heading">{confirmedOrdersCount}</span>
+                        <span className="text-xs bg-blue-200 text-blue-900 font-bold px-2 py-0.5 rounded">Confirmées</span>
+                      </div>
+                    </div>
 
-                <div className="bg-white p-4 rounded-2xl border border-amber-200 bg-amber-50/30 shadow-xs">
-                  <span className="text-xs text-amber-900 font-bold uppercase tracking-wider">En Attente (À Traiter)</span>
-                  <div className="flex items-baseline justify-between mt-2">
-                    <span className="text-2xl sm:text-3xl font-black text-amber-700 font-heading">{pendingOrdersCount}</span>
-                    <span className="text-xs bg-amber-200 text-amber-900 font-bold px-2 py-0.5 rounded animate-pulse">Action</span>
-                  </div>
-                </div>
+                    <div className="bg-white p-4 rounded-2xl border border-purple-200 bg-purple-50/30 shadow-xs">
+                      <span className="text-xs text-purple-900 font-bold uppercase tracking-wider">En livraison</span>
+                      <div className="flex items-baseline justify-between mt-2">
+                        <span className="text-2xl sm:text-3xl font-black text-purple-700 font-heading">{shippingOrdersCount}</span>
+                        <span className="text-xs bg-purple-200 text-purple-900 font-bold px-2 py-0.5 rounded animate-pulse">En route</span>
+                      </div>
+                    </div>
 
-                <div className="bg-white p-4 rounded-2xl border border-emerald-200 bg-emerald-50/30 shadow-xs">
-                  <span className="text-xs text-emerald-900 font-bold uppercase tracking-wider">Confirmées & Livrées</span>
-                  <div className="flex items-baseline justify-between mt-2">
-                    <span className="text-2xl sm:text-3xl font-black text-emerald-700 font-heading">{confirmedOrdersCount + deliveredOrdersCount}</span>
-                    <span className="text-xs bg-emerald-200 text-emerald-900 font-bold px-2 py-0.5 rounded">En cours</span>
-                  </div>
-                </div>
+                    <div className="bg-white p-4 rounded-2xl border border-emerald-200 bg-emerald-50/30 shadow-xs">
+                      <span className="text-xs text-emerald-900 font-bold uppercase tracking-wider">Livrées avec succès</span>
+                      <div className="flex items-baseline justify-between mt-2">
+                        <span className="text-2xl sm:text-3xl font-black text-emerald-700 font-heading">{deliveredOrdersCount}</span>
+                        <span className="text-xs bg-emerald-200 text-emerald-900 font-bold px-2 py-0.5 rounded">Terminées</span>
+                      </div>
+                    </div>
 
-                <div className="bg-white p-4 rounded-2xl border border-red-200 bg-red-50/30 shadow-xs">
-                  <span className="text-xs text-red-900 font-bold uppercase tracking-wider">Chiffre d'Affaires</span>
-                  <div className="flex items-baseline justify-between mt-2">
-                    <span className="text-2xl sm:text-3xl font-black text-red-600 font-heading">{totalRevenue} DH</span>
-                    <span className="text-xs bg-red-100 text-red-800 font-bold px-2 py-0.5 rounded">COD Maroc</span>
-                  </div>
-                </div>
+                    <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs">
+                      <span className="text-xs text-slate-500 font-bold uppercase tracking-wider">Total Livraisons</span>
+                      <div className="flex items-baseline justify-between mt-2">
+                        <span className="text-2xl sm:text-3xl font-black text-slate-900 font-heading">{confirmedOrdersCount + shippingOrdersCount + deliveredOrdersCount}</span>
+                        <span className="text-xs bg-slate-100 text-slate-700 font-bold px-2 py-0.5 rounded">Colis</span>
+                      </div>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs">
+                      <span className="text-xs text-slate-500 font-bold uppercase tracking-wider">Total Commandes</span>
+                      <div className="flex items-baseline justify-between mt-2">
+                        <span className="text-2xl sm:text-3xl font-black text-slate-900 font-heading">{allOrders.length}</span>
+                        <span className="text-xs bg-slate-100 text-slate-700 font-bold px-2 py-0.5 rounded">Reçues</span>
+                      </div>
+                    </div>
+
+                    <div className="bg-white p-4 rounded-2xl border border-amber-200 bg-amber-50/30 shadow-xs">
+                      <span className="text-xs text-amber-900 font-bold uppercase tracking-wider">En Attente (À Traiter)</span>
+                      <div className="flex items-baseline justify-between mt-2">
+                        <span className="text-2xl sm:text-3xl font-black text-amber-700 font-heading">{pendingOrdersCount}</span>
+                        <span className="text-xs bg-amber-200 text-amber-900 font-bold px-2 py-0.5 rounded animate-pulse">Action</span>
+                      </div>
+                    </div>
+
+                    <div className="bg-white p-4 rounded-2xl border border-emerald-200 bg-emerald-50/30 shadow-xs">
+                      <span className="text-xs text-emerald-900 font-bold uppercase tracking-wider">Confirmées & Livrées</span>
+                      <div className="flex items-baseline justify-between mt-2">
+                        <span className="text-2xl sm:text-3xl font-black text-emerald-700 font-heading">{confirmedOrdersCount + deliveredOrdersCount}</span>
+                        <span className="text-xs bg-emerald-200 text-emerald-900 font-bold px-2 py-0.5 rounded">En cours</span>
+                      </div>
+                    </div>
+
+                    <div className="bg-white p-4 rounded-2xl border border-red-200 bg-red-50/30 shadow-xs">
+                      <span className="text-xs text-red-900 font-bold uppercase tracking-wider">Chiffre d'Affaires</span>
+                      <div className="flex items-baseline justify-between mt-2">
+                        <span className="text-2xl sm:text-3xl font-black text-red-600 font-heading">{totalRevenue} DH</span>
+                        <span className="text-xs bg-red-100 text-red-800 font-bold px-2 py-0.5 rounded">COD Maroc</span>
+                      </div>
+                    </div>
+                  </>
+                )}
 
               </div>
 
@@ -872,14 +1089,19 @@ export const AdminDashboard: React.FC = () => {
 
                 {/* Status Filter Chips */}
                 <div className="flex items-center gap-1.5 overflow-x-auto w-full md:w-auto pb-1 md:pb-0">
-                  {[
+                  {(isDeliveryStaff ? [
+                    { id: 'all', label: 'Toutes les livraisons' },
+                    { id: 'confirmed', label: 'Prêtes à livrer' },
+                    { id: 'shipping', label: 'En cours de livraison' },
+                    { id: 'delivered', label: 'Livrées' }
+                  ] : [
                     { id: 'all', label: 'Toutes' },
                     { id: 'pending', label: 'En attente' },
                     { id: 'confirmed', label: 'Confirmées' },
                     { id: 'shipping', label: 'Expédiées' },
                     { id: 'delivered', label: 'Livrées' },
                     { id: 'cancelled', label: 'Annulées' }
-                  ].map(tab => (
+                  ]).map(tab => (
                     <button
                       key={tab.id}
                       onClick={() => setStatusFilter(tab.id)}
@@ -1477,12 +1699,61 @@ export const AdminDashboard: React.FC = () => {
                     />
                   </div>
                   <div className="sm:col-span-2">
-                    <label className="block text-xs font-bold text-slate-700 mb-1">Rôle</label>
-                    <div className="flex flex-wrap gap-3">
-                      {['admin', 'manager', 'delivery', 'employee'].map(r => (
-                        <label key={r} className="flex items-center gap-2 cursor-pointer bg-slate-50 px-3 py-2 rounded-xl border border-slate-200">
-                          <input type="radio" name="role" value={r} checked={newEmpRole === r} onChange={() => setNewEmpRole(r)} className="text-red-600 focus:ring-red-500" />
-                          <span className="text-sm font-bold text-slate-700 capitalize">{r === 'delivery' ? 'Livreur' : r === 'manager' ? 'Gérant' : r}</span>
+                    <label className="block text-xs font-bold text-slate-700 mb-2">
+                      Rôle et Permissions Attribués
+                    </label>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                      {[
+                        { 
+                          id: 'employee', 
+                          label: 'Employé Catalogue', 
+                          badge: 'Produits & Stocks',
+                          desc: 'Ajoute et met à jour les produits, stocks, prix, photos et saisit les commandes manuelles.' 
+                        },
+                        { 
+                          id: 'delivery', 
+                          label: 'Livreur Express', 
+                          badge: 'Commandes Confirmées',
+                          desc: 'Accède uniquement aux commandes confirmées et expédiées, appels et WhatsApp clients en 1-clic.' 
+                        },
+                        { 
+                          id: 'manager', 
+                          label: 'Gérant Magasin', 
+                          badge: 'Commandes & Stats',
+                          desc: 'Gère les commandes, le catalogue, les bannières médias et consulte les statistiques du site.' 
+                        },
+                        { 
+                          id: 'admin', 
+                          label: 'Administrateur', 
+                          badge: 'Accès Total',
+                          desc: 'Accès complet sans restriction à tous les modules, employés, langues et réglages.' 
+                        }
+                      ].map(r => (
+                        <label 
+                          key={r.id} 
+                          className={`flex items-start gap-3 p-3 rounded-2xl border transition cursor-pointer ${
+                            newEmpRole === r.id 
+                              ? 'bg-blue-50/70 border-blue-500 ring-2 ring-blue-200' 
+                              : 'bg-slate-50 border-slate-200 hover:bg-slate-100'
+                          }`}
+                        >
+                          <input 
+                            type="radio" 
+                            name="role" 
+                            value={r.id} 
+                            checked={newEmpRole === r.id} 
+                            onChange={() => setNewEmpRole(r.id)} 
+                            className="mt-1 text-red-600 focus:ring-red-500" 
+                          />
+                          <div className="flex-1">
+                            <div className="flex items-center justify-between gap-1">
+                              <span className="text-xs font-black text-slate-900">{r.label}</span>
+                              <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-white text-slate-700 border border-slate-200">
+                                {r.badge}
+                              </span>
+                            </div>
+                            <p className="text-[11px] text-slate-500 mt-1 leading-tight">{r.desc}</p>
+                          </div>
                         </label>
                       ))}
                     </div>
@@ -1496,55 +1767,91 @@ export const AdminDashboard: React.FC = () => {
               </div>
 
               <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-sm">
-                <h3 className="text-lg font-black text-slate-900 font-heading mb-4">
-                  Liste des Employés et Utilisateurs
-                </h3>
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
+                  <div>
+                    <h3 className="text-lg font-black text-slate-900 font-heading">
+                      Liste des Profils & Employés
+                    </h3>
+                    <p className="text-xs text-slate-500 mt-0.5">
+                      Gérez les rôles et permissions des employés et du personnel.
+                    </p>
+                  </div>
+                  <span className="text-xs font-bold text-slate-600 bg-slate-100 px-3 py-1 rounded-xl w-fit">
+                    {allUsers.length} comptes enregistrés
+                  </span>
+                </div>
+
                 <div className="overflow-x-auto">
                   <table className="w-full text-left text-sm whitespace-nowrap">
                     <thead>
                       <tr className="border-b border-slate-200 text-slate-500 text-xs">
-                        <th className="font-bold py-3 pr-4">Employé</th>
+                        <th className="font-bold py-3 pr-4">Profil</th>
                         <th className="font-bold py-3 px-4">Email</th>
-                        <th className="font-bold py-3 px-4">Rôle</th>
+                        <th className="font-bold py-3 px-4">Rôle Attribué</th>
                         <th className="font-bold py-3 pl-4 text-right">Actions</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100">
-                      {allUsers.map(user => (
-                        <tr key={user.id} className="hover:bg-slate-50">
-                          <td className="py-3 pr-4">
-                            <div className="font-bold text-slate-800">{user.fullName}</div>
-                            {user.phone && <div className="text-xs text-slate-500">{user.phone}</div>}
-                          </td>
-                          <td className="py-3 px-4 text-slate-600">{user.email}</td>
-                          <td className="py-3 px-4">
-                            <select
-                              value={user.role || 'customer'}
-                              onChange={(e) => updateUserRole(user.id, e.target.value)}
-                              className="text-xs font-bold px-2 py-1 rounded bg-slate-100 border border-slate-300 focus:outline-none"
-                            >
-                              <option value="admin">Admin</option>
-                              <option value="manager">Gérant</option>
-                              <option value="delivery">Livreur</option>
-                              <option value="employee">Employé</option>
-                              <option value="customer">Client</option>
-                            </select>
-                          </td>
-                          <td className="py-3 pl-4 text-right">
-                            <button
-                              onClick={() => {
-                                if(confirm(`Voulez-vous supprimer l'utilisateur ${user.fullName} ?`)) {
-                                  deleteUser(user.id);
-                                }
-                              }}
-                              className="p-1.5 text-red-500 hover:bg-red-50 rounded-lg transition"
-                              title="Supprimer"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
+                      {allUsers.map(user => {
+                        const isPrimary = isPrimaryAdmin(user);
+                        return (
+                          <tr key={user.id} className={`hover:bg-slate-50/80 transition ${isPrimary ? 'bg-amber-50/20' : ''}`}>
+                            <td className="py-3 pr-4">
+                              <div className="flex items-center gap-2">
+                                <div className="font-bold text-slate-800">{user.fullName}</div>
+                                {isPrimary && (
+                                  <span className="text-[10px] bg-amber-100 text-amber-900 border border-amber-300 font-black px-2 py-0.5 rounded-full inline-flex items-center gap-1 shadow-2xs">
+                                    <ShieldCheck className="w-3 h-3 text-amber-700" /> Principal
+                                  </span>
+                                )}
+                              </div>
+                              {user.phone && <div className="text-xs text-slate-500">{user.phone}</div>}
+                            </td>
+                            <td className="py-3 px-4 text-slate-600 text-xs font-mono">{user.email}</td>
+                            <td className="py-3 px-4">
+                              {isPrimary ? (
+                                <span className="px-2.5 py-1 rounded-lg text-xs font-black bg-amber-100/70 text-amber-950 border border-amber-300 inline-flex items-center gap-1.5" title="Le rôle du compte principal ne peut pas être modifié">
+                                  <Lock className="w-3 h-3 text-amber-700" /> Admin Racine (Fixe)
+                                </span>
+                              ) : (
+                                <select
+                                  value={user.role || 'customer'}
+                                  onChange={(e) => updateUserRole(user.id, e.target.value)}
+                                  className="text-xs font-bold px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 border border-slate-300 focus:outline-none focus:ring-2 focus:ring-red-500 cursor-pointer transition"
+                                >
+                                  <option value="admin">👑 Admin (Total)</option>
+                                  <option value="manager">🏢 Gérant (Commandes & Catalogue)</option>
+                                  <option value="delivery">🚚 Livreur (Commandes Confirmées)</option>
+                                  <option value="employee">📦 Employé (Catalogue & Produits)</option>
+                                  <option value="customer">👤 Client Standard</option>
+                                </select>
+                              )}
+                            </td>
+                            <td className="py-3 pl-4 text-right">
+                              {isPrimary ? (
+                                <span 
+                                  className="text-[11px] font-bold text-slate-400 bg-slate-100 border border-slate-200 px-2.5 py-1 rounded-lg inline-flex items-center gap-1 cursor-not-allowed select-none"
+                                  title="Le profil principal ne peut jamais être supprimé"
+                                >
+                                  <Lock className="w-3 h-3 text-slate-400" /> Protégé
+                                </span>
+                              ) : (
+                                <button
+                                  onClick={() => {
+                                    if(confirm(`Voulez-vous supprimer le profil de ${user.fullName} ?`)) {
+                                      deleteUser(user.id);
+                                    }
+                                  }}
+                                  className="p-1.5 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition cursor-pointer"
+                                  title="Supprimer l'employé"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </button>
+                              )}
+                            </td>
+                          </tr>
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>
@@ -1555,6 +1862,11 @@ export const AdminDashboard: React.FC = () => {
 
           {activeTab === 'products' && (
             <AdminProductManager initialProductId={adminEditingProductId || selectedProductIdForEdit} />
+          )}
+
+          {/* TAB 7: LANGUAGES ACTIVATION / DEACTIVATION */}
+          {activeTab === 'languages' && (
+            <AdminLanguageManager />
           )}
 
         </div>

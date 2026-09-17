@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
+import { useLanguage } from '../context/LanguageContext';
 import { BRAND_CONFIG } from '../data/config';
 
 export const ProductDetailModal: React.FC = () => {
@@ -35,6 +36,7 @@ export const ProductDetailModal: React.FC = () => {
   } = useCart();
 
   const { isAdmin, isAdminSessionActive } = useAuth();
+  const { translateProduct, translateCategory, t, isRTL, language } = useLanguage();
   const hasAdminAccess = isAdmin || isAdminSessionActive;
 
   const [quantity, setQuantity] = useState(1);
@@ -55,6 +57,7 @@ export const ProductDetailModal: React.FC = () => {
   const product = selectedProductForModal 
     ? (allProducts.find(p => p.id === selectedProductForModal.id) || selectedProductForModal)
     : null;
+  const localizedProduct = product ? translateProduct(product) : null;
   const mainImage = product ? (getProductImage ? getProductImage(product) : product.image) : '';
   
   // Build distinct gallery (main image first, followed by all distinct secondary photos)
@@ -97,7 +100,7 @@ export const ProductDetailModal: React.FC = () => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [selectedProductForModal, images.length]);
 
-  if (!selectedProductForModal || !product) return null;
+  if (!selectedProductForModal || !product || !localizedProduct) return null;
 
   // Touch Swipe handlers
   const onTouchStart = (e: React.TouchEvent) => {
@@ -163,13 +166,15 @@ export const ProductDetailModal: React.FC = () => {
   };
 
   const handleWhatsAppOrder = () => {
-    const msg = `Bonjour Parailaf Maroc, je souhaite commander *${quantity}x ${product.name}* (Total: ${product.price * quantity} DH). Merci de me confirmer la livraison.`;
+    const msg = language === 'ar'
+      ? `السلام عليكم فارا إيلاف، أريد طلب *${quantity}x ${localizedProduct.name}* (المجموع: ${product.price * quantity} درهم). يرجى تأكيد الطلب والتوصيل.`
+      : `Bonjour Parailaf Maroc, je souhaite commander *${quantity}x ${product.name}* (Total: ${product.price * quantity} DH). Merci de me confirmer la livraison.`;
     const url = `https://wa.me/${BRAND_CONFIG.whatsapp}?text=${encodeURIComponent(msg)}`;
     window.open(url, '_blank');
   };
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto">
+    <div className="fixed inset-0 z-50 overflow-y-auto" dir={isRTL ? 'rtl' : 'ltr'}>
       {/* Backdrop */}
       <div 
         className="fixed inset-0 bg-slate-950/75 backdrop-blur-sm transition-opacity"
@@ -182,7 +187,7 @@ export const ProductDetailModal: React.FC = () => {
           {/* Close button */}
           <button
             onClick={() => setSelectedProductForModal(null)}
-            className="absolute top-4 right-4 z-20 w-9 h-9 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center transition cursor-pointer"
+            className={`absolute top-4 ${isRTL ? 'left-4' : 'right-4'} z-20 w-9 h-9 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center transition cursor-pointer`}
             aria-label="Fermer"
           >
             <X className="w-5 h-5" />
@@ -191,18 +196,18 @@ export const ProductDetailModal: React.FC = () => {
           <div className="grid grid-cols-1 md:grid-cols-12 gap-0">
             
             {/* Left: Gallery Column */}
-            <div className="md:col-span-6 bg-white p-6 sm:p-8 flex flex-col justify-between border-b md:border-b-0 md:border-r border-slate-200">
+            <div className={`md:col-span-6 bg-white p-6 sm:p-8 flex flex-col justify-between border-b md:border-b-0 ${isRTL ? 'md:border-l' : 'md:border-r'} border-slate-200`}>
               <div>
                 {/* Badge */}
                 <div className="flex flex-wrap items-center gap-2 mb-4">
-                  {product.badge && (
+                  {localizedProduct?.badge && (
                     <span className="bg-red-600 text-white font-black text-xs px-2.5 py-1 rounded-lg uppercase tracking-wide flex items-center gap-1 shadow-sm">
                       <Flame className="w-3.5 h-3.5 fill-amber-300 text-amber-300" />
-                      {product.badge}
+                      {localizedProduct.badge}
                     </span>
                   )}
                   <span className="text-xs font-bold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200 flex items-center gap-1">
-                    <Check className="w-3.5 h-3.5 text-emerald-600" /> En stock
+                    <Check className="w-3.5 h-3.5 text-emerald-600" /> {t('product.in_stock')}
                   </span>
 
                   {hasAdminAccess && (
@@ -211,16 +216,16 @@ export const ProductDetailModal: React.FC = () => {
                         setSelectedProductForModal(null);
                         openAdmin('products', product.id);
                       }}
-                      className="ml-auto bg-slate-900 hover:bg-slate-800 text-white font-black text-xs px-3 py-1.5 rounded-xl flex items-center gap-1.5 shadow-sm transition cursor-pointer"
+                      className={`${isRTL ? 'mr-auto' : 'ml-auto'} bg-slate-900 hover:bg-slate-800 text-white font-black text-xs px-3 py-1.5 rounded-xl flex items-center gap-1.5 shadow-sm transition cursor-pointer`}
                       title="Modifier les photos, le titre ou la description"
                     >
                       <Edit3 className="w-3.5 h-3.5 text-amber-400" />
-                      <span>Modifier (Admin)</span>
+                      <span>{language === 'ar' ? 'تعديل (إدارة)' : 'Modifier (Admin)'}</span>
                     </button>
                   )}
                 </div>
 
-                {/* Main Large Image Carousel with Touch & Mouse Swipe (100% Unobstructed) */}
+                {/* Main Large Image Carousel with Touch & Mouse Swipe */}
                 <div 
                   className="bg-white rounded-2xl p-2 sm:p-4 border border-slate-100 aspect-square flex items-center justify-center shadow-xs overflow-hidden relative select-none cursor-grab active:cursor-grabbing touch-pan-y"
                   onTouchStart={onTouchStart}
@@ -234,13 +239,13 @@ export const ProductDetailModal: React.FC = () => {
                 >
                   <img
                     src={activeImage}
-                    alt={product.name}
+                    alt={localizedProduct.name}
                     draggable={false}
                     className="w-full h-full max-h-96 object-contain transition-all duration-300 pointer-events-none"
                   />
                 </div>
 
-                {/* Navigation Controls OUTSIDE the image (No photo obstruction) */}
+                {/* Navigation Controls OUTSIDE the image */}
                 {images.length > 1 && (
                   <div className="flex items-center justify-between mt-3 px-1 py-1 bg-slate-50 border border-slate-100 rounded-2xl">
                     {/* Left Arrow Button */}
@@ -249,10 +254,9 @@ export const ProductDetailModal: React.FC = () => {
                       onClick={handlePrevImage}
                       className="px-2.5 sm:px-3 py-1.5 rounded-xl bg-white hover:bg-slate-100 active:scale-95 text-slate-700 text-xs font-bold border border-slate-200/80 shadow-xs flex items-center gap-1.5 transition cursor-pointer"
                       aria-label="Photo précédente"
-                      title="Photo précédente (ou flèche gauche du clavier)"
                     >
-                      <ChevronLeft className="w-4 h-4 text-slate-700" />
-                      <span className="hidden sm:inline">Précédente</span>
+                      <ChevronLeft className={`w-4 h-4 text-slate-700 ${isRTL ? 'rotate-180' : ''}`} />
+                      <span className="hidden sm:inline">{language === 'ar' ? 'السابقة' : 'Précédente'}</span>
                     </button>
 
                     {/* Dots and Counter */}
@@ -281,10 +285,9 @@ export const ProductDetailModal: React.FC = () => {
                       onClick={handleNextImage}
                       className="px-2.5 sm:px-3 py-1.5 rounded-xl bg-white hover:bg-slate-100 active:scale-95 text-slate-700 text-xs font-bold border border-slate-200/80 shadow-xs flex items-center gap-1.5 transition cursor-pointer"
                       aria-label="Photo suivante"
-                      title="Photo suivante (ou flèche droite du clavier)"
                     >
-                      <span className="hidden sm:inline">Suivante</span>
-                      <ChevronRight className="w-4 h-4 text-slate-700" />
+                      <span className="hidden sm:inline">{language === 'ar' ? 'التالية' : 'Suivante'}</span>
+                      <ChevronRight className={`w-4 h-4 text-slate-700 ${isRTL ? 'rotate-180' : ''}`} />
                     </button>
                   </div>
                 )}
@@ -315,11 +318,11 @@ export const ProductDetailModal: React.FC = () => {
               <div className="mt-6 pt-4 border-t border-slate-200 grid grid-cols-2 gap-2 text-[11px] text-slate-600">
                 <div className="flex items-center gap-1.5">
                   <Truck className="w-3.5 h-3.5 text-red-600 shrink-0" />
-                  <span>Livraison 24h-48h Maroc</span>
+                  <span>{language === 'ar' ? 'توصيل 24-48 ساعة بالمغرب' : 'Livraison 24h-48h Maroc'}</span>
                 </div>
                 <div className="flex items-center gap-1.5">
                   <ShieldCheck className="w-3.5 h-3.5 text-[#002f6c] shrink-0" />
-                  <span>Produit 100% Original Scellé</span>
+                  <span>{language === 'ar' ? 'منتج أصلي 100% مختوم' : 'Produit 100% Original Scellé'}</span>
                 </div>
               </div>
             </div>
@@ -330,18 +333,20 @@ export const ProductDetailModal: React.FC = () => {
                 {/* Brand & Rating */}
                 <div className="flex items-center justify-between mb-1">
                   <span className="text-xs font-black text-[#002f6c] uppercase tracking-wider">
-                    {product.brand} • {product.categoryLabel}
+                    {localizedProduct.brand} • {translateCategory(product.category, localizedProduct.categoryLabel)}
                   </span>
                   <div className="flex items-center gap-1 text-amber-500 text-xs">
                     <Star className="w-4 h-4 fill-amber-400 text-amber-400" />
                     <span className="font-bold text-slate-800">{product.rating}</span>
-                    <span className="text-slate-400 text-[11px]">({product.reviewsCount} avis)</span>
+                    <span className="text-slate-400 text-[11px]">
+                      {language === 'ar' ? `(${product.reviewsCount} تقييم)` : `(${product.reviewsCount} avis)`}
+                    </span>
                   </div>
                 </div>
 
                 {/* Name */}
                 <h2 className="text-xl sm:text-2xl font-black text-slate-900 leading-snug font-heading">
-                  {product.name}
+                  {localizedProduct.name}
                 </h2>
 
                 {/* Price block */}
@@ -349,71 +354,79 @@ export const ProductDetailModal: React.FC = () => {
                   <div>
                     <div className="flex items-baseline gap-2">
                       <span className="text-2xl sm:text-3xl font-black text-red-600 font-heading">
-                        {product.price * quantity} <span className="text-base font-bold text-[#002f6c]">DH</span>
+                        {product.price * quantity} <span className="text-base font-bold text-[#002f6c]">{t('common.dh')}</span>
                       </span>
                       {product.originalPrice && (
                         <span className="text-sm text-slate-400 line-through">
-                          {product.originalPrice * quantity} DH
+                          {product.originalPrice * quantity} {t('common.dh')}
                         </span>
                       )}
                     </div>
                     {product.originalPrice && (
                       <p className="text-xs font-bold text-amber-700">
-                        Économie : {(product.originalPrice - product.price) * quantity} DH
+                        {language === 'ar' ? 'توفير : ' : 'Économie : '}{(product.originalPrice - product.price) * quantity} {t('common.dh')}
                       </p>
                     )}
                   </div>
 
                   <span className="text-xs font-bold text-slate-700 bg-white px-2.5 py-1 rounded border border-slate-200 shadow-2xs">
-                    Paiement Espèce
+                    {language === 'ar' ? 'الدفع نقداً عند الاستلام' : 'Paiement Espèce'}
                   </span>
                 </div>
 
                 {/* Full Description */}
                 <p className="text-xs sm:text-sm text-slate-600 mt-4 leading-relaxed">
-                  {product.fullDescription}
+                  {localizedProduct.fullDescription}
                 </p>
 
                 {/* Technical Specs List */}
                 <div className="mt-4 pt-3 border-t border-slate-100 space-y-1.5">
                   <p className="text-xs font-black text-slate-900 uppercase tracking-wide mb-2">
-                    Caractéristiques clés :
+                    {t('product.features')}
                   </p>
-                  {product.specs.duration && (
+                  {localizedProduct.specs?.duration && (
                     <div className="flex items-center justify-between text-xs py-1 border-b border-slate-100">
-                      <span className="text-slate-500 font-medium">Durée d'utilisation :</span>
-                      <span className="font-bold text-slate-900">{product.specs.duration}</span>
+                      <span className="text-slate-500 font-medium">
+                        {language === 'ar' ? 'مدة الاستخدام :' : "Durée d'utilisation :"}
+                      </span>
+                      <span className="font-bold text-slate-900">{localizedProduct.specs.duration}</span>
                     </div>
                   )}
-                  {product.specs.waterproof && (
+                  {localizedProduct.specs?.waterproof && (
                     <div className="flex items-center justify-between text-xs py-1 border-b border-slate-100">
-                      <span className="text-slate-500 font-medium">Étanchéité :</span>
-                      <span className="font-bold text-slate-900">{product.specs.waterproof}</span>
+                      <span className="text-slate-500 font-medium">
+                        {language === 'ar' ? 'مقاومة الماء :' : 'Étanchéité :'}
+                      </span>
+                      <span className="font-bold text-slate-900">{localizedProduct.specs.waterproof}</span>
                     </div>
                   )}
-                  {product.specs.bloodSample && (
+                  {localizedProduct.specs?.bloodSample && (
                     <div className="flex items-center justify-between text-xs py-1 border-b border-slate-100">
-                      <span className="text-slate-500 font-medium">Prélèvement :</span>
-                      <span className="font-bold text-slate-900">{product.specs.bloodSample}</span>
+                      <span className="text-slate-500 font-medium">
+                        {language === 'ar' ? 'طريقة القياس :' : 'Prélèvement :'}
+                      </span>
+                      <span className="font-bold text-slate-900">{localizedProduct.specs.bloodSample}</span>
                     </div>
                   )}
-                  {product.specs.appCompatibility && (
+                  {localizedProduct.specs?.appCompatibility && (
                     <div className="flex items-center justify-between text-xs py-1 border-b border-slate-100">
-                      <span className="text-slate-500 font-medium">Compatibilité :</span>
-                      <span className="font-bold text-red-600">{product.specs.appCompatibility}</span>
+                      <span className="text-slate-500 font-medium">
+                        {language === 'ar' ? 'التوافق :' : 'Compatibilité :'}
+                      </span>
+                      <span className="font-bold text-red-600">{localizedProduct.specs.appCompatibility}</span>
                     </div>
                   )}
                 </div>
 
                 {/* Box contents */}
-                {product.boxContents && product.boxContents.length > 0 && (
+                {localizedProduct.boxContents && localizedProduct.boxContents.length > 0 && (
                   <div className="mt-4 p-3 bg-slate-100/70 rounded-xl border border-slate-200 text-xs">
                     <p className="font-bold text-[#002f6c] mb-1.5 flex items-center gap-1.5">
                       <Package className="w-3.5 h-3.5 text-red-600" />
-                      Contenu du pack :
+                      {t('product.box_contents')}
                     </p>
                     <ul className="space-y-1 text-slate-700 font-medium">
-                      {product.boxContents.map((item, i) => (
+                      {localizedProduct.boxContents.map((item, i) => (
                         <li key={i} className="flex items-center gap-1.5">
                           <span className="w-1.5 h-1.5 rounded-full bg-red-600" />
                           <span>{item}</span>
@@ -459,12 +472,12 @@ export const ProductDetailModal: React.FC = () => {
                     {isAdded ? (
                       <>
                         <Check className="w-4 h-4 text-amber-300" />
-                        <span>Ajouté au panier !</span>
+                        <span>{t('product.added')}</span>
                       </>
                     ) : (
                       <>
                         <ShoppingBag className="w-4 h-4 text-red-100" />
-                        <span>Ajouter au panier</span>
+                        <span>{t('product.add_to_cart')}</span>
                       </>
                     )}
                   </button>
@@ -476,7 +489,7 @@ export const ProductDetailModal: React.FC = () => {
                     onClick={handleQuickBuy}
                     className="py-2.5 px-3 bg-[#002f6c] hover:bg-[#001f4d] text-white font-bold text-xs rounded-xl shadow-xs transition cursor-pointer"
                   >
-                    ⚡ Commander en 1-Clic
+                    {t('product.quick_buy')}
                   </button>
 
                   <button
