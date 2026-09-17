@@ -154,11 +154,14 @@ interface AuthContextType {
     password: string; 
     city?: string; 
     address?: string; 
+    role?: UserRole;
+    adminPasscode?: string;
   }) => Promise<{ success: boolean; error?: string }>;
   logout: () => void;
   updateProfile: (data: Partial<User>) => Promise<{ success: boolean; error?: string }>;
   verifyAdminAccess: (passcodeOrPassword: string, email?: string) => Promise<{ success: boolean; error?: string }>;
   lockAdminSession: () => void;
+  promoteCurrentAccount: (pinCode: string, targetRole?: UserRole) => { success: boolean; error?: string };
   allUsers: StoredUserAccount[];
   createEmployee: (data: {
     fullName: string;
@@ -400,6 +403,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       };
     }
 
+    // Ensure primary admin always has admin role and unlocks dashboard
+    let effectiveRole: UserRole = found.role;
+    if (isPrimaryAdminAccount(found)) {
+      effectiveRole = 'admin';
+      if (found.role !== 'admin') {
+        found.role = 'admin';
+        saveStoredUsers(users.map(u => u.id === found.id ? { ...u, role: 'admin' } : u));
+      }
+    }
+
     const sessionUser: User = {
       id: found.id,
       fullName: found.fullName,
@@ -408,7 +421,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       city: found.city,
       address: found.address,
       createdAt: found.createdAt,
-      role: found.role,
+      role: effectiveRole,
     };
 
     setCurrentUser(sessionUser);
@@ -420,7 +433,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     // Auto-unlock staff/admin dashboard session if user has a staff role
     const staffRoles: UserRole[] = ['admin', 'manager', 'delivery', 'employee'];
-    if (staffRoles.includes(found.role as UserRole) || isPrimaryAdminAccount(found)) {
+    if (staffRoles.includes(effectiveRole) || isPrimaryAdminAccount(found)) {
       setIsAdminSessionActive(true);
       try {
         sessionStorage.setItem(ADMIN_SESSION_KEY, 'true');
@@ -438,6 +451,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     password: string;
     city?: string;
     address?: string;
+    role?: UserRole;
+    adminPasscode?: string;
   }): Promise<{ success: boolean; error?: string }> => {
     await new Promise((resolve) => setTimeout(resolve, 400));
 
@@ -474,20 +489,31 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       };
     }
 
+    const isPrimary = isPrimaryAdminAccount(cleanEmail);
+    let targetRole: UserRole = 'customer';
+    if (isPrimary) {
+      targetRole = 'admin';
+    } else if (data.adminPasscode && MASTER_ADMIN_PASSCODES.includes(data.adminPasscode.trim())) {
+      targetRole = data.role || 'admin';
+    } else if (data.role && data.role !== 'customer') {
+      targetRole = data.role;
+    }
+
     const newUser: StoredUserAccount = {
-      id: `user_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+      id: isPrimary ? PRIMARY_ADMIN_ID : `user_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
       fullName: data.fullName.trim(),
       email: cleanEmail,
       phone: cleanPhone,
       city: data.city?.trim() || 'Casablanca',
       address: data.address?.trim() || '',
       createdAt: new Date().toISOString(),
-      role: 'customer',
+      role: targetRole,
       passwordHash: data.password,
     };
 
     const updatedList = [newUser, ...users];
     saveStoredUsers(updatedList);
+    setAllUsers(updatedList);
 
     const sessionUser: User = {
       id: newUser.id,
@@ -505,6 +531,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       localStorage.setItem(CURRENT_SESSION_KEY, JSON.stringify(sessionUser));
     } catch {
       // ignore
+    }
+
+    if (targetRole !== 'customer') {
+      setIsAdminSessionActive(true);
+      try {
+        sessionStorage.setItem(ADMIN_SESSION_KEY, 'true');
+      } catch {}
     }
 
     setIsAuthModalOpen(false);
@@ -562,9 +595,65 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return { success: true };
   };
 
+  // Promote current account to Staff or Admin with Master PIN
+  const promoteCurrentAccount = (pinCode: string, targetRole: UserRole = 'admin'): { success: boolean; error?: string } => {
+    if (!currentUser) {
+      return { success: false, error: 'Aucun compte connecté.' };
+    }
+
+    const cleanPin = pinCode.trim();
+    // Allow if pin is master admin passcode OR user is primary admin
+    if (!MASTER_ADMIN_PASSCODES.includes(cleanPin) && !isPrimaryAdminAccount(currentUser)) {
+      return { 
+        success: false, 
+        error: 'Code PIN invalide. Utilisez le code PIN Master (1234 ou admin2026).' 
+      };
+    }
+
+    const roleToAssign: UserRole = targetRole || 'admin';
+    const updatedUser: User = {
+      ...currentUser,
+      role: roleToAssign,
+    };
+
+    setCurrentUser(updatedUser);
+    try {
+      localStorage.setItem(CURRENT_SESSION_KEY, JSON.stringify(updatedUser));
+      sessionStorage.setItem(ADMIN_SESSION_KEY, 'true');
+    } catch {}
+
+    setIsAdminSessionActive(true);
+
+    // Update in allUsers & localStorage
+    const users = getStoredUsers();
+    const existingIndex = users.findIndex(u => u.id === currentUser.id || u.email.toLowerCase() === currentUser.email.toLowerCase());
+    if (existingIndex !== -1) {
+      users[existingIndex].role = roleToAssign;
+      saveStoredUsers(users);
+      setAllUsers([...users]);
+    } else {
+      const newStored: StoredUserAccount = {
+        id: currentUser.id,
+        fullName: currentUser.fullName,
+        email: currentUser.email,
+        phone: currentUser.phone,
+        city: currentUser.city || 'Casablanca',
+        address: currentUser.address || '',
+        createdAt: currentUser.createdAt || new Date().toISOString(),
+        role: roleToAssign,
+        passwordHash: cleanPin,
+      };
+      const updated = [newStored, ...users];
+      saveStoredUsers(updated);
+      setAllUsers(updated);
+    }
+
+    return { success: true };
+  };
+
   // Verify Admin / Staff Access
   const verifyAdminAccess = async (passcodeOrPassword: string, email?: string): Promise<{ success: boolean; error?: string }> => {
-    await new Promise((res) => setTimeout(res, 300));
+    await new Promise((res) => setTimeout(res, 250));
     const input = passcodeOrPassword.trim();
     const cleanEmail = email?.trim().toLowerCase();
 
@@ -584,8 +673,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         sessionStorage.setItem(ADMIN_SESSION_KEY, 'true');
       } catch {}
 
-      // If no admin user is currently logged in, automatically establish session as Administrator
-      if (!currentUser || currentUser.role !== 'admin') {
+      // If a current user is logged in, promote them to admin!
+      if (currentUser) {
+        const promoted: User = { ...currentUser, role: 'admin' };
+        setCurrentUser(promoted);
+        try {
+          localStorage.setItem(CURRENT_SESSION_KEY, JSON.stringify(promoted));
+        } catch {}
+        const users = getStoredUsers();
+        const updated = users.map(u => u.id === currentUser.id || u.email.toLowerCase() === currentUser.email.toLowerCase() ? { ...u, role: 'admin' as UserRole } : u);
+        saveStoredUsers(updated);
+        setAllUsers(updated);
+      } else {
         const adminAccount: User = {
           id: 'user_admin_oualid',
           fullName: 'Oualid Soulimani (Admin Principal)',
@@ -604,39 +703,67 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return { success: true };
     }
 
-    // 3. Check credentials against registered staff accounts (admin, manager, employee, delivery)
+    // 3. Check credentials against registered accounts
     const users = getStoredUsers();
-    const staffUser = users.find((u) => {
-      const matchEmail = cleanEmail ? (u.email.toLowerCase() === cleanEmail || u.phone.replace(/\s+/g, '') === cleanEmail.replace(/\s+/g, '')) : true;
-      const isStaffMember = ['admin', 'manager', 'employee', 'delivery'].includes(u.role || '') || isPrimaryAdminAccount(u);
-      return matchEmail && isStaffMember && (u.passwordHash === input || MASTER_ADMIN_PASSCODES.includes(input));
+    const matchedAccount = users.find((u) => {
+      if (!cleanEmail) return false;
+      return (u.email.toLowerCase() === cleanEmail || u.phone.replace(/\s+/g, '') === cleanEmail.replace(/\s+/g, ''));
     });
 
-    if (staffUser) {
-      setIsAdminSessionActive(true);
-      try {
-        sessionStorage.setItem(ADMIN_SESSION_KEY, 'true');
-      } catch {}
-      const sessionUser: User = {
-        id: staffUser.id,
-        fullName: staffUser.fullName,
-        email: staffUser.email,
-        phone: staffUser.phone,
-        city: staffUser.city,
-        address: staffUser.address,
-        createdAt: staffUser.createdAt,
-        role: staffUser.role,
-      };
-      setCurrentUser(sessionUser);
-      try {
-        localStorage.setItem(CURRENT_SESSION_KEY, JSON.stringify(sessionUser));
-      } catch {}
-      return { success: true };
+    if (matchedAccount) {
+      const passwordCorrect = (matchedAccount.passwordHash === input || MASTER_ADMIN_PASSCODES.includes(input));
+      if (passwordCorrect) {
+        let finalRole = matchedAccount.role;
+        // If primary admin account or entered master passcode, force admin
+        if (isPrimaryAdminAccount(matchedAccount) || MASTER_ADMIN_PASSCODES.includes(input)) {
+          finalRole = 'admin';
+        }
+
+        const isStaffMember = ['admin', 'manager', 'employee', 'delivery'].includes(finalRole || '');
+        if (isStaffMember) {
+          setIsAdminSessionActive(true);
+          try {
+            sessionStorage.setItem(ADMIN_SESSION_KEY, 'true');
+          } catch {}
+          const sessionUser: User = {
+            id: matchedAccount.id,
+            fullName: matchedAccount.fullName,
+            email: matchedAccount.email,
+            phone: matchedAccount.phone,
+            city: matchedAccount.city,
+            address: matchedAccount.address,
+            createdAt: matchedAccount.createdAt,
+            role: finalRole,
+          };
+          setCurrentUser(sessionUser);
+          try {
+            localStorage.setItem(CURRENT_SESSION_KEY, JSON.stringify(sessionUser));
+          } catch {}
+
+          if (finalRole !== matchedAccount.role) {
+            const updated = users.map(u => u.id === matchedAccount.id ? { ...u, role: finalRole } : u);
+            saveStoredUsers(updated);
+            setAllUsers(updated);
+          }
+          return { success: true };
+        } else {
+          // It's a customer account with correct password
+          return {
+            success: false,
+            error: "Ce compte existe mais possède le rôle « Client ». Utilisez l'onglet « Code de sécurité (PIN) » avec le code 1234 pour déverrouiller et activer vos droits Administrateur."
+          };
+        }
+      } else {
+        return {
+          success: false,
+          error: "Mot de passe incorrect pour cet email."
+        };
+      }
     }
 
     return { 
       success: false, 
-      error: "Accès refusé : Identifiants incorrects ou ce compte n'a pas les autorisations d'employé, gérant, livreur ou administrateur." 
+      error: "Identifiants introuvables. Utilisez le Code PIN Master (1234) dans le premier onglet pour un accès direct." 
     };
   };
 
@@ -786,6 +913,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         updateProfile,
         verifyAdminAccess,
         lockAdminSession,
+        promoteCurrentAccount,
         allUsers,
         createEmployee,
         updateUserRole,

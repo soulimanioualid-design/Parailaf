@@ -14,7 +14,9 @@ import {
   Save,
   MessageCircle,
   ShoppingBag,
-  ShieldCheck
+  ShieldCheck,
+  Key,
+  ChevronDown
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
@@ -34,7 +36,9 @@ export const AccountModal: React.FC = () => {
     logout, 
     updateProfile,
     getDefaultTabForUser,
-    canAccessTab
+    canAccessTab,
+    promoteCurrentAccount,
+    isPrimaryAdmin
   } = useAuth();
   
   const { allOrders, setIsCartOpen, openAdmin } = useCart();
@@ -50,6 +54,30 @@ export const AccountModal: React.FC = () => {
   const [address, setAddress] = useState(currentUser?.address || '');
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
+
+  // Staff promotion state for normal customer accounts
+  const [showPromoteBox, setShowPromoteBox] = useState(!hasStaffOrAdminAccess && isPrimaryAdmin(currentUser));
+  const [promotePin, setPromotePin] = useState('1234');
+  const [promoteRole, setPromoteRole] = useState<'admin' | 'manager' | 'employee' | 'delivery'>('admin');
+  const [promoteError, setPromoteError] = useState<string | null>(null);
+  const [promoteSuccessMsg, setPromoteSuccessMsg] = useState<string | null>(null);
+
+  const handlePromoteSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setPromoteError(null);
+    setPromoteSuccessMsg(null);
+
+    const res = promoteCurrentAccount(promotePin, promoteRole);
+    if (res.success) {
+      setPromoteSuccessMsg(
+        language === 'ar' 
+          ? 'تم تفعيل الصلاحيات بنجاح! يمكنك الآن الدخول للوحة التحكم.' 
+          : 'Privilèges activés avec succès ! Vous avez maintenant accès au tableau de bord.'
+      );
+    } else {
+      setPromoteError(res.error || 'Code PIN invalide.');
+    }
+  };
 
   // Sync if currentUser changes
   React.useEffect(() => {
@@ -215,7 +243,7 @@ export const AccountModal: React.FC = () => {
                     {currentUser.phone}
                   </span>
                 </div>
-                {hasStaffOrAdminAccess && (
+                {hasStaffOrAdminAccess ? (
                   <button
                     onClick={() => {
                       setIsAccountModalOpen(false);
@@ -230,6 +258,18 @@ export const AccountModal: React.FC = () => {
                         : currentUser.role === 'employee'
                         ? (language === 'ar' ? 'فضاء المنتجات والمخزون' : 'Espace Produits & Catalogue')
                         : (language === 'ar' ? 'لوحة الإدارة والتحكم' : "Tableau de Bord & Gestion")}
+                    </span>
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => setShowPromoteBox(!showPromoteBox)}
+                    className="mt-2.5 px-3 py-1.5 bg-amber-400 hover:bg-amber-300 text-slate-950 text-xs font-black rounded-lg flex items-center gap-1.5 transition shadow-sm cursor-pointer"
+                  >
+                    <Key className="w-3.5 h-3.5" />
+                    <span>
+                      {isPrimaryAdmin(currentUser) 
+                        ? (language === 'ar' ? '👑 تفعيل صلاحيات المدير العام' : '👑 Activer mon accès Administrateur') 
+                        : (language === 'ar' ? 'فضاء الموظفين والإدارة' : 'Activer accès Staff / Admin')}
                     </span>
                   </button>
                 )}
@@ -277,6 +317,139 @@ export const AccountModal: React.FC = () => {
 
           {/* Modal Body */}
           <div className="p-5 sm:p-6 max-h-[65vh] overflow-y-auto">
+
+            {/* Staff Promotion Card */}
+            {(!hasStaffOrAdminAccess || showPromoteBox) && (
+              <div className="mb-5 bg-gradient-to-br from-amber-50 to-orange-50/60 border border-amber-300 rounded-2xl p-4 sm:p-5 text-xs text-amber-950 shadow-xs space-y-3">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <div className="w-7 h-7 rounded-lg bg-amber-200 text-amber-900 flex items-center justify-center shrink-0">
+                      <Key className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <h4 className="font-extrabold text-amber-950 text-sm">
+                        {language === 'ar' ? 'فضاء الموظفين والإدارة' : "Activation de l'Espace Staff & Administration"}
+                      </h4>
+                      <p className="text-[11px] text-amber-800">
+                        {language === 'ar'
+                          ? 'إذا كان هذا الحساب يخص موظفاً، موزّعاً، مسيّراً أو المدير العام، فعّل صلاحياتك هنا :'
+                          : 'Votre compte est enregistré en mode Client. Activez vos droits Administrateur ou Employé ici :'}
+                      </p>
+                    </div>
+                  </div>
+                  {hasStaffOrAdminAccess && (
+                    <button
+                      onClick={() => setShowPromoteBox(false)}
+                      className="text-amber-700 hover:text-amber-900 p-1 cursor-pointer"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  )}
+                </div>
+
+                {promoteSuccessMsg && (
+                  <div className="p-3 bg-emerald-100 border border-emerald-300 text-emerald-900 rounded-xl font-bold flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-700 shrink-0" />
+                    <span>{promoteSuccessMsg}</span>
+                  </div>
+                )}
+
+                {promoteError && (
+                  <div className="p-3 bg-red-100 border border-red-300 text-red-900 rounded-xl font-bold flex items-center gap-2">
+                    <AlertCircle className="w-4 h-4 text-red-700 shrink-0" />
+                    <span>{promoteError}</span>
+                  </div>
+                )}
+
+                {/* 1-Click for Primary Admin */}
+                {isPrimaryAdmin(currentUser) && (
+                  <div className="bg-amber-200/80 border border-amber-400 p-3 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <div>
+                      <p className="font-extrabold text-amber-950">👑 Compte Administrateur Principal Reconnu</p>
+                      <p className="text-[11px] text-amber-900">Email : {currentUser?.email}</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const res = promoteCurrentAccount('1234', 'admin');
+                        if (res.success) {
+                          setPromoteSuccessMsg('👑 Accès Administrateur Principal activé avec succès !');
+                          setPromoteError(null);
+                        } else {
+                          setPromoteError(res.error || 'Erreur');
+                        }
+                      }}
+                      className="px-4 py-2 bg-slate-950 hover:bg-slate-900 text-amber-300 font-extrabold text-xs rounded-xl shadow-xs transition flex items-center justify-center gap-1.5 cursor-pointer"
+                    >
+                      <ShieldCheck className="w-3.5 h-3.5 text-amber-400" />
+                      <span>Activer mes droits Administrateur (1 Clic)</span>
+                    </button>
+                  </div>
+                )}
+
+                {/* Role and PIN Form for Staff Members */}
+                <form onSubmit={handlePromoteSubmit} className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-1">
+                  <div>
+                    <label className="block text-[11px] font-bold text-amber-900 mb-1">
+                      {language === 'ar' ? 'اختر الدور :' : 'Rôle à activer :'}
+                    </label>
+                    <select
+                      value={promoteRole}
+                      onChange={(e) => setPromoteRole(e.target.value as any)}
+                      className="w-full px-3 py-2 bg-white border border-amber-300 rounded-xl text-xs font-bold text-slate-800 focus:outline-none"
+                    >
+                      <option value="admin">👑 Administrateur (Accès total)</option>
+                      <option value="manager">🏢 Gérant Magasin</option>
+                      <option value="employee">📦 Employé Produits & Catalogue</option>
+                      <option value="delivery">🚚 Livreur Express (Commandes)</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-bold text-amber-900 mb-1">
+                      {language === 'ar' ? 'رمز الأمان (PIN: 1234) :' : 'Code PIN Master (1234) :'}
+                    </label>
+                    <input
+                      type="password"
+                      value={promotePin}
+                      onChange={(e) => setPromotePin(e.target.value)}
+                      placeholder="1234 ou admin2026"
+                      className="w-full px-3 py-2 bg-white border border-amber-300 rounded-xl text-xs font-mono font-bold text-slate-800 focus:outline-none"
+                    />
+                  </div>
+
+                  <div className="flex items-end">
+                    <button
+                      type="submit"
+                      className="w-full py-2 bg-[#002f6c] hover:bg-[#002244] text-white font-extrabold text-xs rounded-xl transition flex items-center justify-center gap-1.5 cursor-pointer shadow-xs"
+                    >
+                      <ShieldCheck className="w-3.5 h-3.5" />
+                      <span>{language === 'ar' ? 'تفعيل الدور الآن' : 'Activer ce rôle'}</span>
+                    </button>
+                  </div>
+                </form>
+
+                {hasStaffOrAdminAccess && (
+                  <div className="pt-2 border-t border-amber-200/60 flex items-center justify-between">
+                    <span className="text-[11px] font-bold text-emerald-800 flex items-center gap-1">
+                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                      Rôle actif : <strong className="uppercase">{userRole}</strong>
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsAccountModalOpen(false);
+                        openAdmin(getDefaultTabForUser());
+                      }}
+                      className="px-3 py-1.5 bg-amber-400 hover:bg-amber-300 text-slate-950 font-black text-xs rounded-lg transition shadow-xs cursor-pointer flex items-center gap-1"
+                    >
+                      <span>Ouvrir le Tableau de Bord</span>
+                      <span>→</span>
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
             
             {/* ORDERS TAB */}
             {activeTab === 'orders' && (

@@ -80,6 +80,7 @@ export const AdminDashboard: React.FC = () => {
     isAdminSessionActive, 
     verifyAdminAccess, 
     lockAdminSession,
+    promoteCurrentAccount,
     allUsers, 
     createEmployee, 
     updateUserRole, 
@@ -263,14 +264,53 @@ export const AdminDashboard: React.FC = () => {
 
             {/* If logged in as customer */}
             {currentUser && currentUser.role === 'customer' && (
-              <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 text-xs text-amber-900 flex items-center justify-between">
-                <div>
-                  <span className="text-amber-700 block text-[10px] uppercase font-bold tracking-wider">Session actuelle</span>
-                  <span className="font-bold text-amber-950">{currentUser.fullName}</span> (Compte Client)
+              <div className="bg-amber-50 border border-amber-300 rounded-2xl p-4 text-xs text-amber-950 space-y-2.5 shadow-xs">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <span className="text-amber-800 block text-[10px] uppercase font-bold tracking-wider">Session Actuelle</span>
+                    <span className="font-black text-amber-950 text-sm">{currentUser.fullName}</span>
+                    <span className="text-slate-600 block text-[11px]">{currentUser.email}</span>
+                  </div>
+                  <span className="px-2.5 py-1 bg-amber-200 text-amber-900 text-[10px] font-black rounded-lg uppercase tracking-wider">
+                    Compte Standard
+                  </span>
                 </div>
-                <span className="px-2 py-0.5 bg-amber-200 text-amber-900 text-[10px] font-bold rounded-md">
-                  Non Staff
-                </span>
+
+                <p className="text-amber-900 leading-relaxed text-[11px]">
+                  Votre session est connectée avec un compte normal. Vous pouvez déverrouiller vos privilèges d'administrateur ou d'équipe immédiatement :
+                </p>
+
+                <div className="flex flex-wrap gap-2 pt-1">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const res = promoteCurrentAccount('1234', 'admin');
+                      if (res.success) {
+                        showToast('👑 Privilèges Administrateur activés avec succès !');
+                        setAuthError(null);
+                      } else {
+                        setAuthError(res.error || "Erreur lors de l'activation.");
+                      }
+                    }}
+                    className="px-3.5 py-2 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-extrabold text-xs rounded-xl shadow-xs transition flex items-center gap-1.5 cursor-pointer"
+                  >
+                    <ShieldCheck className="w-4 h-4" />
+                    <span>👑 Déverrouiller mes droits Administrateur (1 Clic)</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setAuthMethod('passcode');
+                      setPasscodeInput('1234');
+                      setAuthError(null);
+                    }}
+                    className="px-3 py-2 bg-white hover:bg-amber-100 text-amber-950 font-bold text-xs rounded-xl border border-amber-300 transition flex items-center gap-1.5 cursor-pointer"
+                  >
+                    <Key className="w-3.5 h-3.5 text-amber-700" />
+                    <span>Code PIN (1234)</span>
+                  </button>
+                </div>
               </div>
             )}
 
@@ -335,9 +375,25 @@ export const AdminDashboard: React.FC = () => {
                       <Eye className="w-4 h-4" />
                     </button>
                   </div>
-                  <p className="text-[11px] text-slate-400 mt-1.5">
-                    Accès strictement réservé à la direction Parailaf Maroc.
-                  </p>
+                  <div className="flex items-center justify-between mt-2 pt-2 border-t border-slate-100">
+                    <span className="text-[11px] font-semibold text-slate-500">Codes PIN Master autorisés :</span>
+                    <div className="flex gap-1.5">
+                      <button
+                        type="button"
+                        onClick={() => { setPasscodeInput('1234'); setAuthError(null); }}
+                        className="px-2 py-0.5 bg-slate-100 hover:bg-red-50 text-slate-700 hover:text-red-700 rounded-md text-[11px] font-bold transition border border-slate-200 cursor-pointer"
+                      >
+                        1234
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => { setPasscodeInput('admin2026'); setAuthError(null); }}
+                        className="px-2 py-0.5 bg-slate-100 hover:bg-red-50 text-slate-700 hover:text-red-700 rounded-md text-[11px] font-bold transition border border-slate-200 cursor-pointer"
+                      >
+                        admin2026
+                      </button>
+                    </div>
+                  </div>
                 </div>
 
                 <button
@@ -356,14 +412,14 @@ export const AdminDashboard: React.FC = () => {
               <form onSubmit={handleVerifyCredentials} className="space-y-3.5">
                 <div>
                   <label className="block text-xs font-bold text-slate-700 mb-1">
-                    Email Administrateur
+                    Email ou Téléphone Staff
                   </label>
                   <div className="relative">
                     <input
-                      type="email"
+                      type="text"
                       value={adminEmailInput}
                       onChange={(e) => setAdminEmailInput(e.target.value)}
-                      placeholder="admin@exemple.com"
+                      placeholder="soulimani.oualid@gmail.com ou livreur@parailaf.ma"
                       className="w-full px-3.5 py-2.5 pl-10 bg-slate-50 border border-slate-300 rounded-xl text-xs font-semibold text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-red-600/30 focus:border-red-600 transition"
                     />
                     <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
@@ -372,7 +428,7 @@ export const AdminDashboard: React.FC = () => {
 
                 <div>
                   <label className="block text-xs font-bold text-slate-700 mb-1">
-                    Mot de passe Administrateur
+                    Mot de passe Staff
                   </label>
                   <div className="relative">
                     <input
@@ -389,6 +445,56 @@ export const AdminDashboard: React.FC = () => {
                       className="text-slate-400 hover:text-slate-600 absolute right-3.5 top-1/2 -translate-y-1/2 cursor-pointer"
                     >
                       <Eye className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+
+                <div className="pt-2 border-t border-slate-100">
+                  <p className="text-[11px] text-slate-500 font-semibold mb-1.5">Comptes d'équipe disponibles en 1 clic :</p>
+                  <div className="grid grid-cols-2 gap-1.5 text-[11px]">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setAdminEmailInput('soulimani.oualid@gmail.com');
+                        setAdminPasswordInput('admin2026');
+                        setAuthError(null);
+                      }}
+                      className="p-1.5 bg-slate-50 hover:bg-blue-50 border border-slate-200 rounded-lg text-left text-slate-700 font-medium transition cursor-pointer"
+                    >
+                      👑 <span className="font-bold">Admin Principal</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setAdminEmailInput('livreur@parailaf.ma');
+                        setAdminPasswordInput('livreur2026');
+                        setAuthError(null);
+                      }}
+                      className="p-1.5 bg-slate-50 hover:bg-amber-50 border border-slate-200 rounded-lg text-left text-slate-700 font-medium transition cursor-pointer"
+                    >
+                      🚚 <span className="font-bold">Livreur Express</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setAdminEmailInput('employe@parailaf.ma');
+                        setAdminPasswordInput('employe2026');
+                        setAuthError(null);
+                      }}
+                      className="p-1.5 bg-slate-50 hover:bg-emerald-50 border border-slate-200 rounded-lg text-left text-slate-700 font-medium transition cursor-pointer"
+                    >
+                      📦 <span className="font-bold">Employé Produits</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setAdminEmailInput('gerant@parailaf.ma');
+                        setAdminPasswordInput('gerant2026');
+                        setAuthError(null);
+                      }}
+                      className="p-1.5 bg-slate-50 hover:bg-indigo-50 border border-slate-200 rounded-lg text-left text-slate-700 font-medium transition cursor-pointer"
+                    >
+                      🏢 <span className="font-bold">Gérant Magasin</span>
                     </button>
                   </div>
                 </div>
