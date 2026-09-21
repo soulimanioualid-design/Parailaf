@@ -164,7 +164,27 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     if (item && item[language]) {
       return item[language];
     }
-    return fallback || item?.fr || key;
+    if (fallback) return fallback;
+    if (item && item.fr) return item.fr;
+
+    // Safety fallback dictionary for common button actions
+    const safetyMap: Record<string, { fr: string; ar: string }> = {
+      'product.add_to_cart': { fr: 'Ajouter au panier', ar: 'أضف إلى السلة' },
+      'product.added': { fr: 'Ajouté !', ar: 'تمت الإضافة !' },
+      'product.quick_buy': { fr: 'Commander', ar: 'طلب سريع' },
+      'product.details': { fr: 'Détails', ar: 'التفاصيل' },
+      'product.in_stock': { fr: 'En stock', ar: 'متوفر' },
+      'card.add_to_cart': { fr: 'Ajouter au panier', ar: 'أضف إلى السلة' },
+      'card.quick_order': { fr: 'Commander', ar: 'طلب سريع' },
+      'card.added': { fr: 'Ajouté !', ar: 'تمت الإضافة !' },
+      'common.dh': { fr: 'DH', ar: 'درهم' },
+    };
+
+    if (safetyMap[key]) {
+      return safetyMap[key][language] || safetyMap[key].fr;
+    }
+
+    return key;
   };
 
   const translateProduct = (product: Product): Product => {

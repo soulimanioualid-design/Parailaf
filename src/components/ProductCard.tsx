@@ -223,17 +223,17 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, viewMode = 'l
                 <span className={`font-black text-red-600 font-heading ${
                   isGrid ? 'text-lg sm:text-2xl' : 'text-2xl sm:text-3xl'
                 }`}>
-                  {product.price} <span className="text-xs sm:text-sm font-bold text-[#002f6c]">{t('common.dh')}</span>
+                  {product.price} <span className="text-xs sm:text-sm font-bold text-[#002f6c]">{t('common.dh', language === 'ar' ? 'درهم' : 'DH')}</span>
                 </span>
                 {product.originalPrice && (
                   <span className="text-[10px] sm:text-xs text-slate-400 line-through">
-                    {product.originalPrice} {t('common.dh')}
+                    {product.originalPrice} {t('common.dh', language === 'ar' ? 'درهم' : 'DH')}
                   </span>
                 )}
               </div>
               {!isGrid && product.originalPrice && (
                 <p className="text-[10px] font-extrabold text-amber-600">
-                  {language === 'ar' ? 'توفير : ' : 'Économie : '}{product.originalPrice - product.price} {t('common.dh')}
+                  {language === 'ar' ? 'توفير : ' : 'Économie : '}{product.originalPrice - product.price} {t('common.dh', language === 'ar' ? 'درهم' : 'DH')}
                 </p>
               )}
             </div>
@@ -259,12 +259,12 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, viewMode = 'l
                 {isAddedRecently ? (
                   <>
                     <Check className="w-3.5 h-3.5 text-amber-300" />
-                    <span>{t('product.added')}</span>
+                    <span>{t('product.added', language === 'ar' ? 'تمت الإضافة !' : 'Ajouté !')}</span>
                   </>
                 ) : (
                   <>
                     <ShoppingBag className="w-3.5 h-3.5 text-red-100" />
-                    <span>{t('product.add_to_cart')}</span>
+                    <span>{t('product.add_to_cart', language === 'ar' ? 'أضف إلى السلة' : 'Ajouter au panier')}</span>
                   </>
                 )}
               </button>
@@ -274,7 +274,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, viewMode = 'l
                   onClick={handleQuickBuy}
                   className="py-1 text-[10px] font-bold text-slate-800 hover:text-red-600 bg-slate-100 hover:bg-red-50 rounded-lg transition text-center truncate cursor-pointer"
                 >
-                  {t('product.quick_buy')}
+                  {t('product.quick_buy', language === 'ar' ? 'طلب سريع' : 'Commander')}
                 </button>
                 <button
                   onClick={handleWhatsAppBuy}
@@ -302,12 +302,12 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, viewMode = 'l
                   {isAddedRecently ? (
                     <>
                       <Check className="w-4 h-4 text-amber-300" />
-                      <span>{t('product.added')}</span>
+                      <span>{t('product.added', language === 'ar' ? 'تمت الإضافة !' : 'Ajouté !')}</span>
                     </>
                   ) : (
                     <>
                       <ShoppingBag className="w-4 h-4 text-red-100" />
-                      <span>{t('product.add_to_cart')}</span>
+                      <span>{t('product.add_to_cart', language === 'ar' ? 'أضف إلى السلة' : 'Ajouter au panier')}</span>
                     </>
                   )}
                 </button>
@@ -321,7 +321,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, viewMode = 'l
                   className="w-full py-2.5 px-3 rounded-xl font-bold text-xs border border-slate-300 hover:border-red-400 bg-white hover:bg-red-50 text-slate-800 transition-all flex items-center justify-center gap-1 cursor-pointer"
                 >
                   <Eye className="w-3.5 h-3.5 text-slate-500" />
-                  <span>{t('product.details')}</span>
+                  <span>{t('product.details', language === 'ar' ? 'التفاصيل' : 'Détails')}</span>
                 </button>
               </div>
 
@@ -331,7 +331,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, viewMode = 'l
                   onClick={handleQuickBuy}
                   className="w-full text-center py-1.5 text-[11px] font-bold text-slate-800 hover:text-red-600 bg-slate-100 hover:bg-red-50 rounded-lg transition cursor-pointer"
                 >
-                  {t('product.quick_buy')}
+                  {t('product.quick_buy', language === 'ar' ? 'طلب سريع' : 'Commander')}
                 </button>
                 <button
                   onClick={handleWhatsAppBuy}

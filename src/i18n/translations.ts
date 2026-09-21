@@ -242,7 +242,61 @@ export const TRANSLATIONS: TranslationDictionary = {
     ar: 'تفعيل الاشتراك الشهري عبر واتساب'
   },
 
-  // Product Card
+  // Common & Currency
+  'common.dh': {
+    fr: 'DH',
+    ar: 'درهم'
+  },
+
+  // Product Card & Actions
+  'product.add_to_cart': {
+    fr: 'Ajouter au panier',
+    ar: 'أضف إلى السلة'
+  },
+  'product.added': {
+    fr: 'Ajouté au panier !',
+    ar: 'تمت الإضافة !'
+  },
+  'product.quick_buy': {
+    fr: 'Commander',
+    ar: 'طلب سريع'
+  },
+  'product.details': {
+    fr: 'Détails',
+    ar: 'التفاصيل'
+  },
+  'product.in_stock': {
+    fr: 'En stock disponible',
+    ar: 'متوفر وجاهز للشحن'
+  },
+  'product.features': {
+    fr: 'Points forts & Avantages',
+    ar: 'المميزات الرئيسية'
+  },
+  'product.box_contents': {
+    fr: 'Contenu du coffret',
+    ar: 'محتويات العلبة'
+  },
+
+  // Filters & Sorting
+  'filter.popular': {
+    fr: 'Popularité / Recommandé',
+    ar: 'الأكثر شعبية وموصى به'
+  },
+  'filter.price_asc': {
+    fr: 'Prix : Croissant',
+    ar: 'السعر: تصاعدي'
+  },
+  'filter.price_desc': {
+    fr: 'Prix : Décroissant',
+    ar: 'السعر: تنازلي'
+  },
+  'filter.rating': {
+    fr: 'Mieux notés',
+    ar: 'الأعلى تقييماً'
+  },
+
+  // Product Card Legacy Aliases
   'card.in_stock': {
     fr: 'En stock',
     ar: 'متوفر'

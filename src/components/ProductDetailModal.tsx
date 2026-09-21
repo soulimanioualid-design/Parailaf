@@ -207,7 +207,7 @@ export const ProductDetailModal: React.FC = () => {
                     </span>
                   )}
                   <span className="text-xs font-bold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200 flex items-center gap-1">
-                    <Check className="w-3.5 h-3.5 text-emerald-600" /> {t('product.in_stock')}
+                    <Check className="w-3.5 h-3.5 text-emerald-600" /> {t('product.in_stock', language === 'ar' ? 'متوفر' : 'En stock')}
                   </span>
 
                   {hasAdminAccess && (
@@ -382,7 +382,7 @@ export const ProductDetailModal: React.FC = () => {
                 {/* Technical Specs List */}
                 <div className="mt-4 pt-3 border-t border-slate-100 space-y-1.5">
                   <p className="text-xs font-black text-slate-900 uppercase tracking-wide mb-2">
-                    {t('product.features')}
+                    {t('product.features', language === 'ar' ? 'المميزات الرئيسية' : 'Points forts & Avantages')}
                   </p>
                   {localizedProduct.specs?.duration && (
                     <div className="flex items-center justify-between text-xs py-1 border-b border-slate-100">
@@ -423,7 +423,7 @@ export const ProductDetailModal: React.FC = () => {
                   <div className="mt-4 p-3 bg-slate-100/70 rounded-xl border border-slate-200 text-xs">
                     <p className="font-bold text-[#002f6c] mb-1.5 flex items-center gap-1.5">
                       <Package className="w-3.5 h-3.5 text-red-600" />
-                      {t('product.box_contents')}
+                      {t('product.box_contents', language === 'ar' ? 'محتويات العلبة' : 'Contenu du coffret')}
                     </p>
                     <ul className="space-y-1 text-slate-700 font-medium">
                       {localizedProduct.boxContents.map((item, i) => (
@@ -472,12 +472,12 @@ export const ProductDetailModal: React.FC = () => {
                     {isAdded ? (
                       <>
                         <Check className="w-4 h-4 text-amber-300" />
-                        <span>{t('product.added')}</span>
+                        <span>{t('product.added', language === 'ar' ? 'تمت الإضافة !' : 'Ajouté !')}</span>
                       </>
                     ) : (
                       <>
                         <ShoppingBag className="w-4 h-4 text-red-100" />
-                        <span>{t('product.add_to_cart')}</span>
+                        <span>{t('product.add_to_cart', language === 'ar' ? 'أضف إلى السلة' : 'Ajouter au panier')}</span>
                       </>
                     )}
                   </button>
@@ -489,7 +489,7 @@ export const ProductDetailModal: React.FC = () => {
                     onClick={handleQuickBuy}
                     className="py-2.5 px-3 bg-[#002f6c] hover:bg-[#001f4d] text-white font-bold text-xs rounded-xl shadow-xs transition cursor-pointer"
                   >
-                    {t('product.quick_buy')}
+                    {t('product.quick_buy', language === 'ar' ? 'طلب سريع' : 'Commander')}
                   </button>
 
                   <button

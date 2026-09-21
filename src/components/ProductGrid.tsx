@@ -150,10 +150,10 @@ export const ProductGrid: React.FC = () => {
                 onChange={(e) => setSortBy(e.target.value as any)}
                 className="bg-slate-100 border border-slate-200 text-xs sm:text-sm font-bold text-slate-700 rounded-xl px-2.5 py-1.5 sm:px-3 sm:py-2 focus:outline-none focus:ring-2 focus:ring-red-500"
               >
-                <option value="popular">{t('filter.popular')}</option>
-                <option value="price-asc">{t('filter.price_asc')}</option>
-                <option value="price-desc">{t('filter.price_desc')}</option>
-                <option value="rating">{t('filter.rating')}</option>
+                <option value="popular">{t('filter.popular', language === 'ar' ? 'الأكثر طلباً وموصى به' : 'Popularité / Recommandé')}</option>
+                <option value="price-asc">{t('filter.price_asc', language === 'ar' ? 'السعر : تصاعدي' : 'Prix : Croissant')}</option>
+                <option value="price-desc">{t('filter.price_desc', language === 'ar' ? 'السعر : تنازلي' : 'Prix : Décroissant')}</option>
+                <option value="rating">{t('filter.rating', language === 'ar' ? 'الأعلى تقييماً' : 'Mieux notés')}</option>
               </select>
             </div>
 
