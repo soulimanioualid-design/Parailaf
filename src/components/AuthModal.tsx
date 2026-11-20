@@ -94,7 +94,8 @@ export const AuthModal: React.FC = () => {
     }
 
     if (isStaffReg && (!regPasscode || !['1234', 'admin2026', 'parailaf2026', 'admin123'].includes(regPasscode.trim()))) {
-      setRegError(language === 'ar' ? 'رمز الأمان الخاص بالفريق غير صحيح (استخدم 1234)' : "Code de sécurité d'équipe incorrect (utilisez le code PIN Master 1234).");
+      setRegError(language === 'ar' ? 'رمز أمان الفريق غير صحيح.' : "Code de sécurité d'équipe incorrect.");
+      setIsRegistering(false);
       return;
     }
 
@@ -269,7 +270,7 @@ export const AuthModal: React.FC = () => {
                 </button>
 
                 {/* Switch to Register */}
-                <div className="text-center pt-2 text-xs text-slate-600">
+                <div className="text-center pt-3 text-xs text-slate-600">
                   <span>{language === 'ar' ? 'ليس لديك حساب بعد؟ ' : 'Pas encore de compte ? '}</span>
                   <button
                     type="button"
@@ -281,67 +282,6 @@ export const AuthModal: React.FC = () => {
                   >
                     {language === 'ar' ? 'إنشاء حساب في 30 ثانية' : 'Créer un compte en 30 secondes'}
                   </button>
-                </div>
-
-                {/* Quick Demo Accounts Helper */}
-                <div className="mt-4 pt-3 border-t border-slate-100 bg-slate-50/80 -mx-5 -mb-5 p-3.5 rounded-b-3xl">
-                  <div className="flex items-center justify-between mb-2">
-                    <p className="text-[11px] font-bold text-slate-600 uppercase tracking-wider flex items-center gap-1">
-                      <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
-                      {language === 'ar' ? 'حسابات تجريبية سريعة بنقرة واحدة :' : 'Comptes pré-configurés (clic direct) :'}
-                    </p>
-                    <span className="text-[10px] text-slate-400 font-semibold">Test instantané</span>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-1.5 text-xs">
-                    <button
-                      type="button"
-                      onClick={() => fillQuickDemo('soulimani.oualid@gmail.com', 'admin2026')}
-                      className="p-2 bg-white rounded-xl border border-blue-200 hover:border-blue-400 hover:bg-blue-50/50 transition text-left cursor-pointer group shadow-xs"
-                    >
-                      <p className="font-extrabold text-[#002f6c] text-[11px] flex items-center gap-1">
-                        👑 Admin Principal
-                      </p>
-                      <p className="text-[10px] text-slate-500 truncate">soulimani.oualid...</p>
-                      <span className="text-[9px] font-mono text-emerald-700 font-bold">admin2026</span>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => fillQuickDemo('livreur@parailaf.ma', 'livreur2026')}
-                      className="p-2 bg-white rounded-xl border border-amber-200 hover:border-amber-400 hover:bg-amber-50/50 transition text-left cursor-pointer group shadow-xs"
-                    >
-                      <p className="font-extrabold text-amber-900 text-[11px] flex items-center gap-1">
-                        🚚 Livreur Express
-                      </p>
-                      <p className="text-[10px] text-slate-500 truncate">livreur@parailaf.ma</p>
-                      <span className="text-[9px] font-mono text-amber-700 font-bold">livreur2026</span>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => fillQuickDemo('employe@parailaf.ma', 'employe2026')}
-                      className="p-2 bg-white rounded-xl border border-emerald-200 hover:border-emerald-400 hover:bg-emerald-50/50 transition text-left cursor-pointer group shadow-xs"
-                    >
-                      <p className="font-extrabold text-emerald-900 text-[11px] flex items-center gap-1">
-                        📦 Employé Catalogue
-                      </p>
-                      <p className="text-[10px] text-slate-500 truncate">employe@parailaf.ma</p>
-                      <span className="text-[9px] font-mono text-emerald-700 font-bold">employe2026</span>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => fillQuickDemo('fatima.bennani@gmail.com', 'maroc2026')}
-                      className="p-2 bg-white rounded-xl border border-slate-200 hover:border-slate-400 hover:bg-slate-50 transition text-left cursor-pointer group shadow-xs"
-                    >
-                      <p className="font-extrabold text-slate-900 text-[11px] flex items-center gap-1">
-                        👤 Compte Client
-                      </p>
-                      <p className="text-[10px] text-slate-500 truncate">fatima.bennani...</p>
-                      <span className="text-[9px] font-mono text-slate-600 font-bold">maroc2026</span>
-                    </button>
-                  </div>
                 </div>
               </form>
             )}
@@ -523,17 +463,17 @@ export const AuthModal: React.FC = () => {
 
                       <div>
                         <label className="block text-[11px] font-bold text-amber-900 mb-1">
-                          {language === 'ar' ? 'رمز أمان الإدارة (PIN Master) :' : 'Code PIN Master (ex: 1234) :'}
+                          {language === 'ar' ? 'رمز أمان الإدارة (PIN) :' : 'Code PIN de validation d\'équipe :'}
                         </label>
                         <input
                           type="password"
                           value={regPasscode}
                           onChange={(e) => setRegPasscode(e.target.value)}
-                          placeholder="Entrez 1234 ou admin2026"
+                          placeholder="••••••••"
                           className="w-full px-2.5 py-1.5 bg-white border border-amber-300 rounded-lg text-xs font-mono font-bold text-slate-800 focus:outline-none"
                         />
                         <p className="text-[10px] text-amber-800 mt-1">
-                          Code Master requis : <strong>1234</strong> ou <strong>admin2026</strong>.
+                          {language === 'ar' ? 'رمز أمان سري مخصص لأعضاء الفريق المعتمدين.' : 'Code de sécurité confidentiel fourni par la direction.'}
                         </p>
                       </div>
                     </div>

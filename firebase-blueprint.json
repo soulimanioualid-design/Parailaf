@@ -59,6 +59,57 @@
       "title": "SiteSettings",
       "description": "Stores general site configuration including language toggles.",
       "type": "object"
+    },
+    "BlogArticle": {
+      "title": "BlogArticle",
+      "description": "Educational advice article on diabetes management and FreeStyle Libre sensor usage.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "slug": { "type": "string", "maxLength": 150 },
+        "title": { "type": "string", "maxLength": 200 },
+        "titleAr": { "type": "string", "maxLength": 200 },
+        "excerpt": { "type": "string", "maxLength": 450 },
+        "excerptAr": { "type": "string", "maxLength": 450 },
+        "content": { "type": "string", "maxLength": 12000 },
+        "contentAr": { "type": "string", "maxLength": 12000 },
+        "category": { "type": "string", "enum": ["capteurs-freestyle", "gestion-diabete", "nutrition-maroc", "astuces-quotidien"] },
+        "categoryLabel": { "type": "string", "maxLength": 80 },
+        "categoryLabelAr": { "type": "string", "maxLength": 80 },
+        "readTimeMinutes": { "type": "number" },
+        "author": { "type": "string", "maxLength": 100 },
+        "authorRole": { "type": "string", "maxLength": 120 },
+        "publishedAt": { "type": "string", "maxLength": 40 },
+        "image": { "type": "string", "maxLength": 600 },
+        "imageKey": { "type": "string", "maxLength": 100 },
+        "imageAlt": { "type": "string", "maxLength": 220 },
+        "relatedProductId": { "type": "string", "maxLength": 128 },
+        "tags": { "type": "array" },
+        "keyTakeaways": { "type": "array" },
+        "keyTakeawaysAr": { "type": "array" },
+        "featured": { "type": "boolean" },
+        "published": { "type": "boolean" },
+        "sortOrder": { "type": "number" },
+        "updatedAt": { "type": "string", "maxLength": 40 }
+      },
+      "required": [
+        "id",
+        "slug",
+        "title",
+        "excerpt",
+        "content",
+        "category",
+        "categoryLabel",
+        "readTimeMinutes",
+        "author",
+        "authorRole",
+        "publishedAt",
+        "image",
+        "imageAlt",
+        "tags",
+        "published",
+        "sortOrder"
+      ]
     }
   },
   "firestore": {
@@ -81,6 +132,10 @@
     "/settings/{settingId}": {
       "schema": { "$ref": "#/entities/SiteSettings" },
       "description": "Stores site settings and language enablement."
+    },
+    "/blog_articles/{articleId}": {
+      "schema": { "$ref": "#/entities/BlogArticle" },
+      "description": "Stores diabetes management and FreeStyle Libre advice articles."
     }
   }
 }

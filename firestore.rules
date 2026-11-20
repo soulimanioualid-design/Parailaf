@@ -93,5 +93,54 @@ service cloud.firestore {
       allow read: if true;
       allow write: if isValidId(settingId);
     }
+
+    function isValidBlogArticle(data) {
+      return data.keys().hasAll([
+          'id', 'slug', 'title', 'excerpt', 'content', 'category', 'categoryLabel',
+          'readTimeMinutes', 'author', 'authorRole', 'publishedAt', 'image', 'imageAlt',
+          'tags', 'published', 'sortOrder'
+        ])
+        && data.keys().hasOnly([
+          'id', 'slug', 'title', 'titleAr', 'excerpt', 'excerptAr', 'content', 'contentAr',
+          'category', 'categoryLabel', 'categoryLabelAr', 'readTimeMinutes', 'author', 'authorRole',
+          'publishedAt', 'image', 'imageKey', 'imageAlt', 'relatedProductId', 'tags',
+          'keyTakeaways', 'keyTakeawaysAr', 'featured', 'published', 'sortOrder', 'updatedAt'
+        ])
+        && isValidId(data.id)
+        && data.slug is string && data.slug.size() <= 150
+        && data.title is string && data.title.size() >= 3 && data.title.size() <= 200
+        && data.excerpt is string && data.excerpt.size() <= 450
+        && data.content is string && data.content.size() <= 12000
+        && data.category in ['capteurs-freestyle', 'gestion-diabete', 'nutrition-maroc', 'astuces-quotidien']
+        && data.categoryLabel is string && data.categoryLabel.size() <= 80
+        && data.readTimeMinutes is number && data.readTimeMinutes >= 1 && data.readTimeMinutes <= 60
+        && data.author is string && data.author.size() <= 100
+        && data.authorRole is string && data.authorRole.size() <= 120
+        && data.publishedAt is string && data.publishedAt.size() <= 40
+        && data.image is string && data.image.size() <= 600
+        && data.imageAlt is string && data.imageAlt.size() <= 220
+        && data.tags is list && data.tags.size() <= 8
+        && (data.tags.size() == 0 || data.tags[0] is string)
+        && data.published is bool
+        && data.sortOrder is number
+        && (!("titleAr" in data) || (data.titleAr is string && data.titleAr.size() <= 200))
+        && (!("excerptAr" in data) || (data.excerptAr is string && data.excerptAr.size() <= 450))
+        && (!("contentAr" in data) || (data.contentAr is string && data.contentAr.size() <= 12000))
+        && (!("categoryLabelAr" in data) || (data.categoryLabelAr is string && data.categoryLabelAr.size() <= 80))
+        && (!("imageKey" in data) || (data.imageKey is string && data.imageKey.size() <= 100))
+        && (!("relatedProductId" in data) || (data.relatedProductId is string && data.relatedProductId.size() <= 128))
+        && (!("keyTakeaways" in data) || (data.keyTakeaways is list && data.keyTakeaways.size() <= 8 && (data.keyTakeaways.size() == 0 || data.keyTakeaways[0] is string)))
+        && (!("keyTakeawaysAr" in data) || (data.keyTakeawaysAr is list && data.keyTakeawaysAr.size() <= 8 && (data.keyTakeawaysAr.size() == 0 || data.keyTakeawaysAr[0] is string)))
+        && (!("featured" in data) || data.featured is bool)
+        && (!("updatedAt" in data) || (data.updatedAt is string && data.updatedAt.size() <= 40));
+    }
+
+    match /blog_articles/{articleId} {
+      allow get: if isValidId(articleId) && (existing().published == true || isAdmin());
+      allow list: if resource.data.published == true || (isSignedIn() && request.auth.token.email == 'soulimani.oualid@gmail.com' && request.auth.token.email_verified == true);
+      allow create: if isValidId(articleId) && isAdmin() && isValidBlogArticle(incoming());
+      allow update: if isValidId(articleId) && isAdmin() && isValidBlogArticle(incoming());
+      allow delete: if isValidId(articleId) && isAdmin();
+    }
   }
 }

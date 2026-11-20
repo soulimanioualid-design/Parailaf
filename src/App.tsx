@@ -9,6 +9,7 @@ import { ProductGrid } from './components/ProductGrid';
 import { FreeStyleGuideSection } from './components/FreeStyleGuideSection';
 import { AdvantagesSection } from './components/AdvantagesSection';
 import { VideoSection } from './components/VideoSection';
+import { BlogSection } from './components/BlogSection';
 import { WhyUsSection } from './components/WhyUsSection';
 import { SoloPromoFlyerSection } from './components/SoloPromoFlyerSection';
 import { TestimonialsSection } from './components/TestimonialsSection';
@@ -64,6 +65,9 @@ export default function App() {
 
             {/* Video Demonstration Section */}
             <VideoSection />
+
+            {/* Blog & Conseils Diabète / FreeStyle Libre (Firestore) */}
+            <BlogSection />
 
             {/* Why Order From Us (Reassurance) */}
             <WhyUsSection />

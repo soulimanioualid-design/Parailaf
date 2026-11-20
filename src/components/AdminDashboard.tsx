@@ -36,7 +36,8 @@ import {
   Briefcase,
   Layers,
   UserCheck,
-  MapPin
+  MapPin,
+  BookOpen
 } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 import { useAuth, ROLE_CONFIGS, AdminTab } from '../context/AuthContext';
@@ -53,6 +54,7 @@ import {
 import { AdminMediaManager } from './AdminMediaManager';
 import { AdminProductManager } from './AdminProductManager';
 import { AdminLanguageManager } from './AdminLanguageManager';
+import { AdminBlogManager } from './AdminBlogManager';
 
 export const AdminDashboard: React.FC = () => {
   const { 
@@ -276,41 +278,35 @@ export const AdminDashboard: React.FC = () => {
                   </span>
                 </div>
 
-                <p className="text-amber-900 leading-relaxed text-[11px]">
-                  Votre session est connectée avec un compte normal. Vous pouvez déverrouiller vos privilèges d'administrateur ou d'équipe immédiatement :
-                </p>
-
-                <div className="flex flex-wrap gap-2 pt-1">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const res = promoteCurrentAccount('1234', 'admin');
-                      if (res.success) {
-                        showToast('👑 Privilèges Administrateur activés avec succès !');
-                        setAuthError(null);
-                      } else {
-                        setAuthError(res.error || "Erreur lors de l'activation.");
-                      }
-                    }}
-                    className="px-3.5 py-2 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-extrabold text-xs rounded-xl shadow-xs transition flex items-center gap-1.5 cursor-pointer"
-                  >
-                    <ShieldCheck className="w-4 h-4" />
-                    <span>👑 Déverrouiller mes droits Administrateur (1 Clic)</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setAuthMethod('passcode');
-                      setPasscodeInput('1234');
-                      setAuthError(null);
-                    }}
-                    className="px-3 py-2 bg-white hover:bg-amber-100 text-amber-950 font-bold text-xs rounded-xl border border-amber-300 transition flex items-center gap-1.5 cursor-pointer"
-                  >
-                    <Key className="w-3.5 h-3.5 text-amber-700" />
-                    <span>Code PIN (1234)</span>
-                  </button>
-                </div>
+                {isPrimaryAdmin(currentUser) ? (
+                  <>
+                    <p className="text-amber-900 leading-relaxed text-[11px]">
+                      Votre compte administrateur est reconnu. Vous pouvez déverrouiller vos privilèges d'administration :
+                    </p>
+                    <div className="pt-1">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const res = promoteCurrentAccount('1234', 'admin');
+                          if (res.success) {
+                            showToast('👑 Privilèges Administrateur activés avec succès !');
+                            setAuthError(null);
+                          } else {
+                            setAuthError(res.error || "Erreur lors de l'activation.");
+                          }
+                        }}
+                        className="px-3.5 py-2 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-extrabold text-xs rounded-xl shadow-xs transition flex items-center gap-1.5 cursor-pointer"
+                      >
+                        <ShieldCheck className="w-4 h-4" />
+                        <span>👑 Déverrouiller mes droits Administrateur</span>
+                      </button>
+                    </div>
+                  </>
+                ) : (
+                  <p className="text-amber-900 leading-relaxed text-[11px]">
+                    Ce compte client ne dispose pas de droits d'accès à l'administration. Veuillez vous connecter avec un compte d'équipe autorisé ou saisir votre code de sécurité PIN.
+                  </p>
+                )}
               </div>
             )}
 
@@ -362,9 +358,9 @@ export const AdminDashboard: React.FC = () => {
                       type={showPassword ? 'text' : 'password'}
                       value={passcodeInput}
                       onChange={(e) => setPasscodeInput(e.target.value)}
-                      placeholder="Saisissez le code PIN administrateur..."
+                      placeholder="••••••••"
                       autoFocus
-                      className="w-full px-4 py-2.5 pl-10 pr-10 bg-slate-50 border border-slate-300 rounded-xl text-sm font-bold text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-red-600/30 focus:border-red-600 transition"
+                      className="w-full px-4 py-2.5 pl-10 pr-10 bg-slate-50 border border-slate-300 rounded-xl text-sm font-bold text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-red-600/30 focus:border-red-600 transition tracking-wider"
                     />
                     <Lock className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
                     <button
@@ -375,25 +371,9 @@ export const AdminDashboard: React.FC = () => {
                       <Eye className="w-4 h-4" />
                     </button>
                   </div>
-                  <div className="flex items-center justify-between mt-2 pt-2 border-t border-slate-100">
-                    <span className="text-[11px] font-semibold text-slate-500">Codes PIN Master autorisés :</span>
-                    <div className="flex gap-1.5">
-                      <button
-                        type="button"
-                        onClick={() => { setPasscodeInput('1234'); setAuthError(null); }}
-                        className="px-2 py-0.5 bg-slate-100 hover:bg-red-50 text-slate-700 hover:text-red-700 rounded-md text-[11px] font-bold transition border border-slate-200 cursor-pointer"
-                      >
-                        1234
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => { setPasscodeInput('admin2026'); setAuthError(null); }}
-                        className="px-2 py-0.5 bg-slate-100 hover:bg-red-50 text-slate-700 hover:text-red-700 rounded-md text-[11px] font-bold transition border border-slate-200 cursor-pointer"
-                      >
-                        admin2026
-                      </button>
-                    </div>
-                  </div>
+                  <p className="text-[11px] text-slate-500 mt-2">
+                    Accès strictement réservé au personnel et à la direction Parailaf Maroc.
+                  </p>
                 </div>
 
                 <button
@@ -419,7 +399,7 @@ export const AdminDashboard: React.FC = () => {
                       type="text"
                       value={adminEmailInput}
                       onChange={(e) => setAdminEmailInput(e.target.value)}
-                      placeholder="soulimani.oualid@gmail.com ou livreur@parailaf.ma"
+                      placeholder="Identifiant staff..."
                       className="w-full px-3.5 py-2.5 pl-10 bg-slate-50 border border-slate-300 rounded-xl text-xs font-semibold text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-red-600/30 focus:border-red-600 transition"
                     />
                     <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
@@ -445,56 +425,6 @@ export const AdminDashboard: React.FC = () => {
                       className="text-slate-400 hover:text-slate-600 absolute right-3.5 top-1/2 -translate-y-1/2 cursor-pointer"
                     >
                       <Eye className="w-4 h-4" />
-                    </button>
-                  </div>
-                </div>
-
-                <div className="pt-2 border-t border-slate-100">
-                  <p className="text-[11px] text-slate-500 font-semibold mb-1.5">Comptes d'équipe disponibles en 1 clic :</p>
-                  <div className="grid grid-cols-2 gap-1.5 text-[11px]">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setAdminEmailInput('soulimani.oualid@gmail.com');
-                        setAdminPasswordInput('admin2026');
-                        setAuthError(null);
-                      }}
-                      className="p-1.5 bg-slate-50 hover:bg-blue-50 border border-slate-200 rounded-lg text-left text-slate-700 font-medium transition cursor-pointer"
-                    >
-                      👑 <span className="font-bold">Admin Principal</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setAdminEmailInput('livreur@parailaf.ma');
-                        setAdminPasswordInput('livreur2026');
-                        setAuthError(null);
-                      }}
-                      className="p-1.5 bg-slate-50 hover:bg-amber-50 border border-slate-200 rounded-lg text-left text-slate-700 font-medium transition cursor-pointer"
-                    >
-                      🚚 <span className="font-bold">Livreur Express</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setAdminEmailInput('employe@parailaf.ma');
-                        setAdminPasswordInput('employe2026');
-                        setAuthError(null);
-                      }}
-                      className="p-1.5 bg-slate-50 hover:bg-emerald-50 border border-slate-200 rounded-lg text-left text-slate-700 font-medium transition cursor-pointer"
-                    >
-                      📦 <span className="font-bold">Employé Produits</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setAdminEmailInput('gerant@parailaf.ma');
-                        setAdminPasswordInput('gerant2026');
-                        setAuthError(null);
-                      }}
-                      className="p-1.5 bg-slate-50 hover:bg-indigo-50 border border-slate-200 rounded-lg text-left text-slate-700 font-medium transition cursor-pointer"
-                    >
-                      🏢 <span className="font-bold">Gérant Magasin</span>
                     </button>
                   </div>
                 </div>
@@ -748,6 +678,22 @@ export const AdminDashboard: React.FC = () => {
             </button>
           )}
 
+          {canAccessTab('blog') && (
+            <button
+              onClick={() => setActiveTab('blog')}
+              className={`w-full flex items-center justify-between px-4 py-3 rounded-xl text-sm font-bold transition-all cursor-pointer ${
+                activeTab === 'blog'
+                  ? 'bg-red-600 text-white shadow-md'
+                  : 'text-blue-100 hover:bg-white/10 hover:text-white'
+              }`}
+            >
+              <div className="flex items-center gap-3">
+                <BookOpen className="w-5 h-5" />
+                <span>Blog & Conseils</span>
+              </div>
+            </button>
+          )}
+
           {(canAccessTab('new-order') || canAccessTab('email') || canAccessTab('employees') || canAccessTab('languages')) && (
             <div className="text-[10px] font-bold text-blue-300/70 uppercase tracking-widest mt-8 mb-3 px-3">Outils & Paramètres</div>
           )}
@@ -881,6 +827,7 @@ export const AdminDashboard: React.FC = () => {
                 {activeTab === 'email' && 'Notifications Email'}
                 {activeTab === 'new-order' && 'Nouvelle Commande'}
                 {activeTab === 'languages' && 'Gestion des Langues'}
+                {activeTab === 'blog' && 'Blog & Conseils'}
               </h1>
               <p className="text-[10px] text-slate-400 font-medium">Panneau Administrateur</p>
             </div>
@@ -896,6 +843,7 @@ export const AdminDashboard: React.FC = () => {
               {activeTab === 'email' && 'Configuration Notifications'}
               {activeTab === 'employees' && 'Gestion des Employés'}
               {activeTab === 'languages' && 'Activation & Désactivation des Langues'}
+              {activeTab === 'blog' && 'Gestion des Articles Conseils (Firestore)'}
             </h2>
           </div>
 
@@ -987,6 +935,20 @@ export const AdminDashboard: React.FC = () => {
             >
               <ImageIcon className="w-4 h-4 text-inherit" />
               <span>Médias</span>
+            </button>
+          )}
+
+          {canAccessTab('blog') && (
+            <button
+              onClick={() => setActiveTab('blog')}
+              className={`flex items-center gap-1.5 py-2 px-3 rounded-xl font-bold text-xs whitespace-nowrap transition-all shrink-0 cursor-pointer ${
+                activeTab === 'blog' 
+                  ? 'bg-red-600 text-white shadow-sm' 
+                  : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+              }`}
+            >
+              <BookOpen className="w-4 h-4 text-inherit" />
+              <span>Blog</span>
             </button>
           )}
 
@@ -1973,6 +1935,11 @@ export const AdminDashboard: React.FC = () => {
           {/* TAB 7: LANGUAGES ACTIVATION / DEACTIVATION */}
           {activeTab === 'languages' && (
             <AdminLanguageManager />
+          )}
+
+          {/* TAB 8: BLOG & CONSEILS FIRESTORE */}
+          {activeTab === 'blog' && (
+            <AdminBlogManager />
           )}
 
         </div>

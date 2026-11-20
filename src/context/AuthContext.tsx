@@ -3,7 +3,7 @@ import { User, StoredUserAccount, UserRole } from '../types';
 import { db } from '../utils/firebase';
 import { doc, onSnapshot, setDoc } from 'firebase/firestore';
 
-export type AdminTab = 'orders' | 'email' | 'analytics' | 'new-order' | 'media' | 'employees' | 'products' | 'languages';
+export type AdminTab = 'orders' | 'email' | 'analytics' | 'new-order' | 'media' | 'employees' | 'products' | 'languages' | 'blog';
 
 export interface RoleConfig {
   role: UserRole;
@@ -34,7 +34,7 @@ export const ROLE_CONFIGS: Record<UserRole, RoleConfig> = {
     description: 'Accès total à tous les modules : commandes, produits, bannières, statistiques, gestion des employés et réglages système.',
     badgeClass: 'bg-red-600 text-white',
     iconName: 'ShieldAlert',
-    allowedTabs: ['orders', 'new-order', 'products', 'media', 'analytics', 'employees', 'languages', 'email'],
+    allowedTabs: ['orders', 'new-order', 'products', 'media', 'blog', 'analytics', 'employees', 'languages', 'email'],
     canEditProducts: true,
     canManageOrders: true,
     canCreateManualOrders: true,
@@ -52,7 +52,7 @@ export const ROLE_CONFIGS: Record<UserRole, RoleConfig> = {
     description: 'Gestion globale des opérations : suivi des commandes, catalogue produits, bannières et statistiques de vente.',
     badgeClass: 'bg-indigo-600 text-white',
     iconName: 'Briefcase',
-    allowedTabs: ['orders', 'new-order', 'products', 'media', 'analytics'],
+    allowedTabs: ['orders', 'new-order', 'products', 'media', 'blog', 'analytics'],
     canEditProducts: true,
     canManageOrders: true,
     canCreateManualOrders: true,
@@ -606,7 +606,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (!MASTER_ADMIN_PASSCODES.includes(cleanPin) && !isPrimaryAdminAccount(currentUser)) {
       return { 
         success: false, 
-        error: 'Code PIN invalide. Utilisez le code PIN Master (1234 ou admin2026).' 
+        error: 'Code PIN de sécurité invalide.' 
       };
     }
 
@@ -750,7 +750,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           // It's a customer account with correct password
           return {
             success: false,
-            error: "Ce compte existe mais possède le rôle « Client ». Utilisez l'onglet « Code de sécurité (PIN) » avec le code 1234 pour déverrouiller et activer vos droits Administrateur."
+            error: "Ce compte possède le rôle « Client ». Veuillez vous connecter avec un compte équipe autorisé ou utiliser votre code PIN de sécurité."
           };
         }
       } else {
@@ -763,7 +763,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     return { 
       success: false, 
-      error: "Identifiants introuvables. Utilisez le Code PIN Master (1234) dans le premier onglet pour un accès direct." 
+      error: "Identifiants introuvables. Veuillez vérifier votre adresse email et mot de passe." 
     };
   };
 

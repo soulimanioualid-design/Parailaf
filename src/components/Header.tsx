@@ -269,13 +269,19 @@ export const Header: React.FC<HeaderProps> = ({ onOpenAbout, onOpenContact }) =>
 
             <button 
               onClick={() => handleNavClick('guide-freestyle')} 
-              className="px-3 py-2 rounded-lg hover:bg-red-50 hover:text-red-600 transition cursor-pointer"
+              className="px-3 py-2 rounded-lg hover:bg-red-50 hover:text-red-600 transition cursor-pointer whitespace-nowrap shrink-0"
             >
               {t('nav.guide')}
             </button>
             <button 
+              onClick={() => handleNavClick('blog-conseils')} 
+              className="px-3 py-2 rounded-lg hover:bg-red-50 hover:text-red-600 transition cursor-pointer whitespace-nowrap shrink-0"
+            >
+              {language === 'ar' ? 'نصائح ومقالات' : 'Blog & Conseils'}
+            </button>
+            <button 
               onClick={onOpenAbout} 
-              className="px-3 py-2 rounded-lg hover:bg-red-50 hover:text-red-600 transition cursor-pointer"
+              className="px-3 py-2 rounded-lg hover:bg-red-50 hover:text-red-600 transition cursor-pointer whitespace-nowrap shrink-0"
             >
               {t('nav.about')}
             </button>
@@ -575,6 +581,14 @@ export const Header: React.FC<HeaderProps> = ({ onOpenAbout, onOpenContact }) =>
                     className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-sm text-slate-700 hover:bg-slate-100 cursor-pointer"
                   >
                     <span>{t('nav.guide')}</span>
+                    <ChevronRight className={`w-4 h-4 text-slate-400 ${isRTL ? 'rotate-180' : ''}`} />
+                  </button>
+
+                  <button
+                    onClick={() => handleNavClick('blog-conseils')}
+                    className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-sm text-slate-700 hover:bg-slate-100 cursor-pointer"
+                  >
+                    <span>{language === 'ar' ? 'نصائح ومقالات السكري' : 'Blog & Conseils Diabète'}</span>
                     <ChevronRight className={`w-4 h-4 text-slate-400 ${isRTL ? 'rotate-180' : ''}`} />
                   </button>
 

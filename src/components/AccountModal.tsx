@@ -57,7 +57,7 @@ export const AccountModal: React.FC = () => {
 
   // Staff promotion state for normal customer accounts
   const [showPromoteBox, setShowPromoteBox] = useState(!hasStaffOrAdminAccess && isPrimaryAdmin(currentUser));
-  const [promotePin, setPromotePin] = useState('1234');
+  const [promotePin, setPromotePin] = useState('');
   const [promoteRole, setPromoteRole] = useState<'admin' | 'manager' | 'employee' | 'delivery'>('admin');
   const [promoteError, setPromoteError] = useState<string | null>(null);
   const [promoteSuccessMsg, setPromoteSuccessMsg] = useState<string | null>(null);
@@ -407,13 +407,13 @@ export const AccountModal: React.FC = () => {
 
                   <div>
                     <label className="block text-[11px] font-bold text-amber-900 mb-1">
-                      {language === 'ar' ? 'رمز الأمان (PIN: 1234) :' : 'Code PIN Master (1234) :'}
+                      {language === 'ar' ? 'رمز أمان الإدارة (PIN) :' : 'Code PIN de Sécurité :'}
                     </label>
                     <input
                       type="password"
                       value={promotePin}
                       onChange={(e) => setPromotePin(e.target.value)}
-                      placeholder="1234 ou admin2026"
+                      placeholder="••••••••"
                       className="w-full px-3 py-2 bg-white border border-amber-300 rounded-xl text-xs font-mono font-bold text-slate-800 focus:outline-none"
                     />
                   </div>

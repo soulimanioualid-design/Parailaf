@@ -42,11 +42,11 @@ interface CartContextType {
   setIsCheckoutOpen: (open: boolean) => void;
   isAdminOpen: boolean;
   setIsAdminOpen: (open: boolean) => void;
-  adminActiveTab: 'orders' | 'email' | 'analytics' | 'new-order' | 'media' | 'employees' | 'products' | 'languages';
-  setAdminActiveTab: (tab: 'orders' | 'email' | 'analytics' | 'new-order' | 'media' | 'employees' | 'products' | 'languages') => void;
+  adminActiveTab: 'orders' | 'email' | 'analytics' | 'new-order' | 'media' | 'employees' | 'products' | 'languages' | 'blog';
+  setAdminActiveTab: (tab: 'orders' | 'email' | 'analytics' | 'new-order' | 'media' | 'employees' | 'products' | 'languages' | 'blog') => void;
   adminEditingProductId: string | null;
   setAdminEditingProductId: (id: string | null) => void;
-  openAdmin: (tab?: 'orders' | 'email' | 'analytics' | 'new-order' | 'media' | 'employees' | 'products' | 'languages', productId?: string | null) => void;
+  openAdmin: (tab?: 'orders' | 'email' | 'analytics' | 'new-order' | 'media' | 'employees' | 'products' | 'languages' | 'blog', productId?: string | null) => void;
   quickBuyProduct: Product | null;
   setQuickBuyProduct: (product: Product | null) => void;
   selectedProductForModal: Product | null;
@@ -415,12 +415,12 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
   const [isAdminOpen, setIsAdminOpen] = useState(false);
-  const [adminActiveTab, setAdminActiveTab] = useState<'orders' | 'email' | 'analytics' | 'new-order' | 'media' | 'employees' | 'products' | 'languages'>('orders');
+  const [adminActiveTab, setAdminActiveTab] = useState<'orders' | 'email' | 'analytics' | 'new-order' | 'media' | 'employees' | 'products' | 'languages' | 'blog'>('orders');
 
   const [adminEditingProductId, setAdminEditingProductId] = useState<string | null>(null);
 
   const openAdmin = (
-    tab: 'orders' | 'email' | 'analytics' | 'new-order' | 'media' | 'employees' | 'products' | 'languages' = 'orders',
+    tab: 'orders' | 'email' | 'analytics' | 'new-order' | 'media' | 'employees' | 'products' | 'languages' | 'blog' = 'orders',
     productId?: string | null
   ) => {
     setAdminActiveTab(tab);

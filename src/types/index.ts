@@ -135,3 +135,39 @@ export interface BrandConfig {
   ifNumber: string;
   taxePro: string;
 }
+
+export type BlogCategory =
+  | 'capteurs-freestyle'
+  | 'gestion-diabete'
+  | 'nutrition-maroc'
+  | 'astuces-quotidien';
+
+export interface BlogArticle {
+  id: string;
+  slug: string;
+  title: string;
+  titleAr?: string;
+  excerpt: string;
+  excerptAr?: string;
+  content: string;
+  contentAr?: string;
+  category: BlogCategory;
+  categoryLabel: string;
+  categoryLabelAr?: string;
+  readTimeMinutes: number;
+  author: string;
+  authorRole: string;
+  publishedAt: string;
+  image: string;
+  imageKey?: string;
+  imageAlt: string;
+  relatedProductId?: string;
+  tags: string[];
+  keyTakeaways?: string[];
+  keyTakeawaysAr?: string[];
+  featured?: boolean;
+  published: boolean;
+  sortOrder: number;
+  updatedAt?: string;
+}
+

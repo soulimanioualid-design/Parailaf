@@ -272,6 +272,15 @@ export const Footer: React.FC<FooterProps> = ({ onOpenAbout, onOpenContact, onOp
               </li>
               <li>
                 <button 
+                  onClick={() => scrollToSection('blog-conseils')} 
+                  className="hover:text-red-400 transition flex items-center gap-1 cursor-pointer"
+                >
+                  <ChevronRight className={`w-3 h-3 text-slate-600 shrink-0 ${isRTL ? 'rotate-180' : ''}`} />
+                  <span>{language === 'ar' ? 'نصائح ومقالات السكري' : 'Blog & Conseils Diabète'}</span>
+                </button>
+              </li>
+              <li>
+                <button 
                   onClick={() => scrollToSection('faq')} 
                   className="hover:text-red-400 transition flex items-center gap-1 cursor-pointer"
                 >
